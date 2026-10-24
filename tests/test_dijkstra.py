@@ -76,7 +76,9 @@ def test_fixture_city_travel_table(tiny_city):
     assert tiny_city.dist[hotel][aarti] == 30
     assert tiny_city.dist[hotel][island] == math.inf
     leg = tiny_city.leg(hotel, garden)
-    assert leg.minutes == 25 and leg.via == ["Museum"]
+    # The planned leg is the raw shortest path rounded UP to 10 minutes; the raw value is kept.
+    assert leg.raw_minutes == 25 and leg.minutes == 30 and leg.via == ["Museum"]
+    assert tiny_city.plan[hotel][garden] == 30 and tiny_city.plan[hotel][hotel] == 0
 
 
 def test_real_cities_agree_with_networkx(real_cities):

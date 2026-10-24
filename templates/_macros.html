@@ -8,7 +8,21 @@
 {%- endmacro %}
 
 {% macro rating(value) -%}
-  <span class="rating" title="Illustrative rating"><i class="bi bi-star-fill" aria-hidden="true"></i>{{ '%.1f'|format(value) }}<span class="visually-hidden"> out of 5</span></span>
+  {%- if value is none -%}
+    <span class="rating is-unrated" title="No open source of visitor ratings exists for this place">Not rated</span>
+  {%- else -%}
+    <span class="rating" title="Illustrative rating"><i class="bi bi-star-fill" aria-hidden="true"></i>{{ '%.1f'|format(value) }}<span class="visually-hidden"> out of 5</span></span>
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro readiness_badge(r, compact=False) -%}
+  {%- if r.status == 'ready' -%}
+    <span class="chip chip-success" title="{{ r.reachable }} of {{ r.total }} attractions reachable by road"><i class="bi bi-check2-circle"></i>{{ 'Ready' if compact else 'Ready to plan' }}</span>
+  {%- elif r.status == 'limited' -%}
+    <span class="chip chip-warning" title="Only {{ r.reachable }} of {{ r.total }} attractions can be planned by road"><i class="bi bi-exclamation-circle"></i>{{ 'Limited' if compact else 'Limited: ' ~ r.reachable ~ ' plannable' }}</span>
+  {%- else -%}
+    <span class="chip chip-danger" title="No attraction is reachable by road in our data"><i class="bi bi-slash-circle"></i>{{ 'Not plannable' if compact else 'Not plannable by road' }}</span>
+  {%- endif -%}
 {%- endmacro %}
 
 {% macro field_error(errors, name) -%}
@@ -25,5 +39,11 @@
 {%- endmacro %}
 
 {% macro category_chips(a, category_names, limit=2) -%}
-  {% for c in a.categories[:limit] %}<span class="chip chip-light">{{ category_names.get(c, c)|title }}</span>{% endfor %}
+  {% for c in a.categories[:limit] %}<span class="chip chip-light">{{ category_names.get(c, c) }}</span>{% endfor %}
+{%- endmacro %}
+
+{% macro estimate_mark(source, what) -%}
+  {%- if source == 'estimate' -%}<sup class="est" title="{{ what }} not known: a typical value for this kind of place is assumed">est.</sup>
+  {%- elif source == 'osm' -%}<sup class="est est-osm" title="{{ what }} from OpenStreetMap">OSM</sup>
+  {%- endif -%}
 {%- endmacro %}

@@ -1,14 +1,14 @@
 """Content pages: home, cities, attractions, about."""
 
-import csv
-import os
 from collections import Counter
 
-from flask import Blueprint, abort, current_app, redirect, render_template, request, url_for
+from flask import Blueprint, abort, redirect, render_template, request, url_for
 
+import config
 from database import queries
 from database.db import get_db
-from routes.helpers import categories, read_catalog
+from routes.helpers import (catalog_only, categories, category_groups, nearby_options, read_catalog, read_data_csv,
+                            readiness_by_city)
 from services.algorithm_info import ALGORITHMS
 from services.city_data import load_attractions
 from services.timeutil import WEEKDAY_LONG, fmt_duration
@@ -17,18 +17,36 @@ main = Blueprint("main", __name__)
 
 SORTS = {
     "popular": ("Most popular", lambda a: (-a.popularity, a.id)),
-    "rating": ("Highest rated", lambda a: (-a.rating, a.id)),
+    "rating": ("Highest rated", lambda a: (-(a.rating if a.rating is not None else -1), -a.popularity, a.id)),
     "duration": ("Shortest visit", lambda a: (a.visit_min, a.id)),
     "fee": ("Lowest entry fee", lambda a: (a.fee, a.id)),
     "name": ("Name (A–Z)", lambda a: (a.name.lower(), a.id)),
 }
 
+SOURCE_LABELS = {
+    "wikipedia": "Wikipedia", "wikidata": "Wikidata", "openstreetmap": "OpenStreetMap", "osm": "OpenStreetMap",
+    "wikipedia_pageviews": "Wikipedia page views", "estimate": "estimate (typical for this kind of place)",
+    "illustrative": "illustrative (chosen by hand)", "approximate": "approximate", "none": "no data",
+}
+
+
+def regions(cities):
+    grouped = {}
+    for c in cities:
+        grouped.setdefault(c["region"] or "Other", []).append(c)
+    return sorted(grouped.items())
+
 
 @main.route("/")
 def index():
     conn = get_db()
-    return render_template("index.html", cities=queries.list_cities(conn), counts=queries.summary_counts(conn),
-                           algorithms=ALGORITHMS, categories=categories())
+    cities = queries.list_cities(conn)
+    ready = readiness_by_city()
+    featured = [c for c in cities if ready[c["slug"]]["status"] == "ready"][:8]
+    return render_template("index.html", cities=cities, featured=featured, readiness=ready,
+                           counts=queries.summary_counts(conn), algorithms=ALGORITHMS, categories=categories(),
+                           ready_count=sum(1 for r in ready.values() if r["status"] == "ready"),
+                           regions=regions(cities))
 
 
 @main.route("/cities")
@@ -39,19 +57,27 @@ def cities():
     for a in attractions:
         by_city.setdefault(a.city_slug, []).append(a)
     category_names = {c["slug"]: c["name"] for c in categories()}
+    city_rows = queries.list_cities(conn)
+    ready = readiness_by_city()
+    near = nearby_options(city_rows)
+    skipped = catalog_only()
     city_cards = []
-    for city in queries.list_cities(conn):
+    for city in city_rows:
         items = sorted(by_city.get(city["slug"], []), key=lambda a: (-a.popularity, a.id))
         counts = Counter(c for a in items for c in a.categories)
         city_cards.append({"city": city, "highlights": [a.name for a in items[:3]],
                            "free": sum(1 for a in items if a.fee == 0),
-                           "categories": [(category_names[c], n) for c, n in counts.most_common(4)]})
+                           "categories": [(category_names[c], n) for c, n in counts.most_common(3)],
+                           "readiness": ready[city["slug"]], "nearby": near[city["slug"]],
+                           "catalog_only": skipped.get(city["slug"], []),
+                           "no_road": [a for a in items if a.access == "no_road"]})
     catalog = read_catalog()
-    modelled = {c["city"]["catalog_id"] for c in city_cards}
-    return render_template("cities.html", city_cards=city_cards, catalog=catalog,
+    modelled = {str(c["city"]["catalog_id"]) for c in city_cards}
+    return render_template("cities.html", city_cards=city_cards, catalog=catalog, regions=regions(city_rows),
                            catalog_states=len({row["state_ut"] for row in catalog}),
                            catalog_attractions=sum(int(row["attraction_count"]) for row in catalog),
-                           modelled_ids={str(i) for i in modelled})
+                           modelled_ids=modelled,
+                           ready_count=sum(1 for r in ready.values() if r["status"] == "ready"))
 
 
 @main.route("/cities/<slug>")
@@ -92,9 +118,12 @@ def attractions():
     shown = {a.id for a in items if matches(a)}
     category_names = {c["slug"]: c["name"] for c in cats}
     details = {a.id: attraction_details(a, category_names) for a in items}
-    return render_template("attractions.html", cities=all_cities, current=current, attractions=items,
-                           shown=shown, categories=cats, category_names=category_names, query=query,
-                           category=category, sort=sort, sorts=SORTS, open_day=open_day, details=details)
+    present = Counter(c for a in items for c in a.categories)
+    return render_template("attractions.html", cities=all_cities, regions=regions(all_cities), current=current,
+                           attractions=items, shown=shown, categories=cats, category_names=category_names,
+                           category_groups=category_groups(), present=present, query=query, category=category,
+                           sort=sort, sorts=SORTS, open_day=open_day, details=details,
+                           readiness=readiness_by_city() if current else None)
 
 
 def attraction_details(a, category_names):
@@ -110,6 +139,16 @@ def attraction_details(a, category_names):
         "rating": a.rating, "popularity": round(a.popularity * 100), "visit": fmt_duration(a.visit_min),
         "fee": "Free" if a.fee == 0 else f"₹{a.fee}", "categories": [category_names[c] for c in a.categories],
         "hours": hours, "status": a.data_status, "catalog": a.in_team_catalog,
+        "access": a.access, "access_note": a.access_note,
+        "sources": [["Location", SOURCE_LABELS.get(a.coord_source or "approximate", a.coord_source)],
+                    ["Opening hours", SOURCE_LABELS.get(a.hours_source, a.hours_source)],
+                    ["Entry fee", SOURCE_LABELS.get(a.fee_source, a.fee_source)],
+                    ["Visit length", SOURCE_LABELS.get(a.duration_source, a.duration_source)],
+                    ["Rating", SOURCE_LABELS.get(a.rating_source, a.rating_source)],
+                    ["Popularity", SOURCE_LABELS.get(a.popularity_source, a.popularity_source)
+                     + (f" ({a.pageviews:,} views in 12 months)" if a.pageviews else "")],
+                    ["Description", "Wikipedia (CC BY-SA)" if a.description_source == "wikipedia"
+                     else ("team catalog" if a.description_source == "catalog" else "written for this project")]],
         "plan_url": url_for("planner.plan", city=a.city_slug),
     }
 
@@ -117,12 +156,18 @@ def attraction_details(a, category_names):
 @main.route("/about")
 def about():
     conn = get_db()
-    coord_sources = Counter()
-    path = os.path.join(current_app.config["DATA_DIR"], "attractions.csv")
-    if os.path.exists(path):
-        with open(path, newline="", encoding="utf-8") as f:
-            coord_sources = Counter(row.get("coord_source", "approximate") for row in csv.DictReader(f))
-    credits = sorted(load_attractions(conn).values(), key=lambda a: (a.city_name, a.name))
+    attractions = list(load_attractions(conn).values())
+    provenance = {
+        "coordinates": Counter(a.coord_source or "approximate" for a in attractions),
+        "hours": Counter(a.hours_source for a in attractions),
+        "fees": Counter(a.fee_source for a in attractions),
+        "ratings": Counter(a.rating_source for a in attractions),
+        "popularity": Counter(a.popularity_source for a in attractions),
+    }
+    credits = sorted(attractions, key=lambda a: (a.city_name, a.name))
+    meta = queries.get_meta(conn)
     return render_template("about.html", algorithms=ALGORITHMS, counts=queries.summary_counts(conn),
-                           cities=queries.list_cities(conn), coord_sources=coord_sources, credits=credits,
-                           catalog_size=len(read_catalog()))
+                           cities=queries.list_cities(conn), provenance=provenance, source_labels=SOURCE_LABELS,
+                           credits=credits, catalog_size=len(read_catalog()), defaults=read_data_csv("estimate_defaults.csv"),
+                           meta=meta, cfg=config, no_road=sum(1 for a in attractions if a.access == "no_road"),
+                           readiness=readiness_by_city())

@@ -1,0 +1,30 @@
+place_type,label,visit_minutes,fee_inr,windows,basis
+temple,Hindu or Jain temple,45,0,06:00-12:00;16:00-21:00,Many temples close for a few hours around midday; entry is usually free.
+hill_temple,Hilltop temple,90,0,06:00-20:00,Includes the climb or rope-way; open through the day.
+gurdwara,Gurdwara,60,0,05:00-22:00,Gurdwaras are open to all through the day; entry is free.
+mosque,Mosque or dargah,40,0,06:00-20:00,Open outside prayer times; prayer times are not modelled.
+church,Church or synagogue,40,0,08:00-18:00,Visiting hours vary with services.
+monastery,Monastery or stupa,45,0,07:00-18:00,Daytime visiting hours.
+ashram,Ashram,60,0,06:00-20:00,Daytime visiting hours.
+fort,Fort,120,50,09:00-17:30,Typical daytime hours of a ticketed monument.
+palace,Palace or haveli,90,100,09:30-17:30,Typical daytime hours of a ticketed palace museum.
+monument,Monument,60,30,09:00-17:30,Typical daytime hours of a ticketed monument.
+cave,Cave monuments,150,50,09:00-17:30,Large site; typical daytime hours of a ticketed monument.
+museum,Museum,90,50,10:00-17:00,Typical museum hours; weekly closing day unknown.
+memorial,Memorial,45,0,09:00-18:00,Daytime visiting hours.
+garden,Garden or park,60,20,06:00-19:00,Daylight hours; small entry fee assumed.
+zoo,Zoo or safari park,120,100,09:00-17:00,Daytime hours; weekly closing day unknown.
+national_park,National park or nature reserve,180,200,07:00-17:00,Daylight hours; entry fee assumed.
+lake,Lake,60,0,06:00-20:00,Open-air; boating costs extra and is not included.
+beach,Beach,60,0,06:00-19:30,Open-air during daylight and early evening.
+ghat,Ghat or riverfront,45,0,05:00-21:00,Open-air; evening aarti times are not modelled.
+viewpoint,Viewpoint or valley,60,0,06:00-18:30,Daylight hours.
+waterfall,Waterfall,60,0,08:00-17:30,Daylight hours.
+wellness,Hot spring or wellness site,60,0,07:00-20:00,Daytime hours.
+market,Market or shopping street,75,0,10:00-21:00,Typical shop hours.
+mall,Shopping mall,90,0,11:00-22:00,Typical mall hours.
+food,Food street or eatery,60,0,11:00-22:30,Typical restaurant hours.
+area,Historic quarter or promenade,90,0,08:00-20:00,Open-air; walking visit.
+dam,Dam or reservoir,45,0,08:00-18:00,Daytime viewing hours.
+landmark,Landmark seen from outside,30,0,06:00-22:00,Seen from outside or crossed; no ticket.
+event,Daily ceremony,90,0,16:00-18:30,Held once a day in the late afternoon; the exact time changes with the season.

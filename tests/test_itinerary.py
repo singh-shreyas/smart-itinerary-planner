@@ -150,7 +150,7 @@ def test_comparison_runs_on_identical_input(real_cities, tmp_path):
                        include_transport=False, interests=(), pace="balanced", start="tajganj-start", strategy="dp")
     result = run_comparison(real_cities["agra"], trip, RATE, str(tmp_path), repeats=1)
     assert [s["key"] for s in result["strategies"]] == ["dp", "greedy", "max_visits"]
-    assert all(s["violations"] == 0 for s in result["strategies"])
+    assert all(s["metrics"]["violations"] == 0 for s in result["strategies"])
     for row in result["selection"]:
         assert row["dp"]["score"] >= row["greedy"]["score"]            # same instance: DP is never worse
     for row in result["routing"]:
