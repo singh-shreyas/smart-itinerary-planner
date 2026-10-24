@@ -34,6 +34,24 @@ def default_values(city_slug=""):
             "venues": "on", "venue_style": [], "veg": "", "shop_min": "", "shop_spend": ""}
 
 
+def city_pairs(area):
+    """Straight-line distance between every pair of cities in a multi-city trip, plus the road distance
+    between their main hubs along the planner's own shortest path (labelled if it is an estimate)."""
+    import itertools
+    import math
+    from services.city_data import _hub
+    from services.multicity import centre_distance_km
+    pairs = []
+    for a, b in itertools.combinations(area.cities, 2):
+        hub_a, hub_b = _hub(a["slug"], area.places), _hub(b["slug"], area.places)
+        road = area.km[hub_a.id][hub_b.id] if hub_a and hub_b else math.inf
+        leg = area.leg(hub_a.id, hub_b.id) if road < math.inf else None
+        pairs.append({"a": a["name"], "b": b["name"], "km": round(centre_distance_km(a, b)),
+                      "road_km": round(road) if road < math.inf else None,
+                      "estimated": bool(leg and leg.estimated), "minutes": leg.minutes if leg else None})
+    return pairs
+
+
 def default_city(cities):
     return "delhi" if any(c["slug"] == "delhi" for c in cities) else (cities[0]["slug"] if cities else "")
 
@@ -94,7 +112,8 @@ def itinerary():
     return render_template("itinerary.html", it=result, trip=trip, city=area,
                            map_data=map_data(area, result), pace=config.PACES[trip.pace],
                            category_names={c["slug"]: c["name"] for c in categories()},
-                           rounding=config.TRAVEL_ROUNDING_MIN, fmt_hhmm=fmt_hhmm)
+                           rounding=config.TRAVEL_ROUNDING_MIN, fmt_hhmm=fmt_hhmm,
+                           city_pairs=city_pairs(area) if area.multi_city else [])
 
 
 @planner.route("/compare")

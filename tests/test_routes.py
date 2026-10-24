@@ -7,7 +7,14 @@ VALID = "/itinerary?city=delhi&days=2&start_date=2026-11-02&start=cp-start"
 
 @pytest.mark.parametrize("url", [
     "/", "/cities", "/attractions", "/attractions?city=jaipur", "/attractions?city=agra&category=history&q=tomb&open_on=4&sort=fee",
-    "/plan", "/plan?city=varanasi", "/about", "/compare", "/compare?city=agra&days=1&start_date=2026-11-06",
+    "/attractions?city=kedarnath", "/attractions?city=mumbai&sort=rating",
+    "/plan", "/plan?city=varanasi", "/plan?city=agra&also=mathura,vrindavan", "/plan?city=kedarnath", "/about", "/compare",
+    "/compare?city=agra&days=1&start_date=2026-11-06",
+    "/compare?city=haridwar&also=rishikesh&days=2&start_date=2026-11-02",
+    "/itinerary?city=agra&also=mathura,vrindavan&days=3&start_date=2026-11-02&interests=spirituality",
+    "/itinerary?city=delhi&days=1&start_date=2026-11-03&day_start=10:00&day_end=23:00&interests=food,markets",
+    "/itinerary?city=kedarnath&days=1&start_date=2026-11-02",
+    "/itinerary?city=calangute&days=2&start_date=2026-11-02&lunch=off&dinner=off",
 ])
 def test_pages_render(client, url):
     response = client.get(url)
@@ -34,6 +41,8 @@ def test_valid_itinerary(client):
     assert "Day 1" in html and "Day 2" in html
     assert "All constraints verified" in html
     assert "straight lines, not the road path" in html
+    assert "Lunch break" in html                                       # meals are on by default
+    assert "Reproducible plan" in html and "plan <code>#" in html
 
 
 @pytest.mark.parametrize("query, field_message", [
@@ -45,7 +54,14 @@ def test_valid_itinerary(client):
     ("city=delhi&budget=-50", "cannot be negative"),
     ("city=delhi&budget=lots", "whole number of rupees"),
     ("city=delhi&interests=shopping-malls", "Unknown interest"),
-    ("city=delhi&start=godowlia-start", "starting point in this city"),
+    ("city=delhi&start=godowlia-start", "starting point in your base city"),
+    ("city=delhi&also=varanasi", "limit is 100 km"),
+    ("city=agra&also=mathura,vrindavan,delhi,jaipur", "at most 3"),
+    ("city=delhi&interest_mode=only", "Pick at least one interest"),
+    ("city=delhi&lunch_from=14:00&lunch_to=14:10", "does not fit"),
+    ("city=delhi&lunch_from=12:00&lunch_to=15:00&dinner_from=14:00", "dinner window must start after"),
+    ("city=delhi&shop_min=7", "listed shopping times"),
+    ("city=delhi&venue_style=buffet", "Unknown meal-venue style"),
     ("city=delhi&start_date=2026-13-45", "YYYY-MM-DD"),
     ("city=delhi&pace=sprint", "relaxed, balanced or packed"),
     ("city=delhi&strategy=random", "Unknown selection strategy"),
@@ -76,9 +92,14 @@ def test_excluding_everything_is_refused(client, app):
 
 
 def test_api_health_and_cities(client):
-    assert client.get("/api/health").get_json() == {"status": "ok", "cities": 4}
+    health = client.get("/api/health").get_json()
+    assert health["status"] == "ok" and health["cities"] == 50 and health["schema"] == "2"
+    assert len(health["data_version"]) == 10
     cities = client.get("/api/cities").get_json()
-    assert {c["slug"] for c in cities} == {"agra", "delhi", "jaipur", "varanasi"}
+    assert len(cities) == 50 and {"agra", "delhi", "jaipur", "varanasi", "mathura"} <= {c["slug"] for c in cities}
+    by_slug = {c["slug"]: c for c in cities}
+    assert by_slug["kedarnath"]["readiness"]["status"] == "not_ready"
+    assert {"mathura", "vrindavan"} <= {n["slug"] for n in by_slug["agra"]["nearby"]}
     attractions = client.get("/api/cities/agra/attractions").get_json()
     taj = next(a for a in attractions if a["slug"] == "taj-mahal")
     assert "Fri" not in taj["hours"]                                   # closed on Fridays
@@ -89,6 +110,8 @@ def test_api_itinerary_shape(client):
     assert set(data) >= {"city", "strategy", "days", "totals", "skipped", "violations", "illustrative"}
     assert data["violations"] == []
     assert data["days"][0]["visits"] and set(data["days"][0]["visits"][0]) >= {"slug", "arrive", "start", "end", "leave", "travel_min"}
+    assert set(data["versions"]) == {"inputs", "data", "settings", "plan"}
+    assert all(v["travel_min"] % 10 == 0 for d in data["days"] for v in d["visits"])
 
 
 def test_api_errors_are_json(client):
@@ -102,6 +125,20 @@ def test_api_compare(client):
     data = client.get("/api/compare?city=agra&days=1&start_date=2026-11-02").get_json()
     assert data["dijkstra"]["mismatches"] == 0
     assert {s["key"] for s in data["strategies"]} == {"dp", "greedy", "max_visits"}
+    assert data["recommendation"]["status"] in ("winner", "tie")
+    assert all(s["feasible"] for s in data["strategies"])
+
+
+def test_api_multi_city_itinerary(client):
+    data = client.get("/api/itinerary?city=haridwar&also=rishikesh&days=2&start_date=2026-11-02").get_json()
+    assert data["violations"] == [] and data["also"] == ["rishikesh"]
+    cities = {v["city"] for d in data["days"] for v in d["visits"]}
+    assert cities <= {"haridwar", "rishikesh"} and cities
+
+
+def test_not_plannable_city_explains_itself(client):
+    html = client.get("/itinerary?city=kedarnath&days=1&start_date=2026-11-02").get_data(as_text=True)
+    assert "No road access" in html or "already in your plan or left out" in html
 
 
 def test_friday_plan_in_agra_skips_the_taj(client):

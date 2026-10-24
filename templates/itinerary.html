@@ -73,6 +73,11 @@
       </div>
     </div>
 
+    {% if city_pairs %}
+      <p class="small text-muted mt-3 mb-0"><i class="bi bi-signpost-2 me-1"></i>Cities in this trip:
+        {% for p in city_pairs %}{{ p.a }} ↔ {{ p.b }} {{ p.km }} km straight line{% if p.road_km %} (about {{ p.road_km }} km / {{ p.minutes|travel }} by road between their hubs{{ ', estimated' if p.estimated }}){% endif %}{{ ' · ' if not loop.last }}{% endfor %}.
+        You stay at {{ it.start_place.name }} and travel out each day.</p>
+    {% endif %}
     {% if it.violations %}
       <div class="notice notice-danger mt-3" role="alert"><i class="bi bi-bug"></i>
         <div><p><strong>The validator found problems with this plan</strong> (this is a planner bug, please report it):</p>

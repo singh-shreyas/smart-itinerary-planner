@@ -1,8 +1,15 @@
-city,slug,name,lat,lng,coord_source,categories,rating,popularity,visit_minutes,fee_inr,in_team_catalog,data_status,wiki_title,description
-testville,fort,Fort,10.0200,10.0000,approximate,history;architecture,4.5,0.9,60,50,no,illustrative,,Open daily 09:00-17:00 (last entry 16:30).
-testville,museum,Museum,10.0300,10.0200,approximate,museums,4.0,0.6,90,100,no,illustrative,,Closed on Mondays.
-testville,temple,Temple,9.9800,10.0300,approximate,spirituality,4.8,0.7,45,0,no,illustrative,,Split hours: closed 12:00-16:00.
-testville,garden,Garden,10.0000,10.0400,approximate,nature,4.2,0.5,60,0,no,illustrative,,Free and open all day.
-testville,island,Island,10.1000,10.1000,approximate,nature,4.9,0.9,60,0,no,illustrative,,No road reaches it (unreachable on purpose).
-testville,aarti,Evening Aarti,10.0100,10.0500,approximate,spirituality,4.7,0.8,60,0,no,illustrative,,Evening only: 18:00-19:30 (last entry 18:30).
-testville,palace,Palace,9.9700,9.9800,approximate,history,4.6,0.8,120,600,no,illustrative,,Expensive: Rs 600 entry.
+city,slug,name,lat,lng,coord_source,categories,rating,popularity,visit_minutes,fee_inr,in_team_catalog,data_status,wiki_title,description,cuisine,vegetarian,access,access_note,place_type
+testville,fort,Fort,10.0200,10.0000,approximate,history;architecture,4.5,0.9,60,50,no,illustrative,,Open daily 09:00-17:00 (last entry 16:30).,,,,,
+testville,museum,Museum,10.0300,10.0200,approximate,museums,4.0,0.6,90,100,no,illustrative,,Closed on Mondays.,,,,,
+testville,temple,Temple,9.9800,10.0300,approximate,spirituality,4.8,0.7,45,0,no,illustrative,,Split hours: closed 12:00-16:00.,,,,,
+testville,garden,Garden,10.0000,10.0400,approximate,nature,4.2,0.5,60,0,no,illustrative,,Free and open all day.,,,,,
+testville,island,Island,10.1000,10.1000,approximate,nature,4.9,0.9,60,0,no,illustrative,,No road reaches it (unreachable on purpose).,,,,,
+testville,aarti,Evening Aarti,10.0100,10.0500,approximate,spirituality,4.7,0.8,60,0,no,illustrative,,Evening only: 18:00-19:30 (last entry 18:30).,,,,,
+testville,palace,Palace,9.9700,9.9800,approximate,history,4.6,0.8,120,600,no,illustrative,,Expensive: Rs 600 entry.,,,,,
+testville,chaat-street,Chaat Street,10.0050,10.0450,approximate,street-food,,0.6,45,0,no,illustrative,,Food-only place (opt-in); vegetarian street food used as a meal venue.,street-food;local-specialty,yes,,,food
+riverton,river-fort,River Fort,10.0100,10.3700,approximate,history;architecture,4.4,0.7,60,40,no,illustrative,,The main sight of Riverton.,,,,,
+riverton,river-ghat,River Ghat,9.9950,10.3600,approximate,spirituality;lakes-viewpoints,,0.5,45,0,no,estimate,,Unrated riverside steps (scored with the neutral prior).,,,,,
+riverton,spice-market,Spice Market,10.0050,10.3550,approximate,markets;handicrafts,,0.4,60,0,no,estimate,,Shopping-only place (opt-in).,,,,,
+riverton,river-cafe,River Cafe,10.0000,10.3700,approximate,cafes,,0.3,45,0,no,estimate,,Cafe used as a meal venue (vegetarian not known).,cafe-bakery,unknown,,,food
+westford,west-temple,West Temple,10.0050,9.3650,approximate,spirituality,4.5,0.6,45,0,no,illustrative,,Westford's sight; no road link to Testville in the data.,,,,,
+farville,far-lake,Far Lake,11.5050,10.0050,approximate,nature,4.0,0.5,60,0,no,illustrative,,Too far for a shared trip.,,,,,

@@ -5,9 +5,12 @@
 
   var data = JSON.parse(document.getElementById("chart-data").textContent);
 
-  // Categorical slots, validated together (all pairs, light surface) with the dataviz palette checker.
-  // Slot 1 always marks the method the planner actually uses (DP, or NN + 2-opt).
-  var SLOT = ["#2a7a52", "#e8894a", "#3f6fb6"];
+  // Strategy colours follow the strategy everywhere on the page (validated with the dataviz
+  // palette checker: lightness, chroma, colour-blind separation; contrast relief = the tables).
+  var STRATEGY = { dp: "#2a7a52", greedy: "#e8894a", max_visits: "#3f6fb6" };
+  var SLOT = [STRATEGY.dp, STRATEGY.greedy, STRATEGY.max_visits];
+  // Time-use segments (a separate, also validated, 4-colour set + neutral grey for unused time).
+  var SEGMENT = { sight: "#2a7a52", travel: "#e8894a", meal: "#3f6fb6", wait: "#b8860b", free: "#d9d3c7" };
   var INK = "#1B2A41", MUTED = "#6B6257", GRID = "#ECE5D8", SURFACE = "#FFFFFF";
 
   if (window.Chart) {
@@ -41,11 +44,14 @@
     for (var k in extra || {}) a[k] = extra[k];
     return a;
   }
-  function bars(label, values, color) {
+  function bars(label, values, color, horizontal) {
     return {
       label: label, data: values, backgroundColor: color, hoverBackgroundColor: color,
-      maxBarThickness: 24, barPercentage: 0.82, categoryPercentage: 0.72,
-      borderRadius: { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 }, borderSkipped: "start"
+      maxBarThickness: 22, barPercentage: 0.82, categoryPercentage: 0.72,
+      borderColor: SURFACE, borderWidth: { top: 0, right: horizontal ? 2 : 0, bottom: 0, left: 0 },
+      borderRadius: horizontal ? { topRight: 4, bottomRight: 4, topLeft: 0, bottomLeft: 0 }
+                               : { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 },
+      borderSkipped: "start"
     };
   }
   function line(label, values, color) {
@@ -55,10 +61,13 @@
       pointHitRadius: 12, tension: 0, borderCapStyle: "round", borderJoinStyle: "round"
     };
   }
-  function barChart(id, labels, datasets, unit, yTitle) {
+  function chart(id, config) {
     var el = document.getElementById(id);
     if (!el || !window.Chart) return;
-    new Chart(el, {
+    new Chart(el, config);
+  }
+  function barChart(id, labels, datasets, unit, yTitle) {
+    chart(id, {
       type: "bar",
       data: { labels: labels, datasets: datasets },
       options: {
@@ -69,9 +78,7 @@
     });
   }
   function lineChart(id, labels, datasets, unit, yTitle, xTitle, logY) {
-    var el = document.getElementById(id);
-    if (!el || !window.Chart) return;
-    new Chart(el, {
+    chart(id, {
       type: "line",
       data: { labels: labels, datasets: datasets },
       options: {
@@ -91,18 +98,64 @@
     });
   }
 
-  // 1. Value score per day, by strategy
-  var byKey = data.by_key;
-  if (byKey && byKey.dp) {
-    var days = byKey.dp.per_day.map(function (d) { return "Day " + d.day; });
-    barChart("chart-strategies", days, [
-      bars("DP", byKey.dp.per_day.map(function (d) { return d.score; }), SLOT[0]),
-      bars("Greedy", byKey.greedy.per_day.map(function (d) { return d.score; }), SLOT[1]),
-      bars("Max visits", byKey.max_visits.per_day.map(function (d) { return d.score; }), SLOT[2])
-    ], "", "score");
+  var rows = data.strategies || [];
+
+  // 1a. Subscores (grouped horizontal bars: one group per measure, one bar per strategy)
+  var MEASURES = [["value", "Value"], ["coverage", "Coverage"], ["travel", "Travel efficiency"],
+                  ["utilisation", "Time utilisation"], ["budget", "Budget efficiency"]];
+  var shown = MEASURES.filter(function (m) { return data.weights && m[0] in data.weights; });
+  if (rows.length) {
+    chart("chart-scorecard", {
+      type: "bar",
+      data: {
+        labels: shown.map(function (m) { return m[1]; }).concat(["Overall"]),
+        datasets: rows.map(function (r) {
+          return bars(r.short, shown.map(function (m) { return r.subscores[m[0]]; }).concat([r.overall]), STRATEGY[r.key], true);
+        })
+      },
+      options: {
+        indexAxis: "y",
+        interaction: { mode: "index", intersect: false },
+        plugins: { legend: legend(), tooltip: tooltip("") },
+        scales: { x: axis("subscore (100 = best of the three)", { min: 0, max: 100 }), y: axis(null, { grid: { display: false } }) }
+      }
+    });
+
+    // 1b. Where the time goes (stacked horizontal bars, one per strategy)
+    var segs = [
+      ["Sightseeing", SEGMENT.sight, function (m) { return m.sight_min; }],
+      ["Travel", SEGMENT.travel, function (m) { return m.travel_min; }],
+      ["Meals", SEGMENT.meal, function (m) { return m.meal_min; }],
+      ["Waiting + buffer", SEGMENT.wait, function (m) { return m.wait_min + m.buffer_min; }],
+      ["Unused", SEGMENT.free, function (m) { return m.free_min; }]
+    ];
+    chart("chart-timeuse", {
+      type: "bar",
+      data: {
+        labels: rows.map(function (r) { return r.short; }),
+        datasets: segs.map(function (s) {
+          var d = bars(s[0], rows.map(function (r) { return s[2](r.metrics); }), s[1], true);
+          d.borderRadius = 0;
+          d.borderWidth = { top: 0, right: 2, bottom: 0, left: 0 };   // 2px surface gap between segments
+          return d;
+        })
+      },
+      options: {
+        indexAxis: "y",
+        interaction: { mode: "index", intersect: false },
+        plugins: { legend: legend(), tooltip: tooltip(" min") },
+        scales: { x: axis("minutes", { stacked: true, beginAtZero: true }), y: axis(null, { stacked: true, grid: { display: false } }) }
+      }
+    });
+
+    // 1c. Value score per day, by strategy
+    var days = rows[0].per_day.map(function (d) { return "Day " + d.day; });
+    barChart("chart-strategies", days, rows.map(function (r) {
+      return bars(r.short, r.per_day.map(function (d) { return d.score; }), STRATEGY[r.key]);
+    }), "", "score");
   }
 
-  // 3. Travel minutes per day, by routing method
+  // 4. Travel minutes per day, by routing method
   var routing = data.routing || [];
   if (routing.length) {
     barChart("chart-routing", routing.map(function (r) { return "Day " + r.day; }), [
@@ -112,7 +165,7 @@
     ], " min", "minutes");
   }
 
-  // 5. Scaling benchmarks from results/benchmarks.json
+  // 6. Scaling benchmarks from results/benchmarks.json
   var bm = data.benchmarks;
   if (bm) {
     lineChart("chart-bm-selection", bm.selection.map(function (r) { return r.n; }), [

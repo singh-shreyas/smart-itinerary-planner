@@ -1,0 +1,53 @@
+city,name,wiki_title,place_type,categories,cuisine,vegetarian,note
+# Curated from data/curation/food_shopping_candidates.txt (Wikipedia articles near each city centre filed under markets, bazaars,,,,,,
+# shopping malls, restaurants, cafés or street food). Left out: defunct places, chains without one location, institutions,,,,,,
+# and plain neighbourhoods. vegetarian = yes ONLY where the Wikipedia text says the place is vegetarian (set after the fetch).,,,,,,
+# Mumbai's search centre is suburban Kurla, so well-known South Mumbai articles were added by title; Britannia & Co. and,,,,,,
+# Mohammed Ali Road were dropped because no source gives them coordinates.,,,,,,
+delhi,Gali Paranthe Wali,Gali Paranthe Wali,food,street-food;food,street-food;local-specialty,,Old Delhi lane of paratha shops
+delhi,Moti Mahal,Moti Mahal (restaurant),food,food,casual;local-specialty,,Historic Daryaganj restaurant
+delhi,Bukhara,Bukhara (restaurant),food,fine-dining;food,fine-dining,,Restaurant in a Delhi hotel
+delhi,Indian Accent,Indian Accent (restaurant),food,fine-dining;food,fine-dining,,Restaurant in New Delhi
+delhi,Khan Market,Khan Market,market,markets;fashion;cafes,cafe-bakery,,Shopping street with cafes
+delhi,Sarojini Nagar Market,Sarojini Nagar,market,markets;fashion,,,Clothing market
+delhi,Khari Baoli,Khari Baoli,market,markets;food,,,Spice market
+delhi,Dariba Kalan,Dariba Kalan,market,markets;handicrafts,,,Jewellery lane
+agra,Sadar Bazaar,"Sadar Bazaar, Agra",market,markets;handicrafts,,,
+varanasi,Dalmandi,Dalmandi,market,markets;fashion,,,
+mumbai,Crawford Market,Crawford Market,market,markets;food,,,
+mumbai,Leopold Cafe,Leopold Cafe,food,cafes;food,cafe-bakery;casual,,
+mumbai,R City Mall,R City Mall,mall,malls;fashion,,,
+calangute,Mapusa Market,Mapusa Municipal Market,market,markets;handicrafts,,,
+calangute,Mall De Goa,Mall De Goa,mall,malls;fashion,,,
+bengaluru,Commercial Street,"Commercial Street, Bengaluru",market,markets;fashion,,,
+bengaluru,Gandhi Bazaar,Gandhi Bazaar,market,markets;street-food,street-food,,
+bengaluru,Russell Market,Russell Market,market,markets;food,,,
+bengaluru,VV Puram Food Street,VV Puram Food Street,food,street-food;food,street-food;local-specialty,yes,Wikipedia: pure vegetarian street food
+bengaluru,Koshy's,Koshy's,food,cafes;food,cafe-bakery;casual,,
+bengaluru,Orion Mall,Orion Mall,mall,malls;fashion,,,
+chennai,Pondy Bazaar,Pondy Bazaar,market,markets;fashion,,,
+chennai,T. Nagar,T. Nagar,market,markets;fashion;handicrafts,,,
+chennai,Express Avenue,Express Avenue,mall,malls;fashion,,,
+chennai,New Woodlands Hotel,New Woodlands Hotel,food,food,casual;local-specialty,yes,Wikipedia: Udupi-style vegetarian restaurant
+hyderabad,Laad Bazaar,Laad Bazaar,market,markets;handicrafts;fashion,,,
+hyderabad,Moazzam Jahi Market,Moazzam Jahi Market,market,markets;food,,,
+hyderabad,Cafe Bahar,Cafe Bahar,food,food,casual;local-specialty,,
+hyderabad,Shah Ghouse Café,Shah Ghouse Café,food,food,casual;local-specialty,,
+hyderabad,GVK One,GVK One,mall,malls;fashion,,,
+jaipur,Laxmi Mishthan Bhandar (LMB),LMB Hotel,food,food,casual;local-specialty,,
+jaipur,World Trade Park,"World Trade Park, Jaipur",mall,malls;fashion,,,
+kochi,Forum Mall Kochi,Forum Mall Kochi,mall,malls;fashion,,,
+kochi,Centre Square Mall,"Centre Square Mall, Kochi",mall,malls;fashion,,,
+kolkata,New Market,"New Market, Kolkata",market,markets;fashion;food,,,
+kolkata,College Street Coffee House,College Street Coffee House,food,cafes;food,cafe-bakery,,
+kolkata,Nahoum & Sons,Nahoum & Sons,food,cafes;food,cafe-bakery,,
+kolkata,Aminia,Aminia,food,food,casual;local-specialty,,
+kolkata,6 Ballygunge Place,6 Ballygunge Place,food,food,casual;local-specialty,,
+kolkata,Tiretta Bazaar,Tiriti Bazaar,food,street-food;food,street-food,,
+kolkata,Quest Mall,Quest Mall,mall,malls;fashion,,,
+madurai,Vishaal Mall,Vishaal Mall,mall,malls;fashion,,,
+mysuru,Mall of Mysore,Mall of Mysore,mall,malls;fashion,,,
+mysuru,Sayyaji Rao Road,Sayajirao Road,market,markets;fashion,,,
+ooty,Ooty Municipal Market,Ooty Municipal Market,market,markets;food,,,
+pondicherry,Providence Mall,Providence Mall,mall,malls;fashion,,,
+shimla,Lower Bazaar,"Lower Bazaar, Shimla",market,markets;handicrafts,,,

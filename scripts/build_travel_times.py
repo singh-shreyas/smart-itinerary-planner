@@ -1,6 +1,6 @@
 """One-off data script: build the sparse road graph (local and intercity links).
 
-    python scripts/build_travel_times.py            # add links for cities that have none yet (needs internet)
+    python scripts/build_travel_times.py            # new cities in full; new places in existing cities only (needs internet)
     python scripts/build_travel_times.py --all      # rebuild every city's links
     python scripts/build_travel_times.py --offline  # straight-line estimates only (no internet)
 
@@ -155,6 +155,41 @@ def build_city(nodes, offline, snap_log):
     return rows
 
 
+def add_new_places(nodes, existing_rows, offline, snap_log):
+    """Keep a city's existing links and connect only places that have none yet (each to its K nearest
+    places, both directions), so adding a few places never changes the rest of the road graph."""
+    linked = {r["from_slug"] for r in existing_rows} | {r["to_slug"] for r in existing_rows}
+    fresh = [i for i, n in enumerate(nodes) if n["slug"] not in linked]
+    if not fresh:
+        return []
+    pairs = set()
+    for i in fresh:
+        nearest = sorted((j for j in range(len(nodes)) if j != i),
+                         key=lambda j: (haversine_km(nodes[i], nodes[j]), j))[:K_NEAREST]
+        for j in nearest:
+            pairs.add((i, j))
+            pairs.add((j, i))
+    involved = sorted({i for pair in pairs for i in pair})
+    sub = [nodes[i] for i in involved]
+    durations = distances = None
+    if not offline:
+        try:
+            durations, distances, snaps = osrm_table(sub)
+            for node, snap in zip(sub, snaps):
+                if node["slug"] in {nodes[i]["slug"] for i in fresh}:
+                    snap_log.append((node["city"], node["slug"], node["name"], round(snap)))
+        except Exception as exc:
+            print(f"  OSRM unavailable ({exc}); using straight-line estimates")
+    position = {i: k for k, i in enumerate(involved)}
+    rows = []
+    for i, j in sorted(pairs):
+        a, b = position[i], position[j]
+        minutes, km, source = edge(nodes[i], nodes[j], durations[a][b] if durations else None,
+                                   distances[a][b] if distances else None)
+        rows.append((nodes[i]["slug"], nodes[j]["slug"], minutes, km, source))
+    return rows
+
+
 def city_centres():
     return {r["slug"]: {"lat": float(r["center_lat"]), "lng": float(r["center_lng"]), "name": r["name"]}
             for r in read_csv("cities.csv")}
@@ -205,13 +240,21 @@ def main():
     args = parser.parse_args()
 
     places = read_places()
-    existing = read_csv("travel_times.csv")
+    known = {(city, n["slug"]) for city, nodes in places.items() for n in nodes}
+    # Links to places that no longer exist (or lost road access) are dropped.
+    existing = [r for r in read_csv("travel_times.csv")
+                if (r["city"], r["from_slug"]) in known and (r["city"], r["to_slug"]) in known]
     have = {r["city"] for r in existing}
     out_rows = [] if args.all else [(r["city"], r["from_slug"], r["to_slug"], r["minutes"], r["km"], r["source"])
                                      for r in existing if r["city"] in places]
     snap_log = []
     for city, nodes in sorted(places.items()):
         if city in have and not args.all:
+            rows = add_new_places(nodes, [r for r in existing if r["city"] == city], args.offline, snap_log)
+            if rows:
+                print(f"{city}: {len(rows)} links added for new places (existing links kept)")
+                out_rows.extend((city,) + r for r in rows)
+                time.sleep(1)
             continue
         rows = build_city(nodes, args.offline, snap_log)
         sources = defaultdict(int)

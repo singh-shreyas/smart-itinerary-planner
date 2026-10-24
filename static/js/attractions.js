@@ -1,7 +1,12 @@
 // Attractions page: live search / filter / sort on the cards the server already rendered,
-// plus the details dialog. Without JavaScript the same form submits and the server filters.
+// plus the details dialog. Without JavaScript the same forms submit and the server filters.
 (function () {
   "use strict";
+
+  // Choosing a destination loads that city's page (the form also works with its "Show" button).
+  document.querySelectorAll("select[data-autosubmit]").forEach(function (select) {
+    select.addEventListener("change", function () { select.form.submit(); });
+  });
 
   var form = document.getElementById("filter-form");
   var grid = document.getElementById("attraction-grid");
@@ -14,7 +19,7 @@
 
   var sorters = {
     popular: function (a, b) { return b.dataset.popularity - a.dataset.popularity || a.dataset.id - b.dataset.id; },
-    rating: function (a, b) { return b.dataset.rating - a.dataset.rating || a.dataset.id - b.dataset.id; },
+    rating: function (a, b) { return b.dataset.rating - a.dataset.rating || b.dataset.popularity - a.dataset.popularity || a.dataset.id - b.dataset.id; },
     duration: function (a, b) { return a.dataset.duration - b.dataset.duration || a.dataset.id - b.dataset.id; },
     fee: function (a, b) { return a.dataset.fee - b.dataset.fee || a.dataset.id - b.dataset.id; },
     name: function (a, b) { return a.dataset.name.localeCompare(b.dataset.name); }
@@ -23,8 +28,7 @@
   function apply() {
     var q = form.q.value.trim().toLowerCase();
     var day = form.open_on.value;
-    var checked = form.querySelector("input[name=category]:checked");
-    var category = checked ? checked.value : "";
+    var category = form.category.value;
     var shown = 0;
 
     cols.forEach(function (col) {
@@ -55,9 +59,17 @@
     form.q.value = "";
     form.open_on.value = "";
     form.sort.value = "popular";
-    document.getElementById("cat-all").checked = true;
+    form.category.value = "";
     apply();
   });
+
+  function row(list, label, value) {
+    var li = document.createElement("li");
+    li.innerHTML = "<span></span><span></span>";
+    li.children[0].textContent = label;
+    li.children[1].textContent = value;
+    list.appendChild(li);
+  }
 
   // Details dialog
   var modal = document.getElementById("attr-modal");
@@ -69,8 +81,19 @@
     img.alt = item.name;
     document.getElementById("attr-modal-title").textContent = item.name;
     document.getElementById("attr-modal-city").textContent = item.city;
-    document.getElementById("attr-modal-rating").innerHTML = '<i class="bi bi-star-fill" aria-hidden="true"></i>' + item.rating.toFixed(1);
+    var rating = document.getElementById("attr-modal-rating");
+    if (item.rating === null) {
+      rating.className = "rating is-unrated fs-6";
+      rating.textContent = "Not rated";
+    } else {
+      rating.className = "rating fs-6";
+      rating.innerHTML = '<i class="bi bi-star-fill" aria-hidden="true"></i>' + item.rating.toFixed(1);
+    }
     document.getElementById("attr-modal-desc").textContent = item.description;
+
+    var access = document.getElementById("attr-modal-access");
+    access.classList.toggle("d-none", item.access !== "no_road");
+    access.querySelector("p").textContent = item.access === "no_road" ? "Not planned by road: " + (item.access_note || "") : "";
 
     var chips = document.getElementById("attr-modal-chips");
     chips.innerHTML = "";
@@ -83,20 +106,20 @@
     if (item.catalog) {
       var tag = document.createElement("span");
       tag.className = "chip";
-      tag.textContent = "From our catalog";
+      tag.textContent = "From our Top-50 catalog";
       chips.appendChild(tag);
     }
 
     var hours = document.getElementById("attr-modal-hours");
     hours.innerHTML = "";
-    item.hours.forEach(function (row) {
+    item.hours.forEach(function (h) {
       var tr = document.createElement("tr");
       var th = document.createElement("td");
       th.className = "fw-semibold";
-      th.textContent = row[0];
+      th.textContent = h[0];
       var td = document.createElement("td");
-      td.textContent = row[1];
-      if (row[1] === "Closed") td.className = "text-accent fw-semibold";
+      td.textContent = h[1];
+      if (h[1] === "Closed") td.className = "text-accent fw-semibold";
       tr.appendChild(th);
       tr.appendChild(td);
       hours.appendChild(tr);
@@ -104,16 +127,13 @@
 
     var facts = document.getElementById("attr-modal-facts");
     facts.innerHTML = "";
-    [["Visit duration", item.visit], ["Entry fee (Indian adult)", item.fee], ["Popularity", item.popularity + " / 100"]]
-      .forEach(function (f) {
-        var li = document.createElement("li");
-        li.innerHTML = "<span></span><span></span>";
-        li.children[0].textContent = f[0];
-        li.children[1].textContent = f[1];
-        facts.appendChild(li);
-      });
-    document.getElementById("attr-modal-status").textContent =
-      "Data status: " + item.status + ". Hours, fee, rating and duration are estimates for this project.";
+    row(facts, "Visit duration", item.visit);
+    row(facts, "Entry fee (Indian adult)", item.fee);
+    row(facts, "Popularity", item.popularity + " / 100");
+    var sources = document.getElementById("attr-modal-sources");
+    sources.innerHTML = "";
+    item.sources.forEach(function (s) { row(sources, s[0], s[1]); });
+
     var credit = document.getElementById("attr-modal-credit");
     credit.textContent = "";
     if (item.credit) {

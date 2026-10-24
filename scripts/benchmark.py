@@ -147,57 +147,73 @@ def bench_dijkstra(sizes, seeds, repeats):
 
 
 def bench_real_scenarios(quick=False):
-    """DP vs Greedy on whole itineraries for a grid of real-data trips (all four cities).
+    """DP vs Greedy vs Max visits on whole itineraries for a grid of real-data trips.
 
-    Unlike the knapsack comparison (where DP >= Greedy is guaranteed), the final
-    itinerary has no guarantee: routing, repair and multi-day effects come after
-    selection. This sweep measures how often each strategy actually ends up ahead.
+    Unlike the knapsack comparison (where DP >= Greedy in value and Max visits >= both in
+    count are guaranteed), the final itinerary has no guarantee: routing, meals, repair,
+    the fill step and multi-day effects come after selection. This sweep measures how often
+    each strategy actually ends up ahead. Cities: the 12 highest-ranked "ready" destinations
+    (deterministic order by Top-50 rank), with the planner's default lunch break.
     """
     import itertools
     import tempfile
     from datetime import date, timedelta
 
     from config import Config
+    from database import queries
     from database.db import connect
     from database.seed_data import seed_database
     from services.city_data import load_city
     from services.itinerary_generator import plan_trip
-    from services.models import TripRequest
+    from services.models import MealSetting, TripRequest
 
     path = os.path.join(tempfile.mkdtemp(), "bench.db")
     seed_database(path, Config.DATA_DIR)
     conn = connect(path)
-    cities = {slug: load_city(conn, slug, Config.TRAFFIC_FACTOR) for slug in ("agra", "delhi", "jaipur", "varanasi")}
+    cities = {}
+    for row in queries.list_cities(conn):                      # Top-50 rank order
+        city = load_city(conn, row["slug"], Config.TRAFFIC_FACTOR)
+        if city.readiness()["status"] == "ready":
+            cities[row["slug"]] = city
+        if len(cities) == (4 if quick else 12):
+            break
     conn.close()
 
-    grid = itertools.product(sorted(cities), range(3 if quick else 7), [1, 2, 3], [None, 300, 600], [False, True],
-                             [(), ("history",), ("spirituality",)], ["balanced", "relaxed"])
-    dp_higher = greedy_higher = equal = 0
-    gaps, best = [], None
-    for slug, offset, days, budget, transport, interests, pace in grid:
-        if budget is None and transport:
-            continue
+    lunch = MealSetting("lunch", 12 * 60, 14 * 60 + 30, 45)
+    grid = itertools.product(cities, range(2 if quick else 3), [1, 2, 3], [None, 300],
+                             [(), ("history",), ("spirituality",)])
+    dp_higher = greedy_higher = equal = mv_more_stops = mv_same_stops = 0
+    gaps = []
+    for slug, offset, days, budget, interests in grid:
         city = cities[slug]
         base = dict(city=slug, start_date=date(2026, 11, 2) + timedelta(days=offset), days=days, day_start=540,
-                    day_end=1140, budget=budget, include_transport=transport, interests=interests, pace=pace,
-                    start=city.start_points[0].slug)
-        dp = plan_trip(city, TripRequest(strategy="dp", **base), Config.TRANSPORT_COST_PER_KM)
-        greedy = plan_trip(city, TripRequest(strategy="greedy", **base), Config.TRANSPORT_COST_PER_KM)
-        assert not dp.violations and not greedy.violations
+                    day_end=1140, budget=budget, include_transport=False, interests=interests, pace="balanced",
+                    start=city.start_points[0].slug, lunch=lunch)
+        plans = {key: plan_trip(city, TripRequest(strategy=key, **base), Config.TRANSPORT_COST_PER_KM)
+                 for key in ("dp", "greedy", "max_visits")}
+        assert not any(p.violations for p in plans.values()), slug
+        dp, greedy, mv = plans["dp"], plans["greedy"], plans["max_visits"]
         if dp.score > greedy.score:
             dp_higher += 1
         elif dp.score < greedy.score:
             greedy_higher += 1
         else:
             equal += 1
+        if mv.stops > dp.stops:
+            mv_more_stops += 1
+        elif mv.stops == dp.stops:
+            mv_same_stops += 1
         if greedy.score:
             gaps.append(100 * (dp.score - greedy.score) / greedy.score)
     total = dp_higher + greedy_higher + equal
     summary = {"scenarios": total, "dp_higher": dp_higher, "greedy_higher": greedy_higher, "equal": equal,
                "mean_dp_gain_pct": round(statistics.mean(gaps), 2),
-               "grid": "4 cities x start dates Mon-Sun x 1-3 days x budget {none, 300, 600} (+/- transport) "
-                       "x interests {none, history, spirituality} x pace {balanced, relaxed}; 09:00-19:00"}
-    print(f"real scenarios: {total} trips, DP higher {dp_higher}, Greedy higher {greedy_higher}, equal {equal}")
+               "max_visits_more_stops": mv_more_stops, "max_visits_same_stops": mv_same_stops,
+               "cities": list(cities),
+               "grid": f"{len(cities)} highest-ranked ready cities x {2 if quick else 3} start days x 1-3 days x "
+                       "budget {none, 300} x interests {none, history, spirituality}; 09:00-19:00 with lunch"}
+    print(f"real scenarios: {total} trips, DP higher {dp_higher}, Greedy higher {greedy_higher}, equal {equal}; "
+          f"Max visits more stops than DP in {mv_more_stops}")
     return summary
 
 

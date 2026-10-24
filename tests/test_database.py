@@ -15,9 +15,9 @@ from database.seed_data import SeedError, parse_days, seed_database
 def test_fixture_seeds_with_expected_counts(tiny_db):
     conn = connect(tiny_db)
     counts = queries.summary_counts(conn)
-    assert counts == {"cities": 1, "attractions": 7, "edges": 20, "categories": 6}
-    city = queries.list_cities(conn)[0]
-    assert (city["slug"], city["attraction_count"], city["start_count"]) == ("testville", 7, 1)
+    assert counts == {"cities": 4, "attractions": 14, "edges": 42, "categories": 26}
+    city = queries.list_cities(conn)[0]                        # ordered by Top-50 rank
+    assert (city["slug"], city["attraction_count"], city["start_count"]) == ("testville", 8, 1)
     assert queries.get_city(conn, "nowhere") is None
     assert database_ready(tiny_db)
 
@@ -87,8 +87,48 @@ def test_empty_database_is_not_ready(tmp_path):
 
 def test_real_data_is_valid_and_fully_connected(real_db, tmp_path):
     summary = seed_database(str(tmp_path / "again.db"), DATA_DIR)
-    assert summary["cities"] == 4 and summary["attractions"] == 60
+    assert summary["cities"] == 50
     assert not [w for w in summary["warnings"] if "cannot be reached" in w]
     conn = connect(real_db)
-    assert {r["slug"] for r in queries.list_cities(conn)} == {"agra", "delhi", "jaipur", "varanasi"}
-    assert queries.edge_source_counts(conn, queries.get_city(conn, "delhi")["id"]) == {"osrm": 150}
+    slugs = {r["slug"] for r in queries.list_cities(conn)}
+    assert {"agra", "delhi", "jaipur", "varanasi", "mumbai", "pondicherry"} <= slugs
+    # The original Delhi road graph is unchanged by the expansion: its 150 OSRM links between the original
+    # places are all still there; new places (food and shopping) only ADD links of their own.
+    original = conn.execute("""
+        SELECT COUNT(*) FROM travel_edges e
+        JOIN places a ON a.id = e.from_id JOIN places b ON b.id = e.to_id
+        LEFT JOIN attractions aa ON aa.place_id = a.id LEFT JOIN attractions ab ON ab.place_id = b.id
+        WHERE a.city_id = (SELECT id FROM cities WHERE slug = 'delhi') AND e.scope = 'local' AND e.source = 'osrm'
+          AND (a.kind = 'start' OR aa.description_source = 'project')
+          AND (b.kind = 'start' OR ab.description_source = 'project')""").fetchone()[0]
+    assert original == 150
+    assert set(queries.edge_source_counts(conn, queries.get_city(conn, "delhi")["id"])) == {"osrm"}
+
+
+def test_top50_list_matches_the_database(real_db):
+    """Every destination in the team's Top-50 list is a city in the database (by catalog id)."""
+    import csv
+    with open(os.path.join(DATA_DIR, "catalog", "top50.csv"), encoding="utf-8") as f:
+        top50 = {int(r["destination_id"]) for r in csv.DictReader(f)}
+    conn = connect(real_db)
+    assert {r["catalog_id"] for r in queries.list_cities(conn)} == top50
+
+
+def test_every_value_has_a_source(real_db):
+    conn = connect(real_db)
+    for row in queries.list_attractions(conn):
+        for column in ("rating_source", "popularity_source", "duration_source", "fee_source", "hours_source"):
+            assert row[column], (row["slug"], column)
+        assert (row["rating"] is None) == (row["rating_source"] == "none")      # no invented ratings
+        if row["access"] == "no_road":
+            assert row["access_note"]
+
+
+def test_slugs_are_unique_across_cities(tmp_path):
+    data = tmp_path / "data"
+    shutil.copytree(FIXTURE_DIR, data)
+    with open(data / "start_points.csv", "a", encoding="utf-8") as f:
+        f.write("riverton,hotel,Second hotel,10.0,10.365\n")
+    with pytest.raises(SeedError) as excinfo:
+        seed_database(str(tmp_path / "dup.db"), str(data))
+    assert "duplicate slug hotel" in str(excinfo.value)

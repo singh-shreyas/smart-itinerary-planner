@@ -132,21 +132,6 @@ def list_edges(conn, city_ids):
     ).fetchall()
 
 
-def intercity_road_km(conn):
-    """Shortest stored intercity road link between each pair of cities: {(slug a, slug b): (km, minutes)}."""
-    rows = conn.execute(
-        """
-        SELECT ca.slug AS a, cb.slug AS b, MIN(e.km) AS km, MIN(e.minutes) AS minutes
-        FROM travel_edges e
-        JOIN places pa ON pa.id = e.from_id JOIN cities ca ON ca.id = pa.city_id
-        JOIN places pb ON pb.id = e.to_id   JOIN cities cb ON cb.id = pb.city_id
-        WHERE e.scope = 'intercity'
-        GROUP BY ca.slug, cb.slug
-        """
-    ).fetchall()
-    return {(r["a"], r["b"]): (r["km"], r["minutes"]) for r in rows}
-
-
 def summary_counts(conn):
     """Totals for the landing and about pages."""
     row = conn.execute(
