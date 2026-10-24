@@ -1,0 +1,274 @@
+city,catalog_name,name,wiki_title,osm_query,place_type,status,access,access_note,categories
+# Human-reviewed mapping of the Top-50 catalog names (data/catalog/top50.csv) to sources.,,,,,,,,,
+# status: map = Wikipedia article (coordinates from Wikipedia, else Wikidata, else the OSM query),,,,,,,,,
+#         osm = no article; location from OpenStreetMap (Nominatim) using osm_query,,,,,,,,,
+#         extra = not in the catalog; added because the city otherwise has too few plannable places,,,,,,,,,
+#         skip = kept out of the planner; the reason is in access_note (shown on the Cities page),,,,,,,,,
+# access: no_road = reached on foot / by boat / by rope-way only; the planner reports it as unreachable.,,,,,,,,,
+ayodhya,Ram Mandir,Ram Mandir,Ram Mandir,,temple,map,,,spirituality;architecture
+ayodhya,Hanuman Garhi,Hanuman Garhi,Hanuman Garhi Temple,"Hanuman Garhi, Ayodhya",temple,map,,,spirituality
+ayodhya,Kanak Bhawan,Kanak Bhawan,Kanak Bhawan,,temple,map,,,spirituality;architecture
+ayodhya,Saryu Ghats,Guptar Ghat (Saryu),,"Guptar Ghat, Ayodhya",ghat,osm,,,spirituality;lakes-viewpoints;photography
+ayodhya,Ram Ki Paidi,Ram Ki Paidi,Ram Ki Paidi,"Ram ki Paidi, Ayodhya",ghat,map,,,spirituality;photography
+ayodhya,Dasharath Bhavan,Dashrath Mahal,,"Dashrath Mahal, Ayodhya",temple,osm,,,spirituality;history
+tirupati,Tirumala Venkateswara Temple,Tirumala Venkateswara Temple,"Venkateswara Temple, Tirumala",,temple,map,,,spirituality;architecture
+tirupati,Kapila Theertham,Kapila Theertham,Kapila Theertham,,temple,map,,,spirituality;nature
+tirupati,Govindaraja Swamy Temple,Govindaraja Swamy Temple,"Govindaraja Temple, Tirupati",,temple,map,,,spirituality;architecture
+tirupati,Akasaganga Teertham,Akasaganga Teertham,,"Akasa Ganga, Tirumala",waterfall,osm,,,spirituality;nature
+tirupati,Talakona Waterfalls,Talakona Waterfalls,Talakona,,waterfall,map,,,nature;adventure;photography
+mumbai,Gateway of India,Gateway of India,Gateway of India,,monument,map,,,history;architecture;photography
+mumbai,Marine Drive,Marine Drive,"Marine Drive, Mumbai",,area,map,,,beaches;lakes-viewpoints;photography;nightlife
+mumbai,CSMT,Chhatrapati Shivaji Maharaj Terminus,Chhatrapati Shivaji Terminus,,landmark,map,,,history;architecture;photography
+mumbai,Elephanta Caves,Elephanta Caves,Elephanta Caves,,cave,map,no_road,"On Elephanta Island: reached by a ferry of about an hour from the Gateway of India, which our road graph does not model.",history;architecture;spirituality
+mumbai,Colaba Causeway,Colaba Causeway,Colaba Causeway,,market,map,,,markets;fashion;handicrafts;street-food
+mumbai,Siddhivinayak Temple,Siddhivinayak Temple,"Siddhivinayak Temple, Mumbai",,temple,map,,,spirituality
+calangute,Calangute Beach,Calangute Beach,Calangute,"Calangute Beach",beach,map,,,beaches;nightlife;family
+calangute,Baga Beach,Baga Beach,"Baga, Goa","Baga Beach, Goa",beach,map,,,beaches;nightlife;adventure
+calangute,Calangute Market,Calangute Market,,"Calangute Market",market,osm,,,markets;handicrafts;fashion
+calangute,St. Alex Church,St. Alex Church,,"St. Alex Church, Calangute",church,osm,,,spirituality;architecture
+calangute,Aguada Fort,Fort Aguada,Fort Aguada,,fort,map,,,history;architecture;photography;lakes-viewpoints
+amritsar,Golden Temple,Golden Temple (Harmandir Sahib),Golden Temple,,gurdwara,map,,,spirituality;architecture;history;photography
+amritsar,Jallianwala Bagh,Jallianwala Bagh,Jallianwala Bagh,,memorial,map,,,history
+amritsar,Wagah-Attari Border,Attari–Wagah Border Ceremony,Attari–Wagah border ceremony,,event,map,,,festivals;history;family
+amritsar,Partition Museum,Partition Museum,Partition Museum,"Partition Museum, Amritsar",museum,map,,,museums;history
+amritsar,Durgiana Temple,Durgiana Temple,Durgiana Temple,,temple,map,,,spirituality;architecture
+udaipur,City Palace,City Palace,"City Palace, Udaipur","City Palace, Udaipur",palace,map,,,history;architecture;museums;photography
+udaipur,Lake Pichola,Lake Pichola,Lake Pichola,,lake,map,,,lakes-viewpoints;photography
+udaipur,Lake Palace,Lake Palace,Lake Palace,,palace,map,no_road,"A hotel on an island in Lake Pichola: reached only by boat, and normally only by hotel guests.",architecture;history
+udaipur,Jag Mandir,Jag Mandir,Jag Mandir Palace,,palace,map,no_road,"On an island in Lake Pichola: reached by boat, which our road graph does not model.",architecture;history;photography
+udaipur,Jagdish Temple,Jagdish Temple,"Jagdish Temple, Udaipur",,temple,map,,,spirituality;architecture
+udaipur,Sajjangarh (Monsoon Palace),Sajjangarh (Monsoon Palace),Monsoon Palace,"Sajjangarh Palace, Udaipur",palace,map,,,history;architecture;lakes-viewpoints;photography
+udaipur,Fateh Sagar Lake,Fateh Sagar Lake,Fateh Sagar Lake,,lake,map,,,lakes-viewpoints;family
+udaipur,Saheliyon-ki-Bari,Saheliyon-ki-Bari,Saheliyon-ki-Bari,,garden,map,,,nature;history;photography
+haridwar,Har Ki Pauri,Har Ki Pauri,Har Ki Pauri,,ghat,map,,,spirituality;festivals;photography
+haridwar,Mansa Devi Temple,Mansa Devi Temple,"Mansa Devi Temple, Haridwar",,hill_temple,map,,,spirituality;lakes-viewpoints
+haridwar,Chandi Devi Temple,Chandi Devi Temple,"Chandi Devi Temple, Haridwar",,hill_temple,map,,,spirituality;lakes-viewpoints
+haridwar,Daksheswar Mahadev Temple,Daksheswar Mahadev Temple,Daksheswar Mahadev Temple,,temple,map,,,spirituality;history
+haridwar,Bharat Mata Mandir,Bharat Mata Mandir,,"Bharat Mata Mandir, Haridwar",temple,osm,,,spirituality;architecture
+rishikesh,Triveni Ghat,Triveni Ghat,Triveni Ghat,"Triveni Ghat, Rishikesh",ghat,map,,,spirituality;festivals;photography
+rishikesh,Beatles Ashram,Beatles Ashram,Beatles Ashram,,ashram,map,,,history;photography;wellness
+rishikesh,Ram Jhula,Ram Jhula,Ram Jhula,,landmark,map,,,photography;lakes-viewpoints
+rishikesh,Laxman Jhula area,Lakshman Jhula,Lakshman Jhula,,landmark,map,,,photography;lakes-viewpoints;markets
+rishikesh,Neelkanth Mahadev Temple,Neelkanth Mahadev Temple,Nilkanth Mahadev,,temple,map,,,spirituality;nature
+rishikesh,Ganga Aarti,Parmarth Niketan,Parmarth Niketan,,ashram,map,,,spirituality;festivals;wellness
+vrindavan,Banke Bihari Temple,Banke Bihari Temple,Banke Bihari Temple,,temple,map,,,spirituality
+vrindavan,Prem Mandir,Prem Mandir,"Prem Mandir, Vrindavan",,temple,map,,,spirituality;architecture;photography
+vrindavan,ISKCON Temple,ISKCON Temple Vrindavan,"ISKCON Temple, Vrindavan",,temple,map,,,spirituality
+vrindavan,Radha Raman Temple,Radha Raman Temple,"Radha Raman Temple, Vrindavan",,temple,map,,,spirituality;history
+vrindavan,Nidhivan,Nidhivan,"Nidhivan, Vrindavan",,temple,map,,,spirituality;nature
+vrindavan,Govardhan Hill,Govardhan Hill,Govardhan Hill,,hill_temple,map,,,spirituality;nature;trekking
+mathura,Krishna Janmabhoomi,Shri Krishna Janmasthan,Krishna Janmasthan Temple Complex,,temple,map,,,spirituality;history
+mathura,Dwarkadhish Temple,Dwarkadhish Temple,"Dwarkadhish Temple, Mathura",,temple,map,,,spirituality;architecture
+mathura,Vishram Ghat,Vishram Ghat,Vishram Ghat,,ghat,map,,,spirituality;photography
+mathura,Mathura Museum,Government Museum Mathura,"Government Museum, Mathura",,museum,map,,,museums;history
+mathura,Kusum Sarovar,Kusum Sarovar,Kusum Sarovar,,monument,map,,,history;architecture;photography
+shirdi,Sai Baba Temple,Shri Sai Baba Samadhi Mandir,"Shri Sai Baba Temple, Shirdi",,temple,map,,,spirituality
+shirdi,Dwarkamai,Dwarkamai,,"Dwarkamai, Shirdi",temple,osm,,,spirituality;history
+shirdi,Chavadi,Chavadi,,"Chavadi, Shirdi",temple,osm,,,spirituality;history
+shirdi,Gurusthan,Gurusthan,,"Gurusthan, Shirdi",temple,osm,,,spirituality
+shirdi,Dixit Wada Museum,Dixit Wada Museum,,"Dixit Wada Museum, Shirdi",museum,osm,,,museums;history
+katra,Vaishno Devi Temple,Vaishno Devi Temple,Vaishno Devi Temple,,temple,map,no_road,"At the end of the 12 km pedestrian pilgrimage trek from Katra (ponies, palanquins and a battery-car path, no public road).",spirituality;trekking
+katra,Banganga,Banganga,,"Banganga, Katra",ghat,osm,,,spirituality;trekking
+katra,Charan Paduka,Charan Paduka,,"Charan Paduka, Katra",temple,osm,no_road,"On the pedestrian Vaishno Devi trek above Katra.",spirituality;trekking
+katra,Ardhkuwari Cave,Ardhkuwari Cave,Ardhkuwari,,temple,map,no_road,"Halfway up the pedestrian Vaishno Devi trek.",spirituality;trekking
+katra,Bhairavnath Temple,Bhairavnath Temple,,"Bhairon Nath Temple, Vaishno Devi",temple,osm,no_road,"Above the Vaishno Devi shrine on the pedestrian trek (or by rope-way from the shrine).",spirituality;trekking
+ujjain,Mahakaleshwar Temple,Mahakaleshwar Jyotirlinga,Mahakaleshwar Jyotirlinga,,temple,map,,,spirituality;architecture;history
+ujjain,Kal Bhairav Temple,Kal Bhairav Temple,"Kal Bhairav Temple, Ujjain",,temple,map,,,spirituality
+ujjain,Ram Ghat,Ram Ghat,,"Ram Ghat, Ujjain",ghat,osm,,,spirituality;photography
+ujjain,Harsiddhi Temple,Harsiddhi Temple,,"Harsiddhi Temple, Ujjain",temple,osm,,,spirituality
+ujjain,Vedh Shala,Vedh Shala (Jantar Mantar),"Jantar Mantar, Ujjain",,monument,map,,,history;architecture
+ujjain,Mangalnath Temple,Mangalnath Temple,Mangalnath Temple,"Mangalnath Temple, Ujjain",temple,map,,,spirituality
+manali,Solang Valley,Solang Valley,Solang Valley,,viewpoint,map,,,adventure;nature;photography;family
+manali,Rohtang Pass,Rohtang Pass,Rohtang Pass,,viewpoint,map,,,adventure;nature;photography
+manali,Hadimba Temple,Hadimba Devi Temple,Hidimba Devi Temple,,temple,map,,,spirituality;architecture;nature
+manali,Old Manali,Old Manali,,"Old Manali",area,osm,,,markets;cafes;nightlife
+manali,Manu Temple,Manu Temple,,"Manu Temple, Manali",temple,osm,,,spirituality
+manali,Vashisht Hot Springs,Vashisht Hot Springs,"Vashisht, Himachal Pradesh",,wellness,map,,,wellness;spirituality
+manali,Atal Tunnel,Atal Tunnel,Atal Tunnel,,landmark,map,,,adventure;photography
+shimla,The Ridge,The Ridge,"The Ridge, Shimla",,area,map,,,photography;lakes-viewpoints;family
+shimla,Mall Road,Mall Road,"Mall Road, Shimla",,market,map,,,markets;cafes;fashion
+shimla,Christ Church,Christ Church,"Christ Church, Shimla",,church,map,,,spirituality;architecture;history
+shimla,Jakhu Temple,Jakhu Temple,Jakhu Temple,,hill_temple,map,,,spirituality;lakes-viewpoints
+shimla,Viceregal Lodge,Viceregal Lodge (Rashtrapati Niwas),Rashtrapati Niwas,,palace,map,,,history;architecture;museums
+shimla,Kufri,Kufri,"Kufri, India",,viewpoint,map,,,adventure;nature;family
+shimla,Shimla State Museum,Himachal State Museum,Himachal State Museum,,museum,map,,,museums;history
+prayagraj,Triveni Sangam,Triveni Sangam,Triveni Sangam,"Triveni Sangam, Prayagraj",ghat,map,,,spirituality;festivals;photography
+prayagraj,Allahabad Fort,Allahabad Fort,Allahabad Fort,,fort,map,,,history;architecture
+prayagraj,Anand Bhavan,Anand Bhavan,Anand Bhavan,"Anand Bhawan, Prayagraj",museum,map,,,museums;history
+prayagraj,Khusro Bagh,Khusro Bagh,Bagh-e-Khusrau,,garden,map,,,history;architecture;nature
+prayagraj,All Saints Cathedral,All Saints Cathedral,"All Saints Cathedral, Prayagraj",,church,map,,,spirituality;architecture
+prayagraj,Akshayavat,Akshayavat,Akshayavata,"Akshayavat, Prayagraj",temple,map,,,spirituality;history
+ajmer,Ajmer Sharif Dargah,Ajmer Sharif Dargah,Shrine of Mu'in al-Din Chishti,,mosque,map,,,spirituality;history;architecture
+ajmer,Ana Sagar Lake,Ana Sagar Lake,Ana Sagar Lake,,lake,map,,,lakes-viewpoints;family
+ajmer,Adhai Din Ka Jhonpra,Adhai Din Ka Jhonpra,Adhai Din Ka Jhonpra,,mosque,map,,,history;architecture
+ajmer,Akbari Fort,Akbari Fort & Museum,Akbari Fort & Museum,,museum,map,,,museums;history
+ajmer,Nareli Jain Temple,Nareli Jain Temple,Nareli Jain Temple,,temple,map,,,spirituality;architecture
+ajmer,Prithviraj Smarak,Prithviraj Smarak,,"Prithviraj Smarak, Ajmer",memorial,osm,,,history;lakes-viewpoints
+hyderabad,Charminar,Charminar,Charminar,,monument,map,,,history;architecture;photography
+hyderabad,Golconda Fort,Golconda Fort,Golconda,,fort,map,,,history;architecture
+hyderabad,Hussain Sagar Lake,Hussain Sagar,Hussain Sagar,,lake,map,,,lakes-viewpoints;family
+hyderabad,Salar Jung Museum,Salar Jung Museum,Salar Jung Museum,,museum,map,,,museums;history
+hyderabad,Chowmahalla Palace,Chowmahalla Palace,Chowmahalla Palace,,palace,map,,,history;architecture;museums
+hyderabad,Qutb Shahi Tombs,Qutb Shahi Tombs,Qutb Shahi tombs,,monument,map,,,history;architecture
+kochi,Fort Kochi,Fort Kochi,Fort Kochi,,area,map,,,history;architecture;cafes
+kochi,Chinese Fishing Nets,Chinese Fishing Nets (Fort Kochi Beach),Fort Kochi Beach,,beach,map,,,photography;beaches;history
+kochi,Mattancherry Palace,Mattancherry Palace,Mattancherry Palace,,palace,map,,,history;museums;architecture
+kochi,Jewish Synagogue,Paradesi Synagogue,Paradesi Synagogue,,church,map,,,spirituality;history
+kochi,St. Francis Church,St. Francis Church,"Church of Saint Francis, Kochi",,church,map,,,spirituality;history
+kochi,Marine Drive,Marine Drive,"Marine Drive, Kochi",,area,map,,,lakes-viewpoints;malls;family
+munnar,Eravikulam National Park,Eravikulam National Park,Eravikulam National Park,,national_park,map,,,wildlife;nature;trekking
+munnar,Mattupetty Dam,Mattupetty Dam,Mattupetty Dam,,dam,map,,,lakes-viewpoints;nature
+munnar,Tea Museum,KDHP Tea Museum,KDHP Tea Museum,"Tea Museum, Munnar",museum,map,,,museums;food
+munnar,Top Station,Top Station,,"Top Station, Kerala",viewpoint,osm,,,lakes-viewpoints;nature;photography
+munnar,Echo Point,Echo Point,,"Echo Point, Munnar",viewpoint,osm,,,lakes-viewpoints;nature;family
+munnar,Tea Gardens,,,,,skip,,"Not a single place: tea estates cover the hills around Munnar.",
+alleppey,Alleppey Backwaters,,,,,skip,,"A network of lagoons explored by boat, not a single place on the road graph.",
+alleppey,Alappuzha Beach,Alappuzha Beach,Alappuzha Beach,,beach,map,,,beaches;family
+alleppey,Houseboat Cruises,,,,,skip,,"An experience (a houseboat trip on the backwaters), not a place on the road graph.",
+alleppey,Vembanad Lake,Vembanad Lake,Vembanad,,lake,map,no_road,"A 2,000 km² lake: its listed coordinates are in open water, so there is no single road access point.",lakes-viewpoints;nature
+alleppey,Marari Beach,Marari Beach,Marari Beach,,beach,map,,,beaches;wellness
+sabarimala,Sabarimala Ayyappa Temple,Sabarimala Ayyappa Temple,Sabarimala Temple,,temple,map,no_road,"Reached by a forest trek of about 5 km from Pamba; no road to the shrine.",spirituality;trekking
+sabarimala,Pamba River,Pamba (river bank and base camp),,"Pamba, Sabarimala",ghat,osm,,,spirituality
+sabarimala,Sannidhanam,,,,,skip,,"The shrine precinct itself: the same place as the Sabarimala Ayyappa Temple.",
+sabarimala,Malikappuram Temple,Malikappuram Temple,,"Malikappuram Devi Temple, Sabarimala",temple,osm,no_road,"Next to the shrine at the top of the Sabarimala trek; no road.",spirituality;trekking
+madurai,Meenakshi Amman Temple,Meenakshi Amman Temple,Meenakshi Temple,,temple,map,,,spirituality;architecture;history;photography
+madurai,Thirumalai Nayakkar Palace,Thirumalai Nayakkar Mahal,Thirumalai Nayakkar Mahal,,palace,map,,,history;architecture
+madurai,Gandhi Memorial Museum,Gandhi Memorial Museum,"Gandhi Memorial Museum, Madurai",,museum,map,,,museums;history
+madurai,Alagar Koyil,Alagar Koyil,Kallalagar Temple,,temple,map,,,spirituality;architecture;nature
+madurai,Teppakulam,Vandiyur Mariamman Teppakulam,Vandiyur Mariamman Temple,,temple,map,,,spirituality;lakes-viewpoints
+chennai,Marina Beach,Marina Beach,Marina Beach,,beach,map,,,beaches;street-food;family
+chennai,Kapaleeshwarar Temple,Kapaleeshwarar Temple,Kapaleeshwarar Temple,,temple,map,,,spirituality;architecture
+chennai,Fort St. George,Fort St. George,Fort St. George,,fort,map,,,history;museums
+chennai,San Thome Basilica,San Thome Basilica,"St. Thomas Cathedral Basilica, Chennai",,church,map,,,spirituality;architecture;history
+chennai,Government Museum,Government Museum,"Government Museum, Chennai",,museum,map,,,museums;history
+chennai,Besant Nagar Beach,Besant Nagar Beach (Elliot's Beach),Edward Elliot's Beach,,beach,map,,,beaches;cafes;family
+rameswaram,Ramanathaswamy Temple,Ramanathaswamy Temple,Ramanathaswamy Temple,,temple,map,,,spirituality;architecture;history
+rameswaram,Pamban Bridge,Pamban Bridge,Pamban Bridge,,landmark,map,,,photography;history
+rameswaram,Dhanushkodi,Dhanushkodi,Dhanushkodi,,beach,map,,,beaches;history;photography
+rameswaram,Abdul Kalam Memorial,Dr. A. P. J. Abdul Kalam Memorial,Dr. A. P. J. Abdul Kalam Memorial,"A. P. J. Abdul Kalam Memorial, Rameswaram",memorial,map,,,history;museums
+rameswaram,Agni Theertham,Agni Theertham,Agni Tirtham,,ghat,map,,,spirituality;beaches
+kanyakumari,Vivekananda Rock Memorial,Vivekananda Rock Memorial,Vivekananda Rock Memorial,,memorial,map,no_road,"On a rock in the sea: reached by ferry, which our road graph does not model.",spirituality;history;photography
+kanyakumari,Thiruvalluvar Statue,Thiruvalluvar Statue,Thiruvalluvar Statue,,monument,map,no_road,"On a rock in the sea: reached by ferry, which our road graph does not model.",history;photography
+kanyakumari,Kanyakumari Beach,Kanyakumari Beach,,"Kanyakumari Beach",beach,osm,,,beaches;photography
+kanyakumari,Bhagavathy Amman Temple,Kumari Amman (Bhagavathy Amman) Temple,,"Bhagavathy Amman Temple, Kanyakumari",temple,osm,,,spirituality
+kanyakumari,Sunset Point,Sunset Point,,"Sunset Point, Kanyakumari",viewpoint,osm,,,lakes-viewpoints;photography
+ooty,Ooty Lake,Ooty Lake,Ooty Lake,,lake,map,,,lakes-viewpoints;family;adventure
+ooty,Botanical Gardens,Government Botanical Garden,Government Botanical Garden,,garden,map,,,nature;family;photography
+ooty,Doddabetta Peak,Doddabetta Peak,Doddabetta,,viewpoint,map,,,lakes-viewpoints;nature;trekking
+ooty,Rose Garden,Government Rose Garden,Government Rose Garden,,garden,map,,,nature;photography
+ooty,Nilgiri Mountain Railway,,,,,skip,,"A timetabled train ride (Mettupalayam–Ooty), not a place to visit at any time; book it separately.",
+ooty,Tea Museum,Tea Factory & Tea Museum,,"Tea Factory, Ooty",museum,osm,,,museums;food
+bengaluru,Bangalore Palace,Bangalore Palace,Bengaluru Palace,"Bangalore Palace",palace,map,,,history;architecture
+bengaluru,Lalbagh Botanical Garden,Lalbagh Botanical Garden,Lal Bagh,,garden,map,,,nature;family;photography
+bengaluru,Cubbon Park,Cubbon Park,Cubbon Park,,garden,map,,,nature;family
+bengaluru,Vidhana Soudha,Vidhana Soudha,Vidhana Soudha,,landmark,map,,,architecture;photography
+bengaluru,ISKCON Temple,ISKCON Temple Bengaluru,"ISKCON Temple, Bengaluru",,temple,map,,,spirituality;architecture
+bengaluru,Tipu Sultan's Palace,Tipu Sultan's Summer Palace,Tipu Sultan's Summer Palace,,palace,map,,,history;architecture
+mysuru,Mysore Palace,Mysore Palace,Mysore Palace,,palace,map,,,history;architecture;photography;festivals
+mysuru,Chamundi Hill,Chamundi Hill (Chamundeshwari Temple),Chamundeshwari Temple,,hill_temple,map,,,spirituality;lakes-viewpoints
+mysuru,Brindavan Gardens,Brindavan Gardens,Brindavan Gardens,,garden,map,,,nature;family;photography
+mysuru,St. Philomena's Cathedral,St. Philomena's Cathedral,"St. Philomena's Cathedral, Mysore",,church,map,,,spirituality;architecture
+mysuru,Mysuru Zoo,Mysuru Zoo,Mysore Zoo,,zoo,map,,,wildlife;family
+mysuru,Devaraja Market,Devaraja Market,Devaraja Market,,market,map,,,markets;street-food;handicrafts
+hampi,Virupaksha Temple,Virupaksha Temple,"Virupaksha Temple, Hampi",,temple,map,,,spirituality;history;architecture
+hampi,Vittala Temple,Vittala Temple,,"Vijaya Vitthala Temple, Hampi",monument,osm,,,history;architecture;photography
+hampi,Stone Chariot,Stone Chariot,,"Stone Chariot, Hampi",monument,osm,,,history;architecture;photography
+hampi,Hampi Bazaar,Hampi Bazaar,,"Hampi Bazaar",market,osm,,,markets;history;handicrafts
+hampi,Lotus Mahal,Lotus Mahal,Lotus Mahal,,monument,map,,,history;architecture
+hampi,Elephant Stables,Elephant Stables,,"Elephant Stables, Hampi",monument,osm,,,history;architecture
+puri,Jagannath Temple,Jagannath Temple,"Jagannath Temple, Puri",,temple,map,,,spirituality;architecture;festivals
+puri,Puri Beach,Puri Beach,Puri Beach,,beach,map,,,beaches;family;street-food
+puri,Gundicha Temple,Gundicha Temple,Gundicha Temple,,temple,map,,,spirituality;festivals
+puri,Narendra Tank,Narendra Tank,,"Narendra Pokhari, Puri",ghat,osm,,,spirituality;lakes-viewpoints
+puri,Raghurajpur Artist Village,Raghurajpur Artist Village,Raghurajpur,,area,map,,,handicrafts;festivals;photography
+konark,Konark Sun Temple,Konark Sun Temple,Konark Sun Temple,,monument,map,,,history;architecture;spirituality;photography
+konark,Chandrabhaga Beach,Chandrabhaga Beach,Chandrabhaga Beach,,beach,map,,,beaches;photography
+konark,Archaeological Museum,Konark Archaeological Museum,,"Archaeological Museum, Konark",museum,osm,,,museums;history
+konark,Ramachandi Temple,Ramachandi Temple,Ramachandi Temple,"Ramachandi Temple, Konark",temple,map,,,spirituality;beaches
+kolkata,Victoria Memorial,Victoria Memorial,"Victoria Memorial, Kolkata",,memorial,map,,,history;museums;architecture;photography
+kolkata,Howrah Bridge,Howrah Bridge,Howrah Bridge,,landmark,map,,,architecture;photography
+kolkata,Indian Museum,Indian Museum,Indian Museum,,museum,map,,,museums;history
+kolkata,St. Paul's Cathedral,St. Paul's Cathedral,"St. Paul's Cathedral, Kolkata",,church,map,,,spirituality;architecture
+kolkata,Marble Palace,Marble Palace,Marble Palace (Kolkata),,palace,map,,,history;architecture;museums
+kolkata,Dakshineswar Temple,Dakshineswar Kali Temple,Dakshineswar Kali Temple,,temple,map,,,spirituality;architecture
+darjeeling,Tiger Hill,Tiger Hill,"Tiger Hill, Darjeeling",,viewpoint,map,,,lakes-viewpoints;nature;photography
+darjeeling,Darjeeling Himalayan Railway,,,,,skip,,"A timetabled toy-train ride, not a place to visit at any time; book it separately.",
+darjeeling,Batasia Loop,Batasia Loop,Batasia Loop,,memorial,map,,,history;photography;lakes-viewpoints
+darjeeling,Himalayan Mountaineering Institute,Himalayan Mountaineering Institute,Himalayan Mountaineering Institute,"Himalayan Mountaineering Institute, Darjeeling",museum,map,,,museums;adventure;history
+darjeeling,Peace Pagoda,Peace Pagoda,"Peace Pagoda, Darjeeling",,monastery,map,,,spirituality;architecture
+darjeeling,Tea Gardens,Happy Valley Tea Estate,Happy Valley Tea Estate,,area,map,,,nature;food;photography
+srinagar,Dal Lake,Dal Lake,Dal Lake,,lake,map,,,lakes-viewpoints;photography;family
+srinagar,Mughal Gardens,Shalimar Bagh (Mughal Gardens),"Shalimar Bagh, Srinagar",,garden,map,,,nature;history;photography
+srinagar,Shankaracharya Temple,Shankaracharya Temple,Shankaracharya Temple,,hill_temple,map,,,spirituality;history;lakes-viewpoints
+srinagar,Hazratbal Shrine,Hazratbal Shrine,Hazratbal Shrine,,mosque,map,,,spirituality;architecture
+srinagar,Pari Mahal,Pari Mahal,Pari Mahal,,garden,map,,,history;nature;lakes-viewpoints
+srinagar,Old City,Old City (Downtown Srinagar),"Downtown, Srinagar",,area,map,,,history;markets;handicrafts
+srinagar,,Nishat Bagh,Nishat Bagh,,garden,extra,,,nature;history;photography
+leh,Leh Palace,Leh Palace,Leh Palace,,palace,map,,,history;architecture;lakes-viewpoints
+leh,Shanti Stupa,Shanti Stupa,"Shanti Stupa, Ladakh",,monastery,map,,,spirituality;lakes-viewpoints;photography
+leh,Thiksey Monastery,Thiksey Monastery,Thikse Monastery,,monastery,map,,,spirituality;architecture;history
+leh,Magnetic Hill,Magnetic Hill,Magnetic Hill (India),,viewpoint,map,,,adventure;photography
+leh,Hall of Fame,Hall of Fame (Army museum),,"Hall of Fame, Leh",museum,osm,,,museums;history
+leh,Namgyal Tsemo Monastery,Namgyal Tsemo Monastery,Namgyal Tsemo Monastery,,monastery,map,,,spirituality;history;lakes-viewpoints
+jodhpur,Mehrangarh Fort,Mehrangarh Fort,Mehrangarh,,fort,map,,,history;architecture;museums;photography
+jodhpur,Umaid Bhawan Palace,Umaid Bhawan Palace,Umaid Bhawan Palace,,palace,map,,,history;architecture;museums
+jodhpur,Jaswant Thada,Jaswant Thada,Jaswant Thada,,monument,map,,,history;architecture
+jodhpur,Clock Tower,Clock Tower (Ghanta Ghar),Ghanta Ghar (Jodhpur),,landmark,map,,,history;markets
+jodhpur,Sardar Market,Sardar Market,,"Sardar Market, Jodhpur",market,osm,,,markets;handicrafts;street-food
+jodhpur,Mandore Gardens,Mandore Gardens,,"Mandore Garden, Jodhpur",garden,osm,,,history;nature
+jodhpur,Rao Jodha Desert Rock Park,Rao Jodha Desert Rock Park,Rao Jodha Desert Rock Park,,national_park,map,,,nature;trekking
+jaisalmer,Jaisalmer Fort,Jaisalmer Fort,Jaisalmer Fort,,fort,map,,,history;architecture;photography
+jaisalmer,Patwon Ki Haveli,Patwon Ki Haveli,,"Patwon Ki Haveli, Jaisalmer",palace,osm,,,history;architecture
+jaisalmer,Salim Singh Ki Haveli,Salim Singh Ki Haveli,,"Salim Singh Ki Haveli, Jaisalmer",palace,osm,,,history;architecture
+jaisalmer,Nathmal Ki Haveli,Nathmal Ki Haveli,,"Nathmal Ki Haveli, Jaisalmer",palace,osm,,,history;architecture
+jaisalmer,Gadisar Lake,Gadisar Lake,Gadisar Lake,,lake,map,,,lakes-viewpoints;photography
+jaisalmer,Sam Sand Dunes,Sam Sand Dunes,"Sam, Jaisalmer",,viewpoint,map,,,adventure;nature;photography
+jaisalmer,Kuldhara Village,Kuldhara,Kuldhara,,monument,map,,,history;photography
+pushkar,Pushkar Lake,Pushkar Lake,Pushkar Lake,,ghat,map,,,spirituality;lakes-viewpoints;photography
+pushkar,Brahma Temple,Brahma Temple,"Brahma Temple, Pushkar",,temple,map,,,spirituality;history
+pushkar,Savitri Temple,Savitri Temple,Savitri Mata Mandir,"Savitri Mata Temple, Pushkar",hill_temple,map,,,spirituality;lakes-viewpoints;trekking
+pushkar,Varaha Temple,Varaha Temple,,"Varaha Temple, Pushkar",temple,osm,,,spirituality
+pushkar,Rangji Temple,Rangji Temple,,"Rangji Temple, Pushkar",temple,osm,,,spirituality;architecture
+pushkar,Pushkar Bazaar,Pushkar Bazaar,,"Sadar Bazaar, Pushkar",market,osm,,,markets;handicrafts;fashion
+pushkar,Man Mahal,Man Mahal,,"Man Mahal, Pushkar",palace,osm,,,history;architecture
+nainital,Naini Lake,Naini Lake,Nainital Lake,,lake,map,,,lakes-viewpoints;family;adventure
+nainital,Naina Devi Temple,Naina Devi Temple,,"Naina Devi Temple, Nainital",temple,osm,,,spirituality
+nainital,Snow View Point,Snow View Point,,"Snow View Point, Nainital",viewpoint,osm,,,lakes-viewpoints;photography
+nainital,Tiffin Top,Tiffin Top,,"Tiffin Top, Nainital",viewpoint,osm,,,lakes-viewpoints;trekking
+nainital,Eco Cave Gardens,Eco Cave Gardens,,"Eco Cave Gardens, Nainital",garden,osm,,,nature;family;adventure
+nainital,Mall Road,Mall Road,,"Mall Road, Nainital",market,osm,,,markets;cafes;fashion
+mussoorie,Mall Road,Mall Road,,"Mall Road, Mussoorie",market,osm,,,markets;cafes;fashion
+mussoorie,Gun Hill,Gun Hill,,"Gun Hill, Mussoorie",viewpoint,osm,,,lakes-viewpoints;family
+mussoorie,Kempty Falls,Kempty Falls,Kempty Falls,,waterfall,map,,,nature;family;photography
+mussoorie,Lal Tibba,Lal Tibba,,"Lal Tibba, Mussoorie",viewpoint,osm,,,lakes-viewpoints;photography
+mussoorie,Company Garden,Company Garden,,"Company Garden, Mussoorie",garden,osm,,,nature;family
+mussoorie,Camel's Back Road,Camel's Back Road,,"Camel's Back Road, Mussoorie",area,osm,,,nature;photography
+kedarnath,Kedarnath Temple,Kedarnath Temple,Kedarnath Temple,"Kedarnath Temple",temple,map,no_road,"At the end of a 16 km mountain trek from Gaurikund (or by helicopter); no road.",spirituality;trekking;history
+kedarnath,Bhairavnath Temple,Bhairavnath Temple,,"Bhairavnath Temple, Kedarnath",temple,osm,no_road,"On the hillside above Kedarnath, reached on foot only.",spirituality;trekking
+kedarnath,Adi Shankaracharya Samadhi,Adi Shankaracharya Samadhi,,"Adi Shankaracharya Samadhi, Kedarnath",memorial,osm,no_road,"Behind Kedarnath Temple, at the end of the trek; no road.",spirituality;history
+kedarnath,Vasuki Tal,Vasuki Tal,,"Vasuki Tal",lake,osm,no_road,"A high-altitude lake about 8 km beyond Kedarnath, reached by trek only.",trekking;nature
+kedarnath,Chorabari Tal,Chorabari Tal,,"Chorabari Tal",lake,osm,no_road,"A glacial lake above Kedarnath, reached by trek only.",trekking;nature
+aurangabad,Ajanta Caves,Ajanta Caves,Ajanta Caves,,cave,map,,,history;architecture;museums
+aurangabad,Ellora Caves,Ellora Caves,Ellora Caves,,cave,map,,,history;architecture;spirituality
+aurangabad,Bibi Ka Maqbara,Bibi Ka Maqbara,Bibi Ka Maqbara,,monument,map,,,history;architecture;photography
+aurangabad,Daulatabad Fort,Daulatabad Fort,Daulatabad Fort,,fort,map,,,history;architecture;trekking
+aurangabad,Panchakki,Panchakki,Panchakki,,monument,map,,,history;architecture
+khajuraho,Khajuraho Group of Monuments,Western Group of Temples,Khajuraho Group of Monuments,,monument,map,,,history;architecture;spirituality;photography
+khajuraho,Kandariya Mahadeva Temple,,,,,skip,,"Inside the Western Group of Temples: visited as part of it.",
+khajuraho,Lakshmana Temple,,,,,skip,,"Inside the Western Group of Temples: visited as part of it.",
+khajuraho,Western Group,,,,,skip,,"The same complex as the Khajuraho Group of Monuments (Western Group of Temples).",
+khajuraho,Light & Sound Show,,,,,skip,,"An evening show with a timetable; book it separately.",
+khajuraho,,Parshvanatha Temple (Eastern Group),"Parshvanatha temple, Khajuraho",,monument,extra,,,history;architecture;spirituality
+khajuraho,,Duladeo Temple (Southern Group),Duladeo Temple,,monument,extra,,,history;architecture;spirituality
+kevadia,Statue of Unity,Statue of Unity,Statue of Unity,,monument,map,,,history;photography;family
+kevadia,Valley of Flowers,Valley of Flowers,,"Valley of Flowers, Kevadia",garden,osm,,,nature;family;photography
+kevadia,Sardar Sarovar Dam,Sardar Sarovar Dam,Sardar Sarovar Dam,,dam,map,,,lakes-viewpoints;photography
+kevadia,Jungle Safari,Jungle Safari (Sardar Patel Zoological Park),,"Sardar Patel Zoological Park, Kevadia",zoo,osm,,,wildlife;family
+kevadia,Cactus Garden,Cactus Garden,,"Cactus Garden, Kevadia",garden,osm,,,nature;family
+kevadia,Ekta Nagar,,,,,skip,,"The town itself (Ekta Nagar is Kevadia's official name), not a single sight.",
+pondicherry,Promenade Beach,Promenade Beach,Promenade Beach,,beach,map,,,beaches;photography;cafes
+pondicherry,Sri Aurobindo Ashram,Sri Aurobindo Ashram,Sri Aurobindo Ashram,,ashram,map,,,spirituality;wellness;history
+pondicherry,French Quarter,French Quarter (White Town),,"White Town, Puducherry",area,osm,,,history;architecture;cafes;photography
+pondicherry,Auroville,Auroville (Matrimandir),Matrimandir,,ashram,map,,,spirituality;architecture;wellness
+pondicherry,Paradise Beach,Paradise Beach,,"Paradise Beach, Puducherry",beach,osm,no_road,"Reached by a ferry from the Chunnambar boat house, which our road graph does not model.",beaches
+pondicherry,Basilica of the Sacred Heart,Basilica of the Sacred Heart,"Basilica of the Sacred Heart of Jesus, Pondicherry",,church,map,,,spirituality;architecture

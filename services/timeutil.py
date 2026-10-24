@@ -1,4 +1,17 @@
-"""Time helpers. The planner works in integer minutes after midnight (09:30 -> 570)."""
+"""Time helpers. The planner works in integer minutes after midnight (09:30 -> 570).
+
+Two different kinds of time are kept apart on purpose:
+
+  * CLOCK times (09:30, opening hours, the user's day window) are exact and are
+    never rounded;
+  * travel DURATIONS are road estimates, so a planned travel leg is rounded UP
+    to the next 10 minutes (see round_up_travel) and shown as "20 min",
+    "1 hr 10 min" -- never with seconds or false precision.
+"""
+
+import math
+
+import config
 
 WEEKDAY_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 WEEKDAY_LONG = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
@@ -23,14 +36,43 @@ def fmt_hhmm(minutes):
 
 
 def fmt_duration(minutes):
-    """95 -> '1 h 35 min', 45 -> '45 min', 120 -> '2 h'."""
+    """95 -> '1 hr 35 min', 45 -> '45 min', 120 -> '2 hr', 0 -> '0 min'."""
+    if minutes is None or minutes == math.inf:
+        return "—"
     minutes = int(round(minutes))
     hours, rest = divmod(minutes, 60)
     if hours and rest:
-        return f"{hours} h {rest} min"
+        return f"{hours} hr {rest} min"
     if hours:
-        return f"{hours} h"
+        return f"{hours} hr"
     return f"{rest} min"
+
+
+def round_up_travel(minutes, step=None):
+    """Conservative planning rule for travel estimates: round UP to the next `step` minutes.
+
+        0 -> 0 (already there)     1..10 -> 10     11..20 -> 20     inf -> inf (no route)
+
+    Rounding up (never down) means a schedule can only over-estimate travel, so
+    a plan that fits on paper does not fail because a ride took 14 instead of 10 minutes.
+    The rule is applied to the whole shortest path, not to each road link, so
+    composing links does not inflate the estimate.
+    """
+    step = step or config.TRAVEL_ROUNDING_MIN
+    if minutes == math.inf:
+        return math.inf
+    if minutes <= 0:
+        return 0
+    return int(step * math.ceil(minutes / step - 1e-9))
+
+
+def fmt_travel(minutes):
+    """A planned travel duration for display: '20 min', '1 hr 10 min', 'no route', 'no travel'."""
+    if minutes == math.inf or minutes is None:
+        return "no route"
+    if minutes == 0:
+        return "no travel"
+    return fmt_duration(minutes)
 
 
 def describe_days(weekdays):

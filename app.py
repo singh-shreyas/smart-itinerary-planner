@@ -18,8 +18,8 @@ from flask import Flask, jsonify, render_template, request
 import config
 from config import Config
 from database import db
-from database.seed_data import SeedError, seed_database
-from services.timeutil import WEEKDAY_LONG, WEEKDAY_SHORT, fmt_duration, fmt_hhmm
+from database.seed_data import SeedError, ensure_database
+from services.timeutil import WEEKDAY_LONG, WEEKDAY_SHORT, fmt_duration, fmt_hhmm, fmt_travel
 
 
 def create_app(test_config=None):
@@ -31,12 +31,13 @@ def create_app(test_config=None):
     app.logger.setLevel(logging.INFO)
 
     db.init_app(app)
-    if app.config["AUTO_SEED"] and not db.database_ready(app.config["DATABASE"]):
+    if app.config["AUTO_SEED"]:
+        # Rebuild only if the database is missing, has an older schema, or was built
+        # from different CSV files. The old file is backed up and user tables kept.
         try:
-            summary = seed_database(app.config["DATABASE"], app.config["DATA_DIR"])
-            app.logger.info("Built database: %s cities, %s attractions", summary["cities"], summary["attractions"])
+            ensure_database(app.config["DATABASE"], app.config["DATA_DIR"], app.logger)
         except SeedError as exc:
-            app.logger.error("Could not build the database:\n%s", exc)
+            app.logger.error("Could not build the database (the previous one, if any, is untouched):\n%s", exc)
 
     _register_template_helpers(app)
     _register_blueprints(app)
@@ -47,18 +48,34 @@ def create_app(test_config=None):
 def _register_template_helpers(app):
     app.add_template_filter(fmt_hhmm, "hhmm")
     app.add_template_filter(fmt_duration, "duration")
+    app.add_template_filter(fmt_travel, "travel")
     app.add_template_filter(lambda n: f"₹{int(round(n)):,}", "inr")
     app.add_template_filter(lambda d: WEEKDAY_SHORT[d], "weekday_short")
     app.add_template_filter(lambda d: WEEKDAY_LONG[d], "weekday_long")
     app.add_template_filter(lambda d: d.strftime("%a %-d %b"), "short_date")
     app.add_template_filter(lambda d: d.strftime("%A, %-d %B %Y"), "long_date")
 
+    def footer_data():
+        """Top destinations and dataset totals for the footer. Never breaks a page (e.g. an error page)."""
+        try:
+            from database import queries
+            conn = db.get_db()
+            counts = queries.summary_counts(conn)
+            return {"cities": queries.list_cities(conn)[:7], "city_count": counts["cities"],
+                    "attraction_count": counts["attractions"], "edge_count": counts["edges"],
+                    "data_version": queries.get_meta(conn).get("dataset_fingerprint", "")[:10]}
+        except Exception:                       # database missing or broken: plain footer
+            return {"cities": [], "city_count": 0}
+
     @app.context_processor
     def inject_globals():
         return {
+            "footer": footer_data(),
             "today": date.today(),
             "PACES": config.PACES,
             "STRATEGIES": config.STRATEGIES,
+            "STRATEGY_SHORT": config.STRATEGY_SHORT,
+            "ROUNDING": config.TRAVEL_ROUNDING_MIN,
             "MAX_DAYS": config.MAX_DAYS,
             "TRAFFIC_FACTOR": app.config["TRAFFIC_FACTOR"],
             "TRANSPORT_RATE": app.config["TRANSPORT_COST_PER_KM"],

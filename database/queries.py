@@ -2,12 +2,29 @@
 
 All values are passed as ? parameters (never formatted into the SQL string),
 which prevents SQL injection. Functions take an open connection and return
-sqlite3.Row objects or plain lists.
+sqlite3.Row objects or plain lists. Where a query takes several city ids, only
+the right number of "?" placeholders is generated -- the ids themselves are
+still passed as parameters.
 """
+
+import sqlite3
+
+
+def _ids(city_ids):
+    """Normalise None / one id / a list of ids to a tuple (or None for 'all cities')."""
+    if city_ids is None:
+        return None
+    if isinstance(city_ids, int):
+        return (city_ids,)
+    return tuple(city_ids)
+
+
+def _in(ids):
+    return "(" + ", ".join("?" for _ in ids) + ")"
 
 
 def list_cities(conn):
-    """Cities with their attraction and start-point counts."""
+    """Cities with their attraction and start-point counts, in Top-50 order."""
     return conn.execute(
         """
         SELECT c.*,
@@ -16,7 +33,7 @@ def list_cities(conn):
         FROM cities c
         LEFT JOIN places p ON p.city_id = c.id
         GROUP BY c.id
-        ORDER BY c.name
+        ORDER BY COALESCE(c.top_rank, 999), c.name
         """
     ).fetchall()
 
@@ -29,17 +46,20 @@ def list_categories(conn):
     return conn.execute("SELECT * FROM categories ORDER BY id").fetchall()
 
 
-def list_attractions(conn, city_id=None):
+def list_attractions(conn, city_ids=None):
     """Attractions joined with their place row, city slug and category slugs.
 
+    city_ids: None for every city, one id, or a list of ids.
     category_slugs is a comma-separated string (GROUP_CONCAT), split by the caller.
     """
     sql = """
-        SELECT p.id, p.slug, p.name, p.lat, p.lng, p.city_id,
+        SELECT p.id, p.slug, p.name, p.lat, p.lng, p.city_id, p.coord_source, p.access, p.access_note,
                c.slug AS city_slug, c.name AS city_name,
-               a.rating, a.popularity, a.visit_minutes, a.fee_inr, a.description,
-               a.image_path, a.image_credit, a.image_source_url, a.info_url,
-               a.in_team_catalog, a.data_status,
+               a.rating, a.rating_source, a.popularity, a.popularity_source, a.pageviews_12m,
+               a.visit_minutes, a.duration_source, a.fee_inr, a.fee_source, a.hours_source,
+               a.description, a.description_source,
+               a.image_path, a.image_credit, a.image_source_url, a.info_url, a.wikidata, a.place_type,
+               a.cuisine, a.vegetarian, a.in_team_catalog, a.data_status,
                (SELECT GROUP_CONCAT(cat.slug, ',')
                   FROM attraction_categories ac
                   JOIN categories cat ON cat.id = ac.category_id
@@ -48,24 +68,26 @@ def list_attractions(conn, city_id=None):
         JOIN attractions a ON a.place_id = p.id
         JOIN cities c ON c.id = p.city_id
     """
+    ids = _ids(city_ids)
     params = ()
-    if city_id is not None:
-        sql += " WHERE p.city_id = ?"
-        params = (city_id,)
-    sql += " ORDER BY c.name, p.id"
+    if ids is not None:
+        sql += f" WHERE p.city_id IN {_in(ids)}"
+        params = ids
+    sql += " ORDER BY COALESCE(c.top_rank, 999), c.name, p.id"
     return conn.execute(sql, params).fetchall()
 
 
-def list_opening_hours(conn, city_id=None):
+def list_opening_hours(conn, city_ids=None):
     sql = """
         SELECT h.place_id, h.weekday, h.open_min, h.close_min, h.last_entry_min
         FROM opening_hours h
         JOIN places p ON p.id = h.place_id
     """
+    ids = _ids(city_ids)
     params = ()
-    if city_id is not None:
-        sql += " WHERE p.city_id = ?"
-        params = (city_id,)
+    if ids is not None:
+        sql += f" WHERE p.city_id IN {_in(ids)}"
+        params = ids
     sql += " ORDER BY h.place_id, h.weekday, h.open_min"
     return conn.execute(sql, params).fetchall()
 
@@ -80,17 +102,49 @@ def list_places(conn, city_id, kind=None):
     return conn.execute(sql, params).fetchall()
 
 
-def list_edges(conn, city_id):
+def list_places_in(conn, city_ids):
+    """Places of several cities, each with its city slug and name."""
+    ids = _ids(city_ids)
     return conn.execute(
-        """
-        SELECT e.from_id, e.to_id, e.minutes, e.km, e.source
+        f"""
+        SELECT p.*, c.slug AS city_slug, c.name AS city_name
+        FROM places p JOIN cities c ON c.id = p.city_id
+        WHERE p.city_id IN {_in(ids)}
+        ORDER BY p.id
+        """,
+        ids,
+    ).fetchall()
+
+
+def list_edges(conn, city_ids):
+    """Road links whose two ends both lie in the given cities (local and intercity)."""
+    ids = _ids(city_ids)
+    return conn.execute(
+        f"""
+        SELECT e.from_id, e.to_id, e.minutes, e.km, e.source, e.scope
         FROM travel_edges e
-        JOIN places p ON p.id = e.from_id
-        WHERE p.city_id = ?
+        JOIN places a ON a.id = e.from_id
+        JOIN places b ON b.id = e.to_id
+        WHERE a.city_id IN {_in(ids)} AND b.city_id IN {_in(ids)}
         ORDER BY e.from_id, e.to_id
         """,
-        (city_id,),
+        ids + ids,
     ).fetchall()
+
+
+def intercity_road_km(conn):
+    """Shortest stored intercity road link between each pair of cities: {(slug a, slug b): (km, minutes)}."""
+    rows = conn.execute(
+        """
+        SELECT ca.slug AS a, cb.slug AS b, MIN(e.km) AS km, MIN(e.minutes) AS minutes
+        FROM travel_edges e
+        JOIN places pa ON pa.id = e.from_id JOIN cities ca ON ca.id = pa.city_id
+        JOIN places pb ON pb.id = e.to_id   JOIN cities cb ON cb.id = pb.city_id
+        WHERE e.scope = 'intercity'
+        GROUP BY ca.slug, cb.slug
+        """
+    ).fetchall()
+    return {(r["a"], r["b"]): (r["km"], r["minutes"]) for r in rows}
 
 
 def summary_counts(conn):
@@ -111,9 +165,16 @@ def edge_source_counts(conn, city_id):
         """
         SELECT e.source, COUNT(*) AS n
         FROM travel_edges e JOIN places p ON p.id = e.from_id
-        WHERE p.city_id = ?
+        WHERE p.city_id = ? AND e.scope = 'local'
         GROUP BY e.source
         """,
         (city_id,),
     ).fetchall()
     return {row["source"]: row["n"] for row in rows}
+
+
+def get_meta(conn):
+    try:
+        return {r["key"]: r["value"] for r in conn.execute("SELECT key, value FROM meta")}
+    except sqlite3.Error:                               # database built before meta existed
+        return {}

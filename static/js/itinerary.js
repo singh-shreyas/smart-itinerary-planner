@@ -41,6 +41,12 @@
       }
     });
     layer = L.layerGroup().addTo(map);
+    (data.cities || []).forEach(function (c) {
+      L.marker([c.lat, c.lng], {
+        icon: L.divIcon({ className: "", html: '<div class="map-city-label">' + esc(c.name) + "</div>", iconSize: [0, 0] }),
+        interactive: false, keyboard: false
+      }).addTo(map);
+    });
   } catch (e) { fail(); return; }
 
   function pin(lat, lng, html, cls) {
@@ -60,7 +66,13 @@
       .bindPopup("<strong>" + esc(start.name) + "</strong><br>Start and end of the day").addTo(layer);
     day.stops.forEach(function (s) {
       points.push([s.lat, s.lng]);
-      pin(s.lat, s.lng, s.n, "").bindPopup("<strong>" + s.n + ". " + esc(s.name) + "</strong><br>" + esc(s.time)).addTo(layer);
+      if (s.kind === "meal") {
+        pin(s.lat, s.lng, '<i class="bi bi-egg-fried"></i>', "is-meal")
+          .bindPopup("<strong>" + esc(s.name) + "</strong><br>" + esc(s.time)).addTo(layer);
+      } else {
+        pin(s.lat, s.lng, s.n, "").bindPopup("<strong>" + s.n + ". " + esc(s.name) + "</strong><br>" + esc(s.time) +
+          (data.cities && data.cities.length ? "<br><span class='text-muted'>" + esc(s.city) + "</span>" : "")).addTo(layer);
+      }
     });
     if (day.stops.length) {
       points.push([start.lat, start.lng]);

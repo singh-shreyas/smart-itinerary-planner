@@ -3,7 +3,7 @@
 import math
 from datetime import timedelta
 
-from algorithms.activity_selection import earliest_deadline_order, max_visits_plan, select_activities
+from algorithms.activity_selection import earliest_deadline_order, select_activities
 from conftest import MONDAY, make_trip
 from services.itinerary_generator import day_context
 from services.scheduler import earliest_start, simulate
@@ -25,11 +25,9 @@ def test_chosen_activities_never_overlap():
     assert chosen == [2, 3, 4]
 
 
-def test_earliest_deadline_order_and_max_visits():
+def test_earliest_deadline_order_breaks_ties_by_id():
     closing = {10: 900, 11: 600, 12: 600, 13: 1200}
     assert earliest_deadline_order([13, 12, 10, 11], closing) == [11, 12, 10, 13]
-    plan = max_visits_plan([10, 11, 12, 13], closing, can_append=lambda route: len(route) <= 2)
-    assert plan == [11, 12]
 
 
 def ctx_for(city, trip, day):

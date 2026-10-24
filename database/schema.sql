@@ -1,12 +1,24 @@
--- Smart Itinerary Planner: SQLite schema.
+-- Smart Itinerary Planner: SQLite schema (schema version 2).
 --
 -- Every node of the travel graph (attraction or start point) is a row in
 -- `places`; attraction-only fields live in the 1:1 `attractions` table.
 -- Times are stored as minutes after midnight (09:30 -> 570) so comparisons
 -- are plain integer maths. A weekday with no opening_hours row = closed.
+--
+-- These tables hold REFERENCE data rebuilt from data/*.csv by
+-- database/seed_data.py. Any other table found in an existing database (for
+-- example user data added later) is copied across unchanged when the
+-- reference data is rebuilt; see database/migrations.py.
+--
+-- Provenance columns (*_source) record where each value came from:
+--   wikipedia / openstreetmap / osm / wikipedia_pageviews  -> an open data source
+--   estimate      -> a documented default for that kind of place (data/estimate_defaults.csv)
+--   illustrative  -> a plausible value chosen by hand for the four original cities
+--   approximate   -> coordinates placed by hand where no source matched
 
 PRAGMA foreign_keys = ON;
 
+DROP TABLE IF EXISTS meta;
 DROP TABLE IF EXISTS travel_edges;
 DROP TABLE IF EXISTS opening_hours;
 DROP TABLE IF EXISTS attraction_categories;
@@ -15,13 +27,21 @@ DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS places;
 DROP TABLE IF EXISTS cities;
 
+CREATE TABLE meta (                          -- schema_version, dataset_fingerprint, built_at
+    key    TEXT PRIMARY KEY,
+    value  TEXT NOT NULL
+);
+
 CREATE TABLE cities (
     id            INTEGER PRIMARY KEY,
     slug          TEXT    NOT NULL UNIQUE,
     name          TEXT    NOT NULL,
     state         TEXT    NOT NULL,
+    region        TEXT,
+    top_rank      INTEGER,                   -- position in the team's Top-50 list
     center_lat    REAL    NOT NULL CHECK (center_lat BETWEEN -90 AND 90),
     center_lng    REAL    NOT NULL CHECK (center_lng BETWEEN -180 AND 180),
+    coord_source  TEXT,
     tagline       TEXT    NOT NULL,
     description   TEXT    NOT NULL,
     hero_image    TEXT,
@@ -31,36 +51,52 @@ CREATE TABLE cities (
 );
 
 CREATE TABLE places (                        -- every node of the travel graph
-    id       INTEGER PRIMARY KEY,
-    city_id  INTEGER NOT NULL REFERENCES cities(id) ON DELETE CASCADE,
-    slug     TEXT    NOT NULL,
-    name     TEXT    NOT NULL,
-    kind     TEXT    NOT NULL CHECK (kind IN ('attraction', 'start')),
-    lat      REAL    NOT NULL CHECK (lat BETWEEN -90 AND 90),
-    lng      REAL    NOT NULL CHECK (lng BETWEEN -180 AND 180),
-    UNIQUE (city_id, slug)
+    id           INTEGER PRIMARY KEY,
+    city_id      INTEGER NOT NULL REFERENCES cities(id) ON DELETE CASCADE,
+    slug         TEXT    NOT NULL UNIQUE,    -- unique across ALL cities (multi-city trips mix them)
+    name         TEXT    NOT NULL,
+    kind         TEXT    NOT NULL CHECK (kind IN ('attraction', 'start')),
+    lat          REAL    NOT NULL CHECK (lat BETWEEN -90 AND 90),
+    lng          REAL    NOT NULL CHECK (lng BETWEEN -180 AND 180),
+    coord_source TEXT,
+    access       TEXT    NOT NULL DEFAULT 'road' CHECK (access IN ('road', 'no_road')),
+    access_note  TEXT                        -- why a place has no road access in our graph
 );
 
 CREATE TABLE categories (
-    id    INTEGER PRIMARY KEY,
-    slug  TEXT NOT NULL UNIQUE,
-    name  TEXT NOT NULL,
-    icon  TEXT NOT NULL                      -- Bootstrap Icons class name
+    id      INTEGER PRIMARY KEY,
+    slug    TEXT NOT NULL UNIQUE,
+    name    TEXT NOT NULL,
+    icon    TEXT NOT NULL,                   -- Bootstrap Icons class name
+    grp     TEXT NOT NULL,                   -- heading the interest is listed under
+    parent  TEXT,                            -- e.g. street-food -> food (a match on the child also counts for the parent)
+    kind    TEXT NOT NULL CHECK (kind IN ('sight', 'food', 'shopping'))
 );
 
 CREATE TABLE attractions (                   -- one row per place with kind = 'attraction'
-    place_id         INTEGER PRIMARY KEY REFERENCES places(id) ON DELETE CASCADE,
-    rating           REAL    NOT NULL CHECK (rating BETWEEN 0 AND 5),
-    popularity       REAL    NOT NULL CHECK (popularity BETWEEN 0 AND 1),
-    visit_minutes    INTEGER NOT NULL CHECK (visit_minutes BETWEEN 15 AND 480),
-    fee_inr          INTEGER NOT NULL DEFAULT 0 CHECK (fee_inr >= 0),
-    description      TEXT    NOT NULL,
-    image_path       TEXT,
-    image_credit     TEXT,
-    image_source_url TEXT,
-    info_url         TEXT,
-    in_team_catalog  INTEGER NOT NULL CHECK (in_team_catalog IN (0, 1)),
-    data_status      TEXT    NOT NULL CHECK (data_status IN ('verified', 'estimate', 'illustrative'))
+    place_id          INTEGER PRIMARY KEY REFERENCES places(id) ON DELETE CASCADE,
+    rating            REAL    CHECK (rating IS NULL OR rating BETWEEN 0 AND 5),   -- NULL = no rating data
+    rating_source     TEXT    NOT NULL,
+    popularity        REAL    NOT NULL CHECK (popularity BETWEEN 0 AND 1),
+    popularity_source TEXT    NOT NULL,
+    pageviews_12m     INTEGER,                                                     -- raw Wikipedia views, when used
+    visit_minutes     INTEGER NOT NULL CHECK (visit_minutes BETWEEN 15 AND 480),
+    duration_source   TEXT    NOT NULL,
+    fee_inr           INTEGER NOT NULL DEFAULT 0 CHECK (fee_inr >= 0),
+    fee_source        TEXT    NOT NULL,
+    hours_source      TEXT    NOT NULL,
+    description       TEXT    NOT NULL,
+    description_source TEXT,
+    image_path        TEXT,
+    image_credit      TEXT,
+    image_source_url  TEXT,
+    info_url          TEXT,
+    wikidata          TEXT,
+    place_type        TEXT,                  -- kind of place (temple, fort, market, ...) used for defaults
+    cuisine           TEXT,                  -- food places only: venue styles separated by ';'
+    vegetarian        TEXT    NOT NULL DEFAULT 'unknown' CHECK (vegetarian IN ('yes', 'unknown')),
+    in_team_catalog   INTEGER NOT NULL CHECK (in_team_catalog IN (0, 1)),
+    data_status       TEXT    NOT NULL CHECK (data_status IN ('verified', 'estimate', 'illustrative'))
 );
 
 CREATE TABLE attraction_categories (
@@ -86,6 +122,7 @@ CREATE TABLE travel_edges (                  -- directed: A->B and B->A are sepa
     minutes  REAL    NOT NULL CHECK (minutes > 0),   -- free-flow minutes (traffic factor applied in code)
     km       REAL    NOT NULL CHECK (km > 0),
     source   TEXT    NOT NULL CHECK (source IN ('osrm', 'manual', 'haversine_estimate')),
+    scope    TEXT    NOT NULL DEFAULT 'local' CHECK (scope IN ('local', 'intercity')),
     PRIMARY KEY (from_id, to_id),
     CHECK (from_id <> to_id)
 );

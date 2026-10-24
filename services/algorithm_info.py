@@ -37,6 +37,13 @@ ALGORITHMS = [
                    "of attractions for the day's estimated capacity.",
     },
     {
+        "key": "max_visits", "name": "Max visits (DP on the count)", "icon": "bi-list-ol",
+        "file": "algorithms/max_visits.py", "time": "O(n · T · M)", "space": "O(n · T · M)",
+        "role": "Strategy",
+        "summary": "The same knapsack DP with every place worth one visit (ties broken by value), so it "
+                   "finds the largest number of places that fit the day's time and budget.",
+    },
+    {
         "key": "nn", "name": "Nearest Neighbour", "icon": "bi-geo-alt",
         "file": "algorithms/nearest_neighbor.py", "time": "O(k²)", "space": "O(k)", "role": "Main plan",
         "summary": "Builds a first route by always travelling to the closest unvisited stop.",
@@ -51,14 +58,14 @@ ALGORITHMS = [
         "key": "activity", "name": "Activity selection", "icon": "bi-calendar-week",
         "file": "algorithms/activity_selection.py", "time": "O(n log n)", "space": "O(n)",
         "role": "Main plan / baseline",
-        "summary": "Earliest-closing-time-first ordering builds the window-first route, and drives the "
-                   "'max visits' baseline on the comparison page.",
+        "summary": "Earliest-closing-time-first ordering decides which stop the window-first route "
+                   "considers next, so places that close early are placed first.",
     },
     {
         "key": "insertion", "name": "Feasible insertion", "icon": "bi-node-plus",
         "file": "algorithms/insertion.py", "time": "O(k³)", "space": "O(k)", "role": "Main plan",
-        "summary": "Places each stop (in closing-time order) at the position that keeps every opening window "
-                   "valid with the least extra travel, so evening-only stops end up last.",
+        "summary": "Places a stop at the position that keeps every opening window and meal valid with the "
+                   "least extra travel. Builds the window-first route and fills leftover time in long days.",
     },
     {
         "key": "held_karp", "name": "Held–Karp (exact tour)", "icon": "bi-bullseye",

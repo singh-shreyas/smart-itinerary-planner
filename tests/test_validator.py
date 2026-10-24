@@ -28,7 +28,9 @@ def test_visit_outside_opening_hours_is_caught(tiny_city):
 
 def test_duplicate_visit_is_caught(tiny_city):
     plan = copy.deepcopy(valid_plan(tiny_city, days=2))
-    plan.days[1].visits.insert(0, copy.deepcopy(plan.days[0].visits[0]))
+    duplicate = copy.deepcopy(plan.days[0].visits[0])
+    plan.days[1].visits.insert(0, duplicate)
+    plan.days[1].timeline.insert(0, duplicate)
     assert any("twice" in p for p in check_itinerary(plan, tiny_city, RATE))
 
 

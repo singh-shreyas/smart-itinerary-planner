@@ -1,0 +1,51 @@
+rank,destination_id,region,state_ut,destination,attractions,state_rank_domestic_visits_2024
+1,1,North India,Uttar Pradesh,Agra,Taj Mahal; Agra Fort; Itmad-ud-Daulah; Mehtab Bagh; Akbar's Tomb; Jama Masjid,1
+2,132,North India,Delhi,Delhi,India Gate; Red Fort; Qutub Minar; Humayun's Tomb; Lotus Temple; Akshardham; Jama Masjid; Chandni Chowk,Not ranked
+3,3,North India,Uttar Pradesh,Varanasi,Kashi Vishwanath Temple; Dashashwamedh Ghat; Assi Ghat; Sarnath; Manikarnika Ghat; Ramnagar Fort,1
+4,49,North India,Rajasthan,Jaipur,Amber Fort; City Palace; Hawa Mahal; Jantar Mantar; Jal Mahal; Nahargarh Fort; Jaigarh Fort; Albert Hall Museum,5
+5,7,North India,Uttar Pradesh,Ayodhya,Ram Mandir; Hanuman Garhi; Kanak Bhawan; Saryu Ghats; Ram Ki Paidi; Dasharath Bhavan,1
+6,41,South India,Andhra Pradesh,Tirupati,Tirumala Venkateswara Temple; Kapila Theertham; Govindaraja Swamy Temple; Akasaganga Teertham; Talakona Waterfalls,4
+7,64,West India,Maharashtra,Mumbai,Gateway of India; Marine Drive; CSMT; Elephanta Caves; Colaba Causeway; Siddhivinayak Temple,6
+8,147,West India,Goa,Calangute,Calangute Beach; Baga Beach; Calangute Market; St. Alex Church; Aguada Fort,Not ranked
+9,133,North India,Punjab,Amritsar,Golden Temple; Jallianwala Bagh; Wagah-Attari Border; Partition Museum; Durgiana Temple,Not ranked
+10,50,North India,Rajasthan,Udaipur,City Palace; Lake Pichola; Lake Palace; Jag Mandir; Jagdish Temple; Sajjangarh (Monsoon Palace); Fateh Sagar Lake; Saheliyon-ki-Bari,5
+11,123,North India,Uttarakhand,Haridwar,Har Ki Pauri; Mansa Devi Temple; Chandi Devi Temple; Daksheswar Mahadev Temple; Bharat Mata Mandir,Not ranked
+12,122,North India,Uttarakhand,Rishikesh,Triveni Ghat; Beatles Ashram; Ram Jhula; Laxman Jhula area; Neelkanth Mahadev Temple; Ganga Aarti,Not ranked
+13,6,North India,Uttar Pradesh,Vrindavan,Banke Bihari Temple; Prem Mandir; ISKCON Temple; Radha Raman Temple; Nidhivan; Govardhan Hill,1
+14,5,North India,Uttar Pradesh,Mathura,Krishna Janmabhoomi; Dwarkadhish Temple; Vishram Ghat; Mathura Museum; Kusum Sarovar,1
+15,70,West India,Maharashtra,Shirdi,Sai Baba Temple; Dwarkamai; Chavadi; Gurusthan; Dixit Wada Museum,6
+16,141,North India,Jammu & Kashmir,Katra,Vaishno Devi Temple; Banganga; Charan Paduka; Ardhkuwari Cave; Bhairavnath Temple,Not ranked
+17,101,Central India,Madhya Pradesh,Ujjain,Mahakaleshwar Temple; Kal Bhairav Temple; Ram Ghat; Harsiddhi Temple; Vedh Shala; Mangalnath Temple,9
+18,114,North India,Himachal Pradesh,Manali,Solang Valley; Rohtang Pass; Hadimba Temple; Old Manali; Manu Temple; Vashisht Hot Springs; Atal Tunnel,Not ranked
+19,113,North India,Himachal Pradesh,Shimla,The Ridge; Mall Road; Christ Church; Jakhu Temple; Viceregal Lodge; Kufri; Shimla State Museum,Not ranked
+20,8,North India,Uttar Pradesh,Prayagraj,Triveni Sangam; Allahabad Fort; Anand Bhavan; Khusro Bagh; All Saints Cathedral; Akshayavat,1
+21,56,North India,Rajasthan,Ajmer,Ajmer Sharif Dargah; Ana Sagar Lake; Adhai Din Ka Jhonpra; Akbari Fort; Nareli Jain Temple; Prithviraj Smarak,5
+22,161,South India,Telangana,Hyderabad,Charminar; Golconda Fort; Hussain Sagar Lake; Salar Jung Museum; Chowmahalla Palace; Qutb Shahi Tombs,Not ranked
+23,151,South India,Kerala,Kochi,Fort Kochi; Chinese Fishing Nets; Mattancherry Palace; Jewish Synagogue; St. Francis Church; Marine Drive,Not ranked
+24,152,South India,Kerala,Munnar,Eravikulam National Park; Mattupetty Dam; Tea Museum; Top Station; Echo Point; Tea Gardens,Not ranked
+25,153,South India,Kerala,Alleppey,Alleppey Backwaters; Alappuzha Beach; Houseboat Cruises; Vembanad Lake; Marari Beach,Not ranked
+26,160,South India,Kerala,Sabarimala,Sabarimala Ayyappa Temple; Pamba River; Sannidhanam; Malikappuram Temple,Not ranked
+27,13,South India,Tamil Nadu,Madurai,Meenakshi Amman Temple; Thirumalai Nayakkar Palace; Gandhi Memorial Museum; Alagar Koyil; Teppakulam,2
+28,12,South India,Tamil Nadu,Chennai,Marina Beach; Kapaleeshwarar Temple; Fort St. George; San Thome Basilica; Government Museum; Besant Nagar Beach,2
+29,18,South India,Tamil Nadu,Rameswaram,Ramanathaswamy Temple; Pamban Bridge; Dhanushkodi; Abdul Kalam Memorial; Agni Theertham,2
+30,19,South India,Tamil Nadu,Kanyakumari,Vivekananda Rock Memorial; Thiruvalluvar Statue; Kanyakumari Beach; Bhagavathy Amman Temple; Sunset Point,2
+31,14,South India,Tamil Nadu,Ooty,Ooty Lake; Botanical Gardens; Doddabetta Peak; Rose Garden; Nilgiri Mountain Railway; Tea Museum,2
+32,28,South India,Karnataka,Bengaluru,Bangalore Palace; Lalbagh Botanical Garden; Cubbon Park; Vidhana Soudha; ISKCON Temple; Tipu Sultan's Palace,3
+33,29,South India,Karnataka,Mysuru,Mysore Palace; Chamundi Hill; Brindavan Gardens; St. Philomena's Cathedral; Mysuru Zoo; Devaraja Market,3
+34,30,South India,Karnataka,Hampi,Virupaksha Temple; Vittala Temple; Stone Chariot; Hampi Bazaar; Lotus Mahal; Elephant Stables,3
+35,168,East India,Odisha,Puri,Jagannath Temple; Puri Beach; Gundicha Temple; Narendra Tank; Raghurajpur Artist Village,Not ranked
+36,170,East India,Odisha,Konark,Konark Sun Temple; Chandrabhaga Beach; Archaeological Museum; Ramachandi Temple,Not ranked
+37,78,East India,West Bengal,Kolkata,Victoria Memorial; Howrah Bridge; Indian Museum; St. Paul's Cathedral; Marble Palace; Dakshineswar Temple,7
+38,79,East India,West Bengal,Darjeeling,Tiger Hill; Darjeeling Himalayan Railway; Batasia Loop; Himalayan Mountaineering Institute; Peace Pagoda; Tea Gardens,7
+39,137,North India,Jammu & Kashmir,Srinagar,Dal Lake; Mughal Gardens; Shankaracharya Temple; Hazratbal Shrine; Pari Mahal; Old City,Not ranked
+40,143,North India,Ladakh,Leh,Leh Palace; Shanti Stupa; Thiksey Monastery; Magnetic Hill; Hall of Fame; Namgyal Tsemo Monastery,Not ranked
+41,51,North India,Rajasthan,Jodhpur,Mehrangarh Fort; Umaid Bhawan Palace; Jaswant Thada; Clock Tower; Sardar Market; Mandore Gardens; Rao Jodha Desert Rock Park,5
+42,52,North India,Rajasthan,Jaisalmer,Jaisalmer Fort; Patwon Ki Haveli; Salim Singh Ki Haveli; Nathmal Ki Haveli; Gadisar Lake; Sam Sand Dunes; Kuldhara Village,5
+43,53,North India,Rajasthan,Pushkar,Pushkar Lake; Brahma Temple; Savitri Temple; Varaha Temple; Rangji Temple; Pushkar Bazaar; Man Mahal,5
+44,125,North India,Uttarakhand,Nainital,Naini Lake; Naina Devi Temple; Snow View Point; Tiffin Top; Eco Cave Gardens; Mall Road,Not ranked
+45,124,North India,Uttarakhand,Mussoorie,Mall Road; Gun Hill; Kempty Falls; Lal Tibba; Company Garden; Camel's Back Road,Not ranked
+46,130,North India,Uttarakhand,Kedarnath,Kedarnath Temple; Bhairavnath Temple; Adi Shankaracharya Samadhi; Vasuki Tal; Chorabari Tal,Not ranked
+47,66,West India,Maharashtra,Aurangabad,Ajanta Caves; Ellora Caves; Bibi Ka Maqbara; Daulatabad Fort; Panchakki,6
+48,102,Central India,Madhya Pradesh,Khajuraho,Khajuraho Group of Monuments; Kandariya Mahadeva Temple; Lakshmana Temple; Western Group; Light & Sound Show,9
+49,93,West India,Gujarat,Kevadia,Statue of Unity; Valley of Flowers; Sardar Sarovar Dam; Jungle Safari; Cactus Garden; Ekta Nagar,8
+50,163,South India,Puducherry,Pondicherry,Promenade Beach; Sri Aurobindo Ashram; French Quarter; Auroville; Paradise Beach; Basilica of the Sacred Heart,Not ranked
