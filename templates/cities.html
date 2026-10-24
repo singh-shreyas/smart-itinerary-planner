@@ -3,48 +3,98 @@
 {% block title %}Destinations{% endblock %}
 
 {% block content %}
-<section class="page-header">
+<section class="page-header pb-4">
   <div class="container">
     <span class="eyebrow">Destinations</span>
-    <h1>Explore our cities</h1>
-    <p class="lead">Four destinations from our 200-destination catalog are fully modelled: every attraction has coordinates,
-      weekly opening hours, a visit duration and an entry fee, connected by a road graph built from OpenStreetMap.</p>
+    <h1>{{ city_cards|length }} destinations across India</h1>
+    <p class="lead">Our team's Top-50 list of India's most visited destinations. {{ ready_count }} are fully plannable by road;
+      the rest have fewer places we could locate reliably, or sights reached only on foot or by boat — each card says which.</p>
   </div>
 </section>
 
-<section class="pb-4">
+<div class="filter-bar">
   <div class="container">
-    <div class="row g-4">
+    <form class="row g-2 align-items-center" id="city-filter" role="search" onsubmit="return false">
+      <div class="col-12 col-md-5">
+        <div class="input-icon">
+          <i class="bi bi-search"></i>
+          <input class="form-control" type="search" id="city-q" placeholder="Search a city, state or attraction" aria-label="Search destinations">
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <select class="form-select" id="city-region" aria-label="Region">
+          <option value="">All regions</option>
+          {% for region, items in regions %}<option value="{{ region }}">{{ region }} ({{ items|length }})</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <select class="form-select" id="city-ready" aria-label="Planning data">
+          <option value="">Any data level</option>
+          <option value="ready">Ready to plan</option>
+          <option value="limited">Limited data</option>
+          <option value="not_ready">Not plannable by road</option>
+        </select>
+      </div>
+      <div class="col-12 col-md-2 text-md-end small text-muted" aria-live="polite"><strong class="text-body tabular" id="city-count">{{ city_cards|length }}</strong> shown</div>
+    </form>
+  </div>
+</div>
+
+<section class="py-4">
+  <div class="container">
+    <div class="row g-4" id="city-grid">
       {% for card in city_cards %}
         {% set c = card.city %}
-        <div class="col-lg-6">
+        {% set r = card.readiness %}
+        <div class="col-md-6 col-xl-4 city-col" data-region="{{ c.region }}" data-ready="{{ r.status }}"
+             data-text="{{ (c.name ~ ' ' ~ c.state ~ ' ' ~ card.highlights|join(' '))|lower }}">
           <article class="card-soft city-card lift">
             <div class="city-media">
-              {{ ui.image(c.hero_image, c.name, width=1280, height=720) }}
-              <span class="badge-float chip chip-dark"><i class="bi bi-geo-alt"></i>{{ c.state }}</span>
+              {{ ui.image(c.hero_image, c.name, width=960, height=540) }}
+              <span class="badge-float chip chip-dark">{% if c.top_rank %}#{{ c.top_rank }} · {% endif %}{{ c.state }}</span>
             </div>
             <div class="city-body">
-              <h2>{{ c.name }}</h2>
-              <div class="tagline">{{ c.tagline }}</div>
-              <p class="mb-3">{{ c.description }}</p>
-              <div class="d-flex flex-wrap gap-2 mb-3">
-                <span class="chip chip-green"><i class="bi bi-pin-map"></i>{{ c.attraction_count }} attractions</span>
-                <span class="chip"><i class="bi bi-ticket-perforated"></i>{{ card.free }} free entry</span>
-                <span class="chip"><i class="bi bi-house-door"></i>{{ c.start_count }} start points</span>
+              <div class="d-flex justify-content-between align-items-start gap-2">
+                <h2>{{ c.name }}</h2>{{ ui.readiness_badge(r, compact=True) }}
               </div>
-              <p class="small-caps text-muted mb-2">Most popular</p>
-              <ul class="highlight-list">
-                {% for name in card.highlights %}<li><i class="bi bi-star"></i>{{ name }}</li>{% endfor %}
-              </ul>
-              <p class="small text-muted mb-4">Strongest in: {% for name, n in card.categories %}{{ name }} ({{ n }}){% if not loop.last %} · {% endif %}{% endfor %}</p>
+              <div class="tagline">{{ c.tagline }}</div>
+              <p class="small mb-3">{{ c.description }}</p>
+              <div class="d-flex flex-wrap gap-2 mb-3">
+                <span class="chip chip-green"><i class="bi bi-pin-map"></i>{{ r.reachable }} plannable{% if r.total != r.reachable %} of {{ r.total }}{% endif %}</span>
+                <span class="chip"><i class="bi bi-ticket-perforated"></i>{{ card.free }} free entry</span>
+              </div>
+              {% if card.highlights %}
+                <p class="small-caps text-muted mb-1">Most visited online</p>
+                <ul class="highlight-list small">
+                  {% for name in card.highlights %}<li><i class="bi bi-star"></i>{{ name }}</li>{% endfor %}
+                </ul>
+              {% endif %}
+              {% if card.nearby %}
+                <p class="small mb-2"><i class="bi bi-signpost-2 me-1 text-accent"></i>Combine with:
+                  {% for n in card.nearby %}<a href="{{ url_for('planner.plan', city=c.slug, also=n.slug) }}">{{ n.name }}</a> <span class="text-muted">({{ n.km|round|int }} km)</span>{{ ', ' if not loop.last }}{% endfor %}</p>
+              {% endif %}
+              {% if card.catalog_only or card.no_road %}
+                <details class="small mb-3">
+                  <summary class="text-muted">{{ card.catalog_only|length + card.no_road|length }} listed sight{{ 's' if (card.catalog_only|length + card.no_road|length) != 1 }} not planned by road</summary>
+                  <ul class="mt-2 mb-0 ps-3">
+                    {% for a in card.no_road %}<li><strong>{{ a.name }}</strong> — {{ a.access_note }}</li>{% endfor %}
+                    {% for s in card.catalog_only %}<li><strong>{{ s.name }}</strong> — {{ s.reason }}</li>{% endfor %}
+                  </ul>
+                </details>
+              {% endif %}
               <div class="d-flex flex-wrap gap-2 mt-auto">
-                <a class="btn btn-brand" href="{{ url_for('planner.plan', city=c.slug) }}"><i class="bi bi-compass me-1"></i>Plan a trip here</a>
-                <a class="btn btn-outline-brand" href="{{ url_for('main.attractions', city=c.slug) }}">Browse attractions</a>
+                {% if r.status != 'not_ready' %}<a class="btn btn-brand btn-sm" href="{{ url_for('planner.plan', city=c.slug) }}"><i class="bi bi-compass me-1"></i>Plan a trip</a>{% endif %}
+                <a class="btn btn-outline-brand btn-sm" href="{{ url_for('main.attractions', city=c.slug) }}">Attractions</a>
               </div>
             </div>
           </article>
         </div>
       {% endfor %}
+    </div>
+    <div class="card-soft empty-state mt-2 d-none" id="city-empty">
+      <div class="empty-icon"><i class="bi bi-search"></i></div>
+      <h3>No destination matches</h3>
+      <p class="mb-0">Try another name, region or data level.</p>
     </div>
   </div>
 </section>
@@ -56,11 +106,11 @@
       <div class="col-lg-4">
         <span class="eyebrow">Our catalog</span>
         <h2 class="mt-3" style="font-size: clamp(1.7rem, 2.8vw, 2.2rem);">{{ catalog|length }} destinations to grow into</h2>
-        <p>Our team's research catalog covers {{ catalog|length }} destinations across {{ catalog_states }} states and union
+        <p>The team's research catalog covers {{ catalog|length }} destinations across {{ catalog_states }} states and union
           territories, with {{ "{:,}".format(catalog_attractions) }} named attractions. States are ordered by domestic tourist
           visits in 2024 (India Tourism Data Compendium 2025).</p>
-        <p>The catalog has names only. A city becomes plannable once its attractions get coordinates, hours,
-          fees and road links: adding rows to the CSV files, with no algorithm changes.</p>
+        <p>The catalog has names only. A destination becomes plannable once its attractions get coordinates, hours,
+          fees and road links — rows in the CSV files, with no algorithm changes.</p>
         <div class="input-icon mt-4">
           <i class="bi bi-search"></i>
           <input class="form-control" type="search" id="catalog-search" placeholder="Search {{ catalog|length }} destinations…" aria-label="Search the catalog">
@@ -77,7 +127,7 @@
                   <td class="text-muted">{{ row.state_ut }}</td>
                   <td class="d-none d-md-table-cell small text-muted">{{ row.attractions|truncate(80) }}</td>
                   <td class="text-end">
-                    {% if row.destination_id in modelled_ids %}<span class="chip chip-green">Plannable</span>
+                    {% if row.destination_id in modelled_ids %}<span class="chip chip-green">In the planner</span>
                     {% else %}<span class="chip">Catalog only</span>{% endif %}
                   </td>
                 </tr>
@@ -100,18 +150,35 @@
 {% block scripts %}
 <script>
   (function () {
+    // City grid filters (the page shows every city without JavaScript).
+    var q = document.getElementById("city-q"), region = document.getElementById("city-region"),
+        ready = document.getElementById("city-ready"), count = document.getElementById("city-count"),
+        empty = document.getElementById("city-empty"), cols = document.querySelectorAll(".city-col");
+    function apply() {
+      var text = q.value.trim().toLowerCase(), shown = 0;
+      cols.forEach(function (col) {
+        var ok = (!text || col.dataset.text.indexOf(text) !== -1) && (!region.value || col.dataset.region === region.value) &&
+                 (!ready.value || col.dataset.ready === ready.value);
+        col.hidden = !ok;
+        if (ok) shown++;
+      });
+      count.textContent = shown;
+      empty.classList.toggle("d-none", shown > 0);
+    }
+    [q, region, ready].forEach(function (el) { el.addEventListener("input", apply); el.addEventListener("change", apply); });
+
     var input = document.getElementById("catalog-search");
     if (!input) return;
     var rows = document.querySelectorAll("#catalog-table tbody tr");
-    var empty = document.getElementById("catalog-empty");
+    var catalogEmpty = document.getElementById("catalog-empty");
     input.addEventListener("input", function () {
-      var q = input.value.trim().toLowerCase(), shown = 0;
+      var t = input.value.trim().toLowerCase(), n = 0;
       rows.forEach(function (row) {
-        var match = !q || row.dataset.search.indexOf(q) !== -1;
+        var match = !t || row.dataset.search.indexOf(t) !== -1;
         row.hidden = !match;
-        if (match) shown++;
+        if (match) n++;
       });
-      empty.classList.toggle("d-none", shown > 0);
+      catalogEmpty.classList.toggle("d-none", n > 0);
     });
   })();
 </script>

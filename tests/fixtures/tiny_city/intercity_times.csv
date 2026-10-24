@@ -1,0 +1,3 @@
+from_city,from_slug,to_city,to_slug,minutes,km,source
+testville,hotel,riverton,riverton-hub,40,45,manual
+riverton,riverton-hub,testville,hotel,40,45,manual

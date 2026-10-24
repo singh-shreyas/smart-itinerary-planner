@@ -93,18 +93,28 @@ def readiness_by_city():
     return {c["slug"]: city_data(c["slug"]).readiness() for c in queries.list_cities(get_db())}
 
 
+def hub_road(slug_a, slug_b):
+    """Road km and planned minutes between two cities' main hubs (shortest path in the two-city graph)."""
+    from services.city_data import _hub
+    area = city_data(slug_a, (slug_b,))
+    hub_a, hub_b = _hub(slug_a, area.places), _hub(slug_b, area.places)
+    if not hub_a or not hub_b or area.km[hub_a.id][hub_b.id] == math.inf:
+        return None
+    leg = area.leg(hub_a.id, hub_b.id)
+    return {"km": round(area.km[hub_a.id][hub_b.id], 1), "minutes": leg.minutes, "estimated": leg.estimated}
+
+
 def nearby_options(cities_rows):
-    """For the planner: each city's eligible nearby cities with straight-line and (if known) road distance."""
-    road = queries.intercity_road_km(get_db())
+    """For the planner: each city's eligible nearby cities with straight-line and road distance between hubs."""
     rows = [dict(c) for c in cities_rows]
     out = {}
     for c in rows:
         near = []
         for other, km in nearby_cities(c, rows):
-            link = road.get((c["slug"], other["slug"]))
+            road = hub_road(c["slug"], other["slug"])
             near.append({"slug": other["slug"], "name": other["name"], "km": km,
-                         "road_km": round(link[0], 1) if link else None,
-                         "road_min": round(link[1] * current_app.config["TRAFFIC_FACTOR"]) if link else None})
+                         "road_km": road["km"] if road and not road["estimated"] else None,
+                         "road_min": road["minutes"] if road and not road["estimated"] else None})
         out[c["slug"]] = near
     return out
 

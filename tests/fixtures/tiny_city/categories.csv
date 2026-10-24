@@ -1,7 +1,27 @@
-slug,name,icon
-history,History,bi-hourglass-split
-architecture,Architecture,bi-bank
-spirituality,Spirituality,bi-flower1
-nature,Nature,bi-tree
-museums,Museums,bi-easel
-markets,Markets,bi-shop
+slug,name,icon,grp,parent,kind
+history,History & heritage,bi-hourglass-split,Culture & heritage,,sight
+architecture,Architecture,bi-bank,Culture & heritage,,sight
+museums,Museums & art galleries,bi-easel,Culture & heritage,,sight
+spirituality,Religious & spiritual sites,bi-flower1,Culture & heritage,,sight
+festivals,Festivals & cultural experiences,bi-stars,Culture & heritage,,sight
+nature,Nature & gardens,bi-tree,Nature & outdoors,,sight
+wildlife,Wildlife & zoos,bi-binoculars,Nature & outdoors,,sight
+adventure,Adventure & outdoor activities,bi-compass,Nature & outdoors,,sight
+trekking,Trekking & hiking,bi-signpost-2,Nature & outdoors,adventure,sight
+beaches,Beaches & waterfronts,bi-umbrella,Nature & outdoors,,sight
+lakes-viewpoints,Lakes & scenic viewpoints,bi-sunrise,Nature & outdoors,,sight
+food,Food & local cuisine,bi-egg-fried,Food,,food
+street-food,Street food,bi-cup-straw,Food,food,food
+cafes,Cafes & bakeries,bi-cup-hot,Food,food,food
+fine-dining,Fine dining,bi-cake2,Food,food,food
+markets,Local markets & bazaars,bi-shop,Shopping,,shopping
+malls,Shopping malls,bi-bag,Shopping,,shopping
+handicrafts,Handicrafts & souvenirs,bi-gift,Shopping,,shopping
+fashion,Fashion & clothing,bi-handbag,Shopping,,shopping
+nightlife,Entertainment & nightlife,bi-moon-stars,Entertainment & leisure,,sight
+performances,Cinemas & live performances,bi-film,Entertainment & leisure,,sight
+sports,Sports & stadiums,bi-trophy,Entertainment & leisure,,sight
+theme-parks,Amusement & theme parks,bi-balloon,Entertainment & leisure,,sight
+family,Family-friendly,bi-people,Entertainment & leisure,,sight
+photography,Photography spots,bi-camera,Entertainment & leisure,,sight
+wellness,Relaxation & wellness,bi-heart-pulse,Entertainment & leisure,,sight

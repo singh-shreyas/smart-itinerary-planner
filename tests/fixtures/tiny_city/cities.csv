@@ -1,2 +1,5 @@
-slug,name,state,center_lat,center_lng,tagline,description,hero_image,catalog_id
-testville,Testville,Test State,10.0000,10.0000,A tiny city for tests,Hand-made fixture whose answers can be worked out on paper.,,
+slug,name,state,center_lat,center_lng,tagline,description,hero_image,catalog_id,region,top_rank
+testville,Testville,Test State,10.0000,10.0000,A tiny city for tests,Hand-made fixture whose answers can be worked out on paper.,,,Test Region,1
+riverton,Riverton,Test State,10.0000,10.3650,A nearby river town,About 40 km east of Testville: multi-city tests.,,,Test Region,2
+westford,Westford,Test State,10.0000,9.3600,A town to the west,About 70 km west of Testville but about 110 km from Riverton: tests the pairwise rule.,,,Test Region,3
+farville,Farville,Test State,11.5000,10.0000,Too far away,About 167 km north: never eligible for a shared trip.,,,Test Region,4

@@ -1,0 +1,3 @@
+city,name,use,lat,lng,reason
+mumbai,Colaba Causeway,wikidata,,,Wikipedia's point is coarse (in the sea off Colaba); Wikidata's lies on the street.
+rameswaram,Dhanushkodi,osm,,,Wikipedia points at the tip of the spit; Wikidata and OSM agree on the old town where visitors stop.

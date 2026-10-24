@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated": "2026-10-24T16:25:44",
+    "generated": "2026-10-25T01:34:35",
     "python": "3.11.9",
     "networkx": "3.6.1",
     "platform": "macOS-15.7.9-x86_64-i386-64bit",
@@ -28,8 +28,8 @@
     {
       "n": 10,
       "instances": 10,
-      "greedy_ms": 0.062711,
-      "dp_ms": 14.5969455,
+      "greedy_ms": 0.0314975,
+      "dp_ms": 5.657244,
       "dp_cells": 61105,
       "greedy_pct_of_dp": 93.54,
       "dp_strictly_better_pct": 70.0
@@ -37,8 +37,8 @@
     {
       "n": 20,
       "instances": 10,
-      "greedy_ms": 0.1491155,
-      "dp_ms": 31.2838445,
+      "greedy_ms": 0.0742395,
+      "dp_ms": 11.6630195,
       "dp_cells": 116655,
       "greedy_pct_of_dp": 91.84,
       "dp_strictly_better_pct": 90.0
@@ -46,8 +46,8 @@
     {
       "n": 30,
       "instances": 10,
-      "greedy_ms": 0.2314465,
-      "dp_ms": 42.033311999999995,
+      "greedy_ms": 0.11905750000000001,
+      "dp_ms": 17.7742475,
       "dp_cells": 172205,
       "greedy_pct_of_dp": 92.2,
       "dp_strictly_better_pct": 100.0
@@ -55,8 +55,8 @@
     {
       "n": 40,
       "instances": 10,
-      "greedy_ms": 0.3290885,
-      "dp_ms": 56.158256,
+      "greedy_ms": 0.16891,
+      "dp_ms": 24.815858,
       "dp_cells": 227755,
       "greedy_pct_of_dp": 91.82,
       "dp_strictly_better_pct": 90.0
@@ -64,8 +64,8 @@
     {
       "n": 60,
       "instances": 10,
-      "greedy_ms": 0.560438,
-      "dp_ms": 88.036975,
+      "greedy_ms": 0.27531,
+      "dp_ms": 37.841751,
       "dp_cells": 338855,
       "greedy_pct_of_dp": 92.51,
       "dp_strictly_better_pct": 100.0
@@ -75,9 +75,9 @@
     {
       "k": 4,
       "instances": 10,
-      "nn_ms": 0.0067755,
-      "two_opt_ms": 0.029926,
-      "held_karp_ms": 0.060505500000000004,
+      "nn_ms": 0.0034635,
+      "two_opt_ms": 0.015524,
+      "held_karp_ms": 0.031518500000000005,
       "nn_gap_pct": 4.9,
       "two_opt_gap_pct": 0.02,
       "two_opt_optimal_pct": 90.0
@@ -85,9 +85,9 @@
     {
       "k": 5,
       "instances": 10,
-      "nn_ms": 0.009064,
-      "two_opt_ms": 0.0625725,
-      "held_karp_ms": 0.1572195,
+      "nn_ms": 0.0046064999999999995,
+      "two_opt_ms": 0.032383999999999996,
+      "held_karp_ms": 0.08180699999999999,
       "nn_gap_pct": 5.48,
       "two_opt_gap_pct": 0.28,
       "two_opt_optimal_pct": 80.0
@@ -95,9 +95,9 @@
     {
       "k": 6,
       "instances": 10,
-      "nn_ms": 0.011532,
-      "two_opt_ms": 0.081012,
-      "held_karp_ms": 0.4164285,
+      "nn_ms": 0.005906,
+      "two_opt_ms": 0.041166,
+      "held_karp_ms": 0.2132265,
       "nn_gap_pct": 6.0,
       "two_opt_gap_pct": 0.12,
       "two_opt_optimal_pct": 90.0
@@ -105,9 +105,9 @@
     {
       "k": 7,
       "instances": 10,
-      "nn_ms": 0.0142595,
-      "two_opt_ms": 0.088424,
-      "held_karp_ms": 1.271984,
+      "nn_ms": 0.007397,
+      "two_opt_ms": 0.044900499999999996,
+      "held_karp_ms": 0.5498365,
       "nn_gap_pct": 4.11,
       "two_opt_gap_pct": 1.21,
       "two_opt_optimal_pct": 50.0
@@ -115,9 +115,9 @@
     {
       "k": 8,
       "instances": 10,
-      "nn_ms": 0.017025,
-      "two_opt_ms": 0.234213,
-      "held_karp_ms": 2.9320625,
+      "nn_ms": 0.0088005,
+      "two_opt_ms": 0.1231825,
+      "held_karp_ms": 1.448912,
       "nn_gap_pct": 12.76,
       "two_opt_gap_pct": 0.83,
       "two_opt_optimal_pct": 70.0
@@ -125,9 +125,9 @@
     {
       "k": 9,
       "instances": 10,
-      "nn_ms": 0.027103500000000003,
-      "two_opt_ms": 0.3845825,
-      "held_karp_ms": 11.1217455,
+      "nn_ms": 0.0105515,
+      "two_opt_ms": 0.144068,
+      "held_karp_ms": 3.6577405,
       "nn_gap_pct": 7.57,
       "two_opt_gap_pct": 1.97,
       "two_opt_optimal_pct": 50.0
@@ -135,9 +135,9 @@
     {
       "k": 10,
       "instances": 10,
-      "nn_ms": 0.024849,
-      "two_opt_ms": 0.4144955,
-      "held_karp_ms": 34.218176,
+      "nn_ms": 0.01221,
+      "two_opt_ms": 0.1509545,
+      "held_karp_ms": 9.08929,
       "nn_gap_pct": 4.48,
       "two_opt_gap_pct": 2.29,
       "two_opt_optimal_pct": 40.0
@@ -147,42 +147,58 @@
     {
       "v": 25,
       "instances": 10,
-      "ours_ms": 2.139379,
-      "networkx_ms": 4.116845,
+      "ours_ms": 0.598441,
+      "networkx_ms": 1.316535,
       "pairs_checked": 6250,
       "mismatches": 0
     },
     {
       "v": 50,
       "instances": 10,
-      "ours_ms": 5.773823,
-      "networkx_ms": 17.034686,
+      "ours_ms": 2.5442964999999997,
+      "networkx_ms": 5.2364975000000005,
       "pairs_checked": 25000,
       "mismatches": 0
     },
     {
       "v": 100,
       "instances": 10,
-      "ours_ms": 28.347948000000002,
-      "networkx_ms": 54.8703845,
+      "ours_ms": 11.046948,
+      "networkx_ms": 22.768861,
       "pairs_checked": 100000,
       "mismatches": 0
     },
     {
       "v": 200,
       "instances": 10,
-      "ours_ms": 108.01847000000001,
-      "networkx_ms": 223.244405,
+      "ours_ms": 45.885661,
+      "networkx_ms": 90.68190799999999,
       "pairs_checked": 400000,
       "mismatches": 0
     }
   ],
   "real_scenarios": {
-    "scenarios": 2520,
-    "dp_higher": 989,
-    "greedy_higher": 361,
-    "equal": 1170,
-    "mean_dp_gain_pct": 1.14,
-    "grid": "4 cities x start dates Mon-Sun x 1-3 days x budget {none, 300, 600} (+/- transport) x interests {none, history, spirituality} x pace {balanced, relaxed}; 09:00-19:00"
+    "scenarios": 648,
+    "dp_higher": 126,
+    "greedy_higher": 3,
+    "equal": 519,
+    "mean_dp_gain_pct": 0.68,
+    "max_visits_more_stops": 0,
+    "max_visits_same_stops": 642,
+    "cities": [
+      "agra",
+      "delhi",
+      "varanasi",
+      "jaipur",
+      "ayodhya",
+      "tirupati",
+      "mumbai",
+      "calangute",
+      "amritsar",
+      "udaipur",
+      "haridwar",
+      "rishikesh"
+    ],
+    "grid": "12 highest-ranked ready cities x 3 start days x 1-3 days x budget {none, 300} x interests {none, history, spirituality}; 09:00-19:00 with lunch"
   }
 }

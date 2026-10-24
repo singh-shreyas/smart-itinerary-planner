@@ -3,6 +3,7 @@
     python scripts/build_city_dataset.py fetch    # query the sources -> data/curation/source_snapshot.json
     python scripts/build_city_dataset.py build    # snapshot + curation -> data/*.csv rows for those cities
     python scripts/build_city_dataset.py report   # print what needs a human look (coordinate disagreements, ...)
+    python scripts/build_city_dataset.py images   # free-licence photos + data/image_credits.csv
 
 Inputs (both reviewed by a person):
     data/catalog/top50.csv               the team's Top-50 destination list (city + famous attractions)
@@ -43,6 +44,10 @@ DATA = os.path.join(ROOT, "data")
 CURATION = os.path.join(DATA, "curation")
 SNAPSHOT = os.path.join(CURATION, "source_snapshot.json")
 ORIGINAL_CITIES = {"delhi", "agra", "jaipur", "varanasi"}
+ORIGINAL_CENTRES = {"delhi": {"lat": 28.6139, "lng": 77.2090, "title": "Delhi"},
+                    "agra": {"lat": 27.1767, "lng": 78.0081, "title": "Agra"},
+                    "jaipur": {"lat": 26.9124, "lng": 75.7873, "title": "Jaipur"},
+                    "varanasi": {"lat": 25.3176, "lng": 82.9739, "title": "Varanasi"}}
 WIKI = "https://en.wikipedia.org/w/api.php"
 WIKIDATA = "https://www.wikidata.org/w/api.php"
 NOMINATIM = "https://nominatim.openstreetmap.org/search"
@@ -73,6 +78,20 @@ def slugify(text):
     text = text.lower().replace("&", "and")
     text = re.sub(r"[’'`().,]", "", text)
     return re.sub(r"[^a-z0-9]+", "-", text).strip("-")
+
+
+def food_rows():
+    """data/curation/food_shopping.csv in the same shape as attraction_titles.csv rows (status 'extra')."""
+    path = os.path.join(CURATION, "food_shopping.csv")
+    if not os.path.exists(path):
+        return []
+    rows = []
+    for r in read_rows(path):
+        rows.append({"city": r["city"], "catalog_name": "", "name": r["name"], "wiki_title": r["wiki_title"],
+                     "osm_query": "", "place_type": r["place_type"], "status": "extra", "access": "", "access_note": "",
+                     "categories": r["categories"], "cuisine": r.get("cuisine", ""),
+                     "vegetarian": r.get("vegetarian") or "unknown"})
+    return rows
 
 
 # --------------------------------------------------------------------------- fetch
@@ -176,7 +195,7 @@ def fetch():
                                     "qid": page.get("pageprops", {}).get("wikibase_item"),
                                     "image": page.get("pageimage")}
 
-    rows = [r for r in curation if r["status"] in ("map", "extra", "osm")]
+    rows = [r for r in curation if r["status"] in ("map", "extra", "osm")] + food_rows()
     titles = sorted({r["wiki_title"] for r in rows if r["wiki_title"]})
     print(f"{len(titles)} articles ...")
     pages = wiki_query(titles, "coordinates|pageprops|description|extracts|pageimages")
@@ -186,7 +205,7 @@ def fetch():
     for r in rows:
         key = f"{r['city']}|{r['name']}"
         old = snapshot["attractions"].get(key, {})
-        city = snapshot["cities"][r["city"]]
+        city = snapshot["cities"].get(r["city"]) or ORIGINAL_CENTRES[r["city"]]
         centre = [city["lat"], city["lng"]]
         entry = {"city": r["city"], "name": r["name"], "status": r["status"]}
         if r["wiki_title"]:
@@ -238,7 +257,7 @@ def fetch():
     for slug, entries in sorted(by_city.items()):
         if all("osm_tags" in e for e in entries):
             continue
-        city = snapshot["cities"][slug]
+        city = snapshot["cities"].get(slug) or ORIGINAL_CENTRES[slug]
         far = max(haversine_km(city["lat"], city["lng"], *(e.get("wiki_coords") or e.get("wikidata_coords")
                                                            or [city["lat"], city["lng"]])) for e in entries)
         tags = overpass_tags({e["qid"] for e in entries}, [city["lat"], city["lng"]], far + 3)
@@ -361,7 +380,12 @@ ATTRACTION_FIELDS = ["city", "slug", "name", "lat", "lng", "coord_source", "cate
                      "description"]
 
 
+ORIGINAL_SLUGS_CACHE = set()
+
+
 def build():
+    ORIGINAL_SLUGS_CACHE.clear()
+    ORIGINAL_SLUGS_CACHE.update(original_slugs())
     with open(SNAPSHOT, encoding="utf-8") as f:
         snapshot = json.load(f)
     curation = read_rows(os.path.join(CURATION, "attraction_titles.csv"))
@@ -372,11 +396,9 @@ def build():
     if os.path.exists(os.path.join(CURATION, "coordinate_review.csv")):
         overrides = {f"{r['city']}|{r['name']}": r for r in read_rows(os.path.join(CURATION, "coordinate_review.csv"))}
 
-    used_slugs = set()
-    for name in ("attractions.csv", "start_points.csv"):
-        for r in read_rows(os.path.join(DATA, name)):
-            if r["city"] in ORIGINAL_CITIES:
-                used_slugs.add(r["slug"])
+    city_names = {c["slug"]: c["name"] for c in cities_cur}
+    city_names.update({slug: info["title"] for slug, info in ORIGINAL_CENTRES.items()})
+    used_slugs = set(original_slugs())
 
     def unique_slug(base, city):
         slug = base if base not in used_slugs else f"{base}-{city}"
@@ -404,7 +426,7 @@ def build():
             new_starts.append({"city": slug, "slug": unique_slug(slugify(label) + "-start", slug), "name": label,
                                "lat": f"{s['lat']:.5f}", "lng": f"{s['lng']:.5f}", "coord_source": s["source"]})
 
-    for r in curation:
+    for r in curation + food_rows():
         if r["status"] not in ("map", "osm", "extra"):
             continue
         key = f"{r['city']}|{r['name']}"
@@ -445,7 +467,7 @@ def build():
                 description = description[:417].rsplit(" ", 1)[0] + "…"
             description_source = "wikipedia"
         else:
-            description = (f"Listed among the best-known sights of {next(c['name'] for c in cities_cur if c['slug'] == r['city'])} "
+            description = (f"Listed among the best-known sights of {city_names[r['city']]} "
                            f"in our team's destination catalog. Location from OpenStreetMap; no encyclopedia summary is available.")
             description_source = "catalog"
         slug = unique_slug(slugify(r["name"].split(" (")[0]), r["city"])
@@ -459,7 +481,8 @@ def build():
             "in_team_catalog": "yes" if r["status"] != "extra" else "no", "data_status": "estimate",
             "wiki_title": (entry.get("title") or "").replace(" ", "_"), "wikidata": entry.get("qid") or "",
             "place_type": r["place_type"], "access": r["access"] or "road", "access_note": r["access_note"],
-            "cuisine": "", "vegetarian": "unknown", "description_source": description_source,
+            "cuisine": r.get("cuisine", ""), "vegetarian": r.get("vegetarian") or "unknown",
+            "description_source": description_source,
             "description": description})
         for day in range(7):
             for o, c in hours.get(day, []):
@@ -488,6 +511,18 @@ def compress_hours(rows):
     return out
 
 
+def is_original(row):
+    """A hand-made row of the four original cities (not something this script generated for them)."""
+    return row["city"] in ORIGINAL_CITIES and (row.get("description_source") or "project") == "project"
+
+
+def original_slugs():
+    """Slugs of the original cities' hand-made attractions and start points."""
+    slugs = {r["slug"] for r in read_rows(os.path.join(DATA, "attractions.csv")) if is_original(r)}
+    slugs |= {r["slug"] for r in read_rows(os.path.join(DATA, "start_points.csv")) if r["city"] in ORIGINAL_CITIES}
+    return slugs
+
+
 def write_merged(name, new_rows, key=None, fields=None):
     """Keep the original four cities' rows as they are; replace every other city's rows with new_rows."""
     path = os.path.join(DATA, name)
@@ -496,7 +531,31 @@ def write_merged(name, new_rows, key=None, fields=None):
         old_fields = reader.fieldnames
         old = list(reader)
     city_key = "slug" if key == "slug" else "city"
-    kept = [r for r in old if r[city_key] in ORIGINAL_CITIES]
+    # Keep only the original four cities' hand-made rows; everything this script generates (including
+    # food and shopping places in those cities) is rebuilt below, so re-running never duplicates anything.
+    if key == "slug":
+        kept = [r for r in old if r["slug"] in ORIGINAL_CITIES]
+    elif name == "attractions.csv":
+        kept = [r for r in old if is_original(r)]
+    else:
+        hand_made = ORIGINAL_SLUGS_CACHE or original_slugs()
+        kept = [r for r in old if r["city"] in ORIGINAL_CITIES and r["slug"] in hand_made]
+    if name == "cities.csv":
+        # Region and Top-50 rank for the original cities come from the same catalog list.
+        top50 = {r["destination"].lower(): r for r in read_rows(os.path.join(DATA, "catalog", "top50.csv"))}
+        for r in kept:
+            info = top50.get(r["name"].lower())
+            if info:
+                r["region"] = r.get("region") or info["region"]
+                r["top_rank"] = r.get("top_rank") or info["rank"]
+    if name == "attractions.csv":
+        # The original cities' values were chosen by hand: say so explicitly in every provenance column.
+        for r in kept:
+            for column in ("rating_source", "popularity_source", "duration_source", "fee_source", "hours_source"):
+                r[column] = r.get(column) or "illustrative"
+            r["access"] = r.get("access") or "road"
+            r["vegetarian"] = r.get("vegetarian") or "unknown"
+            r["description_source"] = r.get("description_source") or "project"
     fields = fields or list(dict.fromkeys(old_fields + [k for r in new_rows for k in r]))
     with open(path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fields, lineterminator="\n", extrasaction="ignore")
@@ -524,11 +583,88 @@ def report():
             print(f"  {key:52} spread {spread:6.1f} km | " + " | ".join(parts) + (f" | osm name: {osm['name']}" if osm else ""))
 
 
+# --------------------------------------------------------------------------- images
+
+def shrink(path, width):
+    """Wikimedia serves thumbnails in fixed size steps (a 640 px request may return 960 px at high quality).
+    On macOS, resize to `width` with the built-in `sips` tool at normal JPEG quality, keeping the
+    result only if it is smaller. Elsewhere the file is left as downloaded."""
+    import shutil
+    import subprocess
+    if not shutil.which("sips") or not path.lower().endswith((".jpg", ".jpeg")):
+        return
+    tmp = path + ".small.jpg"
+    result = subprocess.run(["sips", "-Z", str(width), "-s", "format", "jpeg", "-s", "formatOptions", "normal",
+                             path, "--out", tmp], capture_output=True)
+    if result.returncode == 0 and os.path.getsize(tmp) < os.path.getsize(path):
+        os.replace(tmp, path)
+    elif os.path.exists(tmp):
+        os.remove(tmp)
+
+
+def images():
+    """Free-licence lead photos (Wikipedia pageimages, pilicense=free) for the new cities.
+
+    Attraction photos are 640 px wide and city banners 1280 px, which keeps the repository small.
+    Author and licence go to data/image_credits.csv (shown on the About page). Existing files are kept.
+    """
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from fetch_wikimedia import image_info
+    from net import download
+    with open(SNAPSHOT, encoding="utf-8") as f:
+        snapshot = json.load(f)
+    attractions = [r for r in read_rows(os.path.join(DATA, "attractions.csv")) if not is_original(r)]
+    by_title = {e.get("title"): e for e in snapshot["attractions"].values() if e.get("title")}
+    old = read_rows(os.path.join(DATA, "image_credits.csv"))
+    hand_made = original_slugs() | {"hero"}
+    credits = [r for r in old if r["city"] in ORIGINAL_CITIES and r["slug"] in hand_made]
+    jobs = []
+    for slug, city in sorted(snapshot["cities"].items()):
+        if city.get("image"):
+            jobs.append((slug, "hero", city["image"], 1280, f"images/cities/{slug}"))
+    for r in attractions:
+        entry = by_title.get(r["wiki_title"].replace("_", " "))
+        if entry and entry.get("image"):
+            jobs.append((r["city"], r["slug"], entry["image"], 640, f"images/attractions/{r['city']}/{r['slug']}"))
+    previous = {(r["city"], r["slug"]): r for r in old}
+    for city, slug, file_name, width, stem in jobs:
+        done = previous.get((city, slug))
+        if done and os.path.exists(os.path.join(ROOT, "static", done["image_path"])):
+            credits.append(done)                      # already downloaded and credited: no network call
+            continue
+        try:
+            info = image_info(file_name, width)
+        except Exception as exc:
+            print(f"  {city}/{slug}: {exc}")
+            continue
+        if info is None or not info["mime"].startswith("image/") or info["mime"] == "image/svg+xml":
+            print(f"  {city}/{slug}: no usable raster image")
+            continue
+        ext = os.path.splitext(urllib.parse.urlparse(info["url"]).path)[1].lower() or ".jpg"
+        rel = stem + ext
+        target = os.path.join(ROOT, "static", rel)
+        os.makedirs(os.path.dirname(target), exist_ok=True)
+        if not os.path.exists(target):
+            download(info["url"], target)
+            shrink(target, width)
+            time.sleep(1.0)
+        credits.append({"city": city, "slug": slug, "image_path": rel, "credit": info["artist"],
+                        "license": info["license"], "source_url": info["page"]})
+        print(f"  {rel}  ({info['license']})")
+        time.sleep(0.3)
+    with open(os.path.join(DATA, "image_credits.csv"), "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["city", "slug", "image_path", "credit", "license", "source_url"],
+                                lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(credits)
+    print(f"{len(credits)} credits written")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("stage", choices=["fetch", "build", "report"])
+    parser.add_argument("stage", choices=["fetch", "build", "report", "images"])
     args = parser.parse_args()
-    {"fetch": fetch, "build": build, "report": report}[args.stage]()
+    {"fetch": fetch, "build": build, "report": report, "images": images}[args.stage]()
     return 0
 
 

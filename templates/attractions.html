@@ -10,24 +10,40 @@
         {{ ui.image(current.hero_image, '', eager=True, width=1920, height=900) }}
         <div class="w-100 d-flex flex-wrap justify-content-between align-items-end gap-3">
           <div>
-            <span class="eyebrow on-dark">{{ current.state }}</span>
+            <span class="eyebrow on-dark">{{ current.state }}{% if current.region %} · {{ current.region }}{% endif %}</span>
             <h1>{{ current.name }}</h1>
             <p>{{ current.tagline }} · {{ current.attraction_count }} attractions</p>
           </div>
-          <a class="btn btn-brand" href="{{ url_for('planner.plan', city=current.slug) }}"><i class="bi bi-compass me-1"></i>Plan a trip to {{ current.name }}</a>
+          {% if readiness and readiness[current.slug].status != 'not_ready' %}
+            <a class="btn btn-brand" href="{{ url_for('planner.plan', city=current.slug) }}"><i class="bi bi-compass me-1"></i>Plan a trip to {{ current.name }}</a>
+          {% endif %}
         </div>
       </div>
+      {% if readiness and readiness[current.slug].status != 'ready' %}
+        <div class="notice mt-3"><i class="bi bi-exclamation-circle"></i>
+          <p>{{ ui.readiness_badge(readiness[current.slug]) }} Only {{ readiness[current.slug].reachable }} of {{ readiness[current.slug].total }}
+            attractions here can be reached by road in our data; the others are on treks, islands or have no reliable location.</p></div>
+      {% endif %}
     {% else %}
       <span class="eyebrow">Attractions</span>
       <h1>Every place we can plan</h1>
-      <p class="lead">Search and filter attractions across all cities. Open any card for weekly opening hours and details.</p>
+      <p class="lead">Search and filter {{ attractions|length }} attractions across {{ cities|length }} destinations. Open any card for weekly
+        opening hours and where each detail comes from.</p>
     {% endif %}
-    <nav class="pill-nav mt-4" aria-label="Choose a city">
-      <a href="{{ url_for('main.attractions') }}" class="{{ 'active' if not current }}">All cities</a>
-      {% for c in cities %}
-        <a href="{{ url_for('main.attractions', city=c.slug) }}" class="{{ 'active' if current and current.slug == c.slug }}">{{ c.name }}</a>
-      {% endfor %}
-    </nav>
+    <form class="city-picker mt-4" method="get" action="{{ url_for('main.attractions') }}">
+      <label class="form-label small mb-1" for="city-pick">Destination</label>
+      <div class="d-flex gap-2">
+        <select class="form-select" id="city-pick" name="city" data-autosubmit>
+          <option value="">All destinations</option>
+          {% for region, items in regions %}
+            <optgroup label="{{ region }}">
+              {% for c in items %}<option value="{{ c.slug }}" {% if current and current.slug == c.slug %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+            </optgroup>
+          {% endfor %}
+        </select>
+        <button class="btn btn-outline-brand js-hide" type="submit">Show</button>
+      </div>
+    </form>
   </div>
 </section>
 
@@ -41,6 +57,19 @@
           <input class="form-control" type="search" name="q" id="filter-q" value="{{ query }}" placeholder="Search by name or description" aria-label="Search attractions">
         </div>
       </div>
+      <div class="col-6 col-lg-3">
+        <select class="form-select" name="category" id="filter-category" aria-label="Interest">
+          <option value="">Every interest</option>
+          {% for group, items in category_groups %}
+            {% set available = items|selectattr('slug', 'in', present)|list %}
+            {% if available %}
+              <optgroup label="{{ group }}">
+                {% for c in available %}<option value="{{ c.slug }}" {% if category == c.slug %}selected{% endif %}>{{ c.name }} ({{ present[c.slug] }})</option>{% endfor %}
+              </optgroup>
+            {% endif %}
+          {% endfor %}
+        </select>
+      </div>
       <div class="col-6 col-lg-2">
         <select class="form-select" name="open_on" id="filter-day" aria-label="Open on">
           <option value="">Open any day</option>
@@ -52,17 +81,9 @@
           {% for key, (label, _) in sorts.items() %}<option value="{{ key }}" {% if key == sort %}selected{% endif %}>{{ label }}</option>{% endfor %}
         </select>
       </div>
-      <div class="col-12 col-lg-4 d-flex align-items-center justify-content-lg-end gap-3">
-        <span class="text-muted small" aria-live="polite"><strong class="text-body tabular" id="result-count">{{ shown|length }}</strong> of {{ attractions|length }} shown</span>
+      <div class="col-6 col-lg-1 d-flex align-items-center justify-content-lg-end gap-2">
+        <span class="text-muted small text-nowrap" aria-live="polite"><strong class="text-body tabular" id="result-count">{{ shown|length }}</strong>/{{ attractions|length }}</span>
         <button class="btn btn-outline-brand btn-sm js-hide" type="submit">Apply</button>
-      </div>
-      <div class="col-12">
-        <div class="d-flex flex-wrap gap-2 pt-1" role="radiogroup" aria-label="Category">
-          <span class="chip-toggle"><input type="radio" name="category" id="cat-all" value="" {% if not category %}checked{% endif %}><label for="cat-all">All</label></span>
-          {% for c in categories %}
-            <span class="chip-toggle"><input type="radio" name="category" id="cat-{{ c.slug }}" value="{{ c.slug }}" {% if category == c.slug %}checked{% endif %}><label for="cat-{{ c.slug }}"><i class="bi {{ c.icon }}"></i>{{ c.name }}</label></span>
-          {% endfor %}
-        </div>
       </div>
     </form>
   </div>
@@ -72,8 +93,9 @@
   <div class="container">
     <div class="notice mb-4">
       <i class="bi bi-info-circle" aria-hidden="true"></i>
-      <p><strong>Illustrative data.</strong> Opening hours, entry fees (Indian adult), ratings and visit durations are plausible estimates for this
-        project, not verified facts. Check official sources before you travel.</p>
+      <p><strong>Know your data.</strong> Locations come from Wikipedia, Wikidata or OpenStreetMap. Opening hours, entry fees and visit
+        lengths are <em>estimates</em> (typical for that kind of place) unless marked “OSM”; ratings exist only for the four original cities
+        and are illustrative. Popularity comes from Wikipedia page views. Check official sources before you travel.</p>
     </div>
 
     <div class="row g-4" id="attraction-grid">
@@ -81,14 +103,14 @@
         <div class="col-sm-6 col-lg-4 attraction-col" {% if a.id not in shown %}hidden{% endif %}
              data-id="{{ a.id }}" data-text="{{ (a.name ~ ' ' ~ a.description ~ ' ' ~ a.city_name)|lower }}"
              data-categories="{{ a.categories|join(' ') }}" data-days="{{ a.open_weekdays()|join('') }}"
-             data-popularity="{{ a.popularity }}" data-rating="{{ a.rating }}" data-duration="{{ a.visit_min }}"
+             data-popularity="{{ a.popularity }}" data-rating="{{ a.rating if a.rating is not none else -1 }}" data-duration="{{ a.visit_min }}"
              data-fee="{{ a.fee }}" data-name="{{ a.name|lower }}">
           <article class="card-soft attr-card lift position-relative">
             <div class="attr-media">
-              {{ ui.image(a.image, a.name, width=960, height=720) }}
+              {{ ui.image(a.image, a.name, width=640, height=480) }}
               <div class="attr-badges">
                 <div class="d-flex flex-wrap gap-1">{{ ui.category_chips(a, category_names) }}</div>
-                {% if a.fee == 0 %}<span class="chip chip-green">Free</span>{% endif %}
+                {% if a.access == 'no_road' %}<span class="chip chip-danger">No road</span>{% elif a.fee == 0 %}<span class="chip chip-green">Free</span>{% endif %}
               </div>
             </div>
             <div class="attr-body">
@@ -100,10 +122,10 @@
                   data-id="{{ a.id }}" aria-haspopup="dialog">{{ a.name }}<span class="visually-hidden">: opening hours and details</span></button></h3>
               <p class="attr-desc">{{ a.description }}</p>
               <div class="attr-facts">
-                <span><i class="bi bi-hourglass-split"></i>{{ a.visit_min|duration }} visit</span>
-                <span><i class="bi bi-ticket-perforated"></i>{{ 'Free entry' if a.fee == 0 else a.fee|inr }}</span>
+                <span><i class="bi bi-hourglass-split"></i>{{ a.visit_min|duration }}{{ ui.estimate_mark(a.duration_source, 'Visit length') }}</span>
+                <span><i class="bi bi-ticket-perforated"></i>{{ 'Free entry' if a.fee == 0 else a.fee|inr }}{{ ui.estimate_mark(a.fee_source, 'Entry fee') }}</span>
                 <span><i class="bi bi-calendar3"></i>{{ ui.open_days(a) }}</span>
-                <span><i class="bi bi-clock"></i>{{ a.hours_label(a.open_weekdays()[0]) }}</span>
+                <span><i class="bi bi-clock"></i>{{ a.hours_label(a.open_weekdays()[0]) }}{{ ui.estimate_mark(a.hours_source, 'Opening hours') }}</span>
               </div>
             </div>
           </article>
@@ -114,7 +136,7 @@
     <div class="card-soft empty-state mt-2 {{ '' if not shown and attractions else 'd-none' }}" id="empty-state">
       <div class="empty-icon"><i class="bi bi-funnel"></i></div>
       <h3>No attractions match these filters</h3>
-      <p class="mb-4">Try another category or day, or clear the search.</p>
+      <p class="mb-4">Try another interest or day, or clear the search.</p>
       <a class="btn btn-outline-brand" id="clear-filters" href="{{ url_for('main.attractions', city=current.slug if current else None) }}">Clear filters</a>
     </div>
   </div>
@@ -122,9 +144,9 @@
 
 <div class="modal fade" id="attr-modal" tabindex="-1" aria-labelledby="attr-modal-title" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content" style="border-radius: var(--radius-xl); border: 0; overflow: hidden;">
-      <div style="aspect-ratio: 16/7; background: var(--bg-alt); position: relative;">
-        <img id="attr-modal-img" src="{{ url_for('static', filename='images/placeholder.svg') }}" alt="" style="width:100%;height:100%;object-fit:cover;">
+    <div class="modal-content attr-modal-content">
+      <div class="attr-modal-media">
+        <img id="attr-modal-img" src="{{ url_for('static', filename='images/placeholder.svg') }}" alt="">
         <button type="button" class="btn-close bg-white rounded-circle p-2 position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body p-4">
@@ -137,15 +159,17 @@
         </div>
         <div class="d-flex flex-wrap gap-2 mb-3" id="attr-modal-chips"></div>
         <p id="attr-modal-desc"></p>
+        <div class="notice d-none mb-3" id="attr-modal-access"><i class="bi bi-sign-stop"></i><p></p></div>
         <div class="row g-4">
-          <div class="col-md-7">
+          <div class="col-md-6">
             <h3 class="h6 small-caps text-muted">Weekly opening hours</h3>
             <table class="table table-soft table-sm"><tbody id="attr-modal-hours"></tbody></table>
           </div>
-          <div class="col-md-5">
+          <div class="col-md-6">
             <h3 class="h6 small-caps text-muted">At a glance</h3>
             <ul class="breakdown" id="attr-modal-facts"></ul>
-            <p class="small text-muted mt-3 mb-0" id="attr-modal-status"></p>
+            <h3 class="h6 small-caps text-muted mt-4">Where this comes from</h3>
+            <ul class="breakdown small" id="attr-modal-sources"></ul>
           </div>
         </div>
       </div>

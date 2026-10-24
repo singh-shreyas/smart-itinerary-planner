@@ -1,15 +1,16 @@
 # Smart Itinerary Planner and Travel Optimization System
 
-Plan realistic, day-by-day sightseeing itineraries for Indian cities, and compare the algorithms behind them.
-Pick a city, dates, daily hours, an optional budget, interests and pace. The planner chooses the most valuable
-attractions for each day, orders them to cut travel, respects every opening hour and the budget, and explains every
-attraction it leaves out.
+Plan realistic, day-by-day sightseeing itineraries for **50 Indian destinations** — on their own or combined with nearby
+cities — and compare the algorithms behind them. Pick a base city (plus nearby cities if you like), dates, daily hours,
+an optional budget, interests, meals and pace. The planner chooses the most valuable places for each day, schedules lunch
+and dinner, orders the stops to cut travel, respects every opening hour and the budget, explains every place it leaves
+out and every hour it leaves unused, and gives each plan a reproducibility fingerprint.
 
 ADA (Analysis and Design of Algorithms) project, B.Tech CSE (Section B), Faculty of Technology, University of Delhi.
 Team: **Shreyas Singh** and **Priyanshi Gupta**.
 
 Stack (as in our synopsis): **Python · Flask · SQLite · HTML/CSS/JavaScript · Bootstrap 5 · Jinja2**, with
-**NetworkX used only to cross-check** our Dijkstra. Maps use **Leaflet + OpenStreetMap** (free, no API key).
+**NetworkX used only to cross-check** our Dijkstra. Maps use **Leaflet + OpenStreetMap** (free, no API key). No paid API is used.
 
 ---
 
@@ -27,57 +28,69 @@ python app.py                          # start the app
 
 Open **http://127.0.0.1:5001** in your browser. Stop the server with `Ctrl+C`.
 
-* On first start the SQLite database (`instance/itinerary.db`) is **built automatically** from the CSV files in `data/`.
+* On start the SQLite database (`instance/itinerary.db`) is **built automatically** from the CSV files in `data/` — and
+  **rebuilt safely** whenever the data or the schema changed (see *Safe database updates* below).
 * Port **5001** is used because macOS AirPlay Receiver often occupies port 5000.
 * Equivalent Flask command: `flask --app app run --debug --port 5001`.
-* Everything except map tiles works offline: Bootstrap, Leaflet, Chart.js, icons and fonts are stored in `static/vendor/` and `static/fonts/`.
+* Everything except map tiles works offline: Bootstrap, Leaflet, Chart.js, icons and fonts are in `static/vendor/` and `static/fonts/`.
 
-### Rebuild the database
+### Safe database updates
 
 ```bash
-python -m database.seed_data           # validates data/*.csv and rebuilds instance/itinerary.db
+python -m database.seed_data --check   # schema version, data fingerprint, "up to date" or why a rebuild is needed
+python -m database.seed_data           # validate data/*.csv and rebuild instance/itinerary.db
 flask --app app init-db                # same, through the Flask CLI
-python -m database.seed_data --strict  # also refuses rows marked "illustrative" (for when data is verified)
+python -m database.seed_data --strict  # also refuse rows marked "illustrative" and any warning
 ```
 
-The seed script refuses to build the database if a row is invalid (closing before opening, a visit that never fits its
-hours, an edge between two cities, coordinates far from the city, unknown categories, ...), and lists every problem.
+The database has a `meta` table with the **schema version** and a **SHA-256 fingerprint of the CSV files** it was built
+from. A rebuild (automatic on start-up, or by hand) never loses data:
+
+1. every CSV is validated first — a bad row stops the build and the old database is left untouched;
+2. the new database is written to a temporary file;
+3. every table that is *not* reference data (for example saved trips or settings added later) is copied across with its rows;
+4. the old file is copied to `instance/backups/` (newest 5 kept);
+5. the new file is swapped in atomically.
 
 ### Run the tests
 
 ```bash
-python -m pytest            # all tests (about 10 seconds)
+python -m pytest            # all tests
 python -m pytest -v         # one line per test
-python -m pytest -k dijkstra
+python -m pytest -k meals
 ```
 
-Latest run: **116 passed**. The tests cover:
+Latest run: **223 passed** (about 8 seconds). Tests use temporary databases built from `tests/fixtures/tiny_city/` (four hand-made
+cities whose answers can be worked out on paper) and from `data/`; they never touch `instance/itinerary.db`.
 
 | File | What it checks |
 |---|---|
-| `tests/test_dijkstra.py` | hand-worked shortest paths, unreachable nodes, directed edges, negative weights rejected, **equality with NetworkX** on 60 random graphs and on every real city |
-| `tests/test_selection.py` | the **greedy trap** (Greedy 90 vs DP 120), **DP = brute force** on 200 random instances, DP ≥ Greedy on 300 instances, limits respected, zero budget, merge sort, score formula |
-| `tests/test_routing.py` | Nearest Neighbour, **2-opt never worse than NN**, 2-opt untangles a crossing, 2-opt with a feasibility rule, **Held–Karp = brute force** over all permutations, feasible insertion |
-| `tests/test_activity_selection.py` | the textbook 11-activity example, closed weekdays, split opening hours, last entry, ride back by day end, no overlapping visits |
-| `tests/test_database.py` | schema constraints and foreign keys, seeding counts, invalid CSV rows refused, unreachable places reported, real data fully connected |
-| `tests/test_itinerary.py` | multi-day plans with no repeats, budgets (₹0, small, none), unreachable places, evening-only stops, empty days with reasons, determinism, **120 random real-data trips that must pass the validator** |
-| `tests/test_routes.py` | every page renders, invalid input → HTTP 400 with a field message (never 500), unknown pages → 404, JSON API |
-| `tests/test_validator.py` | the independent validator catches tampered plans (outside hours, duplicates, wrong travel, overrun, budget) |
-
-Tests use a temporary database built from `tests/fixtures/tiny_city/` (a hand-made city whose answers can be worked out
-on paper) and from `data/`; they never touch `instance/itinerary.db`.
+| `test_dijkstra.py` | hand-worked shortest paths, unreachable nodes, directed edges, the 10-minute planning table, **equality with NetworkX** |
+| `test_selection.py` | the greedy trap, **DP = brute force** on 200 instances, DP ≥ Greedy, limits, merge sort, score formula |
+| `test_strategies.py` | value-vs-count and greedy-trap instances where the three strategies differ, a case where they coincide, **Max visits = brute-force count** on 150 instances, each selector best at its own objective on identical instances, scorecard normalisation, **infeasible plans never recommended**, honest ties |
+| `test_routing.py` | Nearest Neighbour, 2-opt never worse than NN, Held–Karp = brute force, feasible insertion |
+| `test_activity_selection.py` | textbook activity selection, closed weekdays, split hours, last entry, ride back by day end |
+| `test_meals.py` | when a meal is needed, lunch inside its window, meal at a nearby listed food place (as its own travel leg), generic break when suggestions are off, meals near the base after returning, a long visit never swallows lunch, meal time reserved in the knapsack, the validator catches broken meals |
+| `test_time_window.py` | a longer day gives more stops, a later end changes nothing when everything is closed (and the unused time is explained), stops never decrease as the day grows (12:00–23:00, all strategies), no special case for 23:00, the time breakdown adds up exactly |
+| `test_multicity.py` | distances and nearby lists, **pairwise 100 km rule**, invalid groups refused, combined pool with intercity legs, **missing road link → labelled estimate (never zero)**, day grouping, Agra + Mathura + Vrindavan on real data |
+| `test_categories.py` | category hierarchy, neutral prior for unrated places, interests change the score, food/shopping opt-in, "only matching interests", limited-data notes, shopping time and spend, vegetarian filter |
+| `test_rounding.py` | the round-up rule, display format, every leg a multiple of 10 that agrees with the clock times, clock times not rounded |
+| `test_determinism.py` | same trip twice → identical plan (all strategies, multi-city, meals), **same plan under three different `PYTHONHASHSEED`s**, tie-breaking by id, input order irrelevant, fingerprints separate data changes |
+| `test_database.py`, `test_migrations.py` | schema constraints, invalid rows refused, unique slugs across cities, every value has a source, Top-50 list = database, **upgrade from an old database keeps user tables and makes a backup**, up-to-date database untouched, failed rebuild leaves the old file intact, backup rotation |
+| `test_itinerary.py`, `test_validator.py`, `test_routes.py` | multi-day plans, budgets, unreachable places, random real-data trips that must pass the validator; the validator catches tampered plans; every page renders (incl. multi-city), bad input → HTTP 400 with a message, JSON API |
 
 ### Run the benchmarks
 
 ```bash
-python scripts/benchmark.py            # about 3 minutes; writes results/benchmarks.json and .csv
+python scripts/benchmark.py            # about 30 seconds; writes results/benchmarks.json and .csv
 python scripts/benchmark.py --quick    # fewer seeds
 ```
 
-Seeded synthetic instances (`random.Random(seed)`) measure how runtime grows with input size, and a sweep of 2,520
-real-data trips counts how often DP or Greedy produces the better final itinerary. Quality numbers are identical on
-every run; timings vary with the machine and its load. The comparison page charts this file, and nothing on that page
-is typed in by hand.
+Seeded synthetic instances (`random.Random(seed)`) measure how runtime grows with input size; a sweep of 648 real-data
+trips (the 12 highest-ranked plannable cities × 3 start days × 1–3 days × 2 budgets × 3 interest settings, with lunch)
+counts how often each strategy ends up ahead. Latest run: DP's itinerary scored higher than Greedy's in 126 trips, Greedy's
+in 3, equal in 519; Max visits never planned more stops than DP and planned fewer in 6 (selection-level guarantees do not
+survive routing, meals and repair). The comparison page charts this file; nothing on it is typed in by hand.
 
 ---
 
@@ -85,75 +98,156 @@ is typed in by hand.
 
 | Page | URL | What you can do |
 |---|---|---|
-| Home | `/` | Hero, quick plan form, destinations, how it works, the algorithms |
-| Cities | `/cities` | The four modelled cities + the searchable 200-destination team catalog |
-| Attractions | `/attractions?city=delhi` | Search, category and "open on" filters, sorting, details dialog with weekly hours |
-| Trip planner | `/plan` | City, start point, dates, daily hours, budget (± local transport), interests, pace, strategy, exclusions |
-| Itinerary | `/itinerary?...` | Day tabs, timeline with arrive/start/end/leave, travel legs (with Dijkstra "via" places), fees, daily time and budget breakdown, Leaflet map, DP / Greedy / Max-visits switch, "not included" reasons |
-| Compare | `/compare?...` | The same trip through every algorithm: whole itineraries, knapsack selection, routing vs the exact optimum, Dijkstra vs NetworkX, scaling charts |
-| About | `/about` | Problem, pipeline, algorithms with complexities, architecture, data sources, limitations, photo credits |
+| Home | `/` | Hero with quick plan, featured destinations, destinations by region, how it works, the algorithms |
+| Destinations | `/cities` | All 50 cities with search, region and data-level filters; nearby cities to combine; sights not plannable by road and why; the 200-destination catalog |
+| Attractions | `/attractions?city=delhi` | Destination picker, search, interest / "open on" filters, sorting; details dialog with weekly hours and the **source of every value** |
+| Trip planner | `/plan` | Base city, nearby cities (pairwise 100 km rule), start point, dates, daily hours, budget (± transport), 26 interests (prefer / only), lunch and dinner windows and lengths, meal-venue style, vegetarian only, shopping time and spend, pace, strategy, exclusions |
+| Itinerary | `/itinerary?...` | Day tabs; timeline with travel legs (local / intercity / estimated), visits and **meal breaks**; time breakdown (sightseeing, local and intercity travel, meals, waiting, buffer, unused) and **why the day ends early**; costs; Leaflet map; strategy switch; reasons for every place left out; reproducibility fingerprints |
+| Compare | `/compare?...` | Recommendation (or an honest tie), scorecard with raw values and subscores, time-use and value charts, trade-offs, each strategy's objective with live demos, the three selectors on identical knapsacks, routing vs the exact optimum, Dijkstra vs NetworkX, scaling charts |
+| About | `/about` | Problem, pipeline, algorithms, strategies, meals, food and shopping, multi-city rule, scoring, reproducibility, architecture, data sources with counts, default values, limitations, credits |
 
 Plans are a pure function of the URL (GET requests, deterministic), so any itinerary link can be refreshed or shared.
 
 JSON API: `/api/health`, `/api/cities`, `/api/cities/<slug>/attractions`, `/api/itinerary?...`, `/api/compare?...`.
 
 ```bash
-curl "http://127.0.0.1:5001/api/itinerary?city=delhi&days=2&start_date=2026-11-02&budget=600&transport=on"
+curl "http://127.0.0.1:5001/api/itinerary?city=agra&also=mathura,vrindavan&days=3&start_date=2026-11-02"
 ```
 
-Trip parameters: `city`, `start_date` (YYYY-MM-DD), `days` (1–5), `day_start`/`day_end` (HH:MM, at least 2 h apart),
-`budget` (₹, empty = no limit), `transport=on` (count local transport in the budget), `interests` (repeatable),
-`pace` (relaxed/balanced/packed), `start` (start point or attraction slug), `strategy` (dp/greedy/max_visits),
-`exclude` (comma-separated slugs). Missing optional values get sensible defaults.
+Trip parameters: `city` (base city), `also` (nearby cities, comma-separated), `start_date` (YYYY-MM-DD), `days` (1–5),
+`day_start`/`day_end` (HH:MM, at least 2 h apart), `budget` (₹, empty = no limit), `transport=on`, `interests`
+(repeatable), `interest_mode` (prefer/only), `lunch`/`dinner` (on/off) with `lunch_from`, `lunch_to`, `lunch_min` (and the
+same for dinner), `venues` (on/off), `venue_style` (street-food, cafe-bakery, casual, fine-dining, local-specialty),
+`veg=on`, `shop_min`, `shop_spend`, `pace` (relaxed/balanced/packed), `start`, `strategy` (dp/greedy/max_visits),
+`exclude`. Missing optional values get sensible defaults (lunch and dinner on).
 
 ---
 
 ## The algorithms
 
-All implemented by us in plain Python, one per file in `algorithms/`, with no Flask or SQLite imports, so each one can be
-tested on plain lists and dicts. No optimisation library is used. NetworkX appears only in `services/crosscheck.py`.
+All implemented by us in plain Python, one per file in `algorithms/`, with no Flask or SQLite imports. No optimisation
+library is used. NetworkX appears only in `services/crosscheck.py`.
 
 | Algorithm | File | Role in the system | Time | Space |
 |---|---|---|---|---|
-| Graph (adjacency list) | `algorithms/graph.py` | City road network: each place links to its 5 nearest places | O(V + E) | O(V + E) |
-| Dijkstra (binary heap) | `algorithms/dijkstra.py` | Shortest travel time between every pair of places (chains local links) | O((V+E) log V) per source; O(V(V+E) log V) all pairs | O(V²) table |
-| Merge sort + priority queues | `algorithms/sorting.py`, `heapq` | Ordering by score / closing time; heap inside Dijkstra; weakest-stop removal in repair | O(n log n); O(log n) per heap op | O(n) |
-| Greedy selection | `algorithms/greedy.py` | Strategy / baseline: best value per unit of time (and money) first | O(n log n) | O(n) |
-| Dynamic programming (0/1 knapsack, 2-D) | `algorithms/dynamic_programming.py` | Default strategy: best-value set within the day's minutes **and** budget | O(n·T·M) (pseudo-polynomial) | O(n·T·M) |
-| Nearest Neighbour | `algorithms/nearest_neighbor.py` | First route: always go to the closest unvisited stop | O(k²) | O(k) |
-| 2-opt local search | `algorithms/two_opt.py` | Improve a route by reversing segments; optional feasibility check | O(k³) per pass | O(k) |
-| Activity selection | `algorithms/activity_selection.py` | Earliest-closing-time-first ordering; "max visits" baseline; textbook version tested | O(n log n) | O(n) |
-| Feasible insertion | `algorithms/insertion.py` | Window-first route: insert stops (in closing-time order) where every opening window still holds | O(k³) | O(k) |
-| Held–Karp (bitmask DP) | `algorithms/held_karp.py` | Comparison only: the exact shortest tour, to measure NN and 2-opt gaps | O(2ᵏ·k²) | O(2ᵏ·k) |
-
-V = places, E = road links, n = candidate attractions, k = stops in a day, T and M = time and money units in the DP table.
+| Graph (adjacency list) | `graph.py` | Road network of a city or city group: each place links to its 5 nearest places, plus intercity links | O(V + E) | O(V + E) |
+| Dijkstra (binary heap) | `dijkstra.py` | Shortest travel time between every pair of places | O((V+E) log V) per source | O(V²) table |
+| Merge sort + priority queues | `sorting.py`, `heapq` | Ordering by score / closing time; heap inside Dijkstra; weakest-stop removal in repair | O(n log n) | O(n) |
+| Greedy selection | `greedy.py` | Strategy: best value per unit of time (and money) first | O(n log n) | O(n) |
+| Dynamic programming (0/1 knapsack, 2-D) | `dynamic_programming.py` | Default strategy: **maximum total value** within the day's minutes and budget | O(n·T·M) | O(n·T·M) |
+| Max visits (DP on the count) | `max_visits.py` | Strategy: **maximum number of places**, ties by value — the same DP with values `B + score` | O(n·T·M) | O(n·T·M) |
+| Nearest Neighbour | `nearest_neighbor.py` | First route: always go to the closest unvisited stop | O(k²) | O(k) |
+| 2-opt local search | `two_opt.py` | Improve a route by reversing segments; optional feasibility check | O(k³) per pass | O(k) |
+| Activity selection | `activity_selection.py` | Earliest-closing-time-first order for the window-first route; textbook version tested | O(n log n) | O(n) |
+| Cheapest feasible insertion | `insertion.py` | Window-first route, and the **fill step** that uses extra time | O(k²) per insertion | O(k) |
+| Held–Karp (bitmask DP) | `held_karp.py` | Comparison only: the exact shortest tour | O(2ᵏ·k²) | O(2ᵏ·k) |
 
 ### How they work together (the pipeline)
 
 `services/itinerary_generator.py`:
 
-1. **Once per city (cached):** load places, hours and road links from SQLite → adjacency list → Dijkstra from every place
-   → travel-time table (∞ when there is no path). Edge minutes are OSRM free-flow times × the traffic factor, rounded up.
-2. **Once per trip:** score each attraction: `score = round(100 × (0.5·rating/5 + 0.3·popularity + 0.2·interest_match))`.
-3. **For each day, in date order:**
-   1. **Filter:** keep attractions not yet planned, not excluded, open on that weekday, reachable both ways,
-      affordable on their own, and able to fit in the day on their own. Each rejection is recorded with its reason.
-   2. **Select:** 0/1 knapsack with DP (default) or Greedy. Each stop's time weight is
-      `visit + pace buffer + its cheapest trip out`, a **lower bound** on real travel, because every route leaves each stop once.
-      So no set that truly fits is thrown away. The money weight is the entry fee (+ a transport lower bound if transport counts).
-      Weights are rounded **up** to 10-minute / money units and capacities **down**, so whatever the DP accepts really fits.
-      Greedy and DP receive the identical integer instance.
-   3. **Route, two branches:** *travel-first* = Nearest Neighbour → 2-opt; *window-first* = closing-time order
-      (the activity-selection rule) with feasible insertion → 2-opt that only accepts feasible moves. Keep the feasible branch with less travel.
-   4. **Check:** `services/scheduler.py` simulates the day minute by minute (arrive = leave + travel; start inside an opening
-      window and before last entry; end = start + visit; leave = end + buffer; back at the start by day end).
-   5. **Repair:** if no branch works (or the day is over budget), the weakest selected stop (lowest score per minute, or per
-      rupee, from a min-heap) leaves today's pool and **the selector runs again**. The pool shrinks every round, so the loop always ends.
-4. **Validate:** `services/validator.py` re-checks every constraint from the raw data, independently of the planner. Tests require zero violations.
+1. **Once per city or city group (cached):** places, hours and road links (local + intercity) → adjacency list → Dijkstra
+   from every place → raw travel table → **planning table** = each shortest time rounded **up** to 10 minutes.
+2. **Once per trip:** score each place, `round(100 × (0.5·rating/5 + 0.3·popularity + 0.2·interest_match))` (unrated places
+   use a neutral 4.0 prior); apply trip rules (excluded, no road access, food/shopping only when asked for, "only matching interests").
+3. **For each day, in date order:** filter → **select** (one knapsack instance; DP, Greedy or Max visits) → **route** (travel-first
+   NN → 2-opt, or window-first insertion → 2-opt) → **check** (`scheduler.py` simulates the day, meals included) → **repair**
+   (weakest stop leaves, select again) → **fill** (leftovers inserted where they still fit). Multi-city: this runs for each city
+   alone and for all together, and the day keeps the best by the strategy's objective.
+4. **Validate:** `services/validator.py` re-checks every constraint from the raw data. Tests require zero violations.
 
-**What is (and is not) optimal.** The full problem, the multi-day *Orienteering Problem with Time Windows*, is NP-hard, so
-select-then-route is a decomposition heuristic. DP is optimal for each day's rounded knapsack model; 2-opt reaches a local
-optimum; Held–Karp is exact for travel only (it ignores opening hours). No itinerary is claimed to be globally optimal.
+**Knapsack capacity.** Each stop's weight is `visit + pace buffer + cheapest way out` (a lower bound on real travel); the
+capacity is the day minus the shortest first ride, the unavoidable extra of the ride home and the meal breaks. So no set that
+truly fits is ever thrown away. **What is optimal.** The full problem (multi-day orienteering with time windows) is NP-hard.
+DP and Max visits are exact for each day's rounded knapsack model; 2-opt is a local optimum; Held–Karp is exact for travel only.
+
+### The three strategies (requirement: meaningfully different objectives)
+
+| Strategy | Objective | Guarantee |
+|---|---|---|
+| DP | maximum total value score | exact for the knapsack model |
+| Greedy | value per unit of time and money, taken in order | fast heuristic, can miss better combinations |
+| Max visits | maximum number of places, then maximum value | exact for the knapsack model |
+
+They share candidates, weights, costs, capacity, routing, meals, repair and validation, so differences come only from the
+objective. Live demos on `/compare`: the greedy trap (Greedy 90 vs DP 120) and value vs count (DP picks a valuable 2-hour place +
+one short one; Max visits picks three short ones). On real data they often coincide — most newer cities have 4–8 plannable places,
+which all fit — and the page says so instead of inventing differences.
+
+### Scoring on the comparison page
+
+Raw metrics come from the actual plans: places visited, value, travel per place, share of time sightseeing, value per
+₹100 (smoothed with a ₹100 baseline), validator violations and runtime. Each metric is normalised against the best strategy on
+the same trip (100 = best; `value ÷ best` for higher-is-better, `best ÷ value` for travel), then weighted: value 40%, coverage 20%,
+travel efficiency 15%, time utilisation 15%, budget efficiency 10% (left out when nobody spends anything). **Feasibility is a gate**:
+any validator violation makes a plan ineligible. Runtime is shown, not scored. Ties and identical timelines are reported as such.
+Route-building methods are compared in their own section, never mixed into this score.
+
+---
+
+## Features added in the second iteration
+
+* **Reproducibility.** No randomness, no set-order dependence; ties broken by value, then travel, then the place's row in the
+  dataset. Interests and nearby cities are canonicalised. Every itinerary shows four fingerprints — inputs, data (CSV hash),
+  settings (`config.fingerprint_settings()`), plan — so a changed plan is traceable to a changed input, dataset or setting.
+* **Travel rounding.** Planned legs are the raw shortest path rounded **up** to 10 minutes (0 stays 0; ∞ stays "no route"); raw
+  minutes are kept for route optimisation and shown on hover. Clock times, opening hours and the user's window are never rounded.
+* **Using the whole day.** Longer windows raise the knapsack capacity; the fill step inserts leftovers; unused time is explained
+  per day (closing times, budget, meals, nothing left).
+* **Meals.** Lunch (12:00–14:30, 45 min) and dinner (19:00–21:30, 60 min) by default, adjustable or off. Planned only when the meal
+  cannot be had before the day starts or after it ends. At a listed food place within 20 minutes, else a generic break — no venue claimed.
+* **Multi-city trips.** Up to 3 nearby cities; every pair within 100 km straight line (haversine between centres). OSRM intercity
+  links; a labelled straight-line estimate (km × 1.35 at 40 km/h) only if no link exists. One base for the whole trip.
+* **26 interests** in 5 groups with a parent hierarchy (street food → food), "prefer" or "only" modes, limited-data notes.
+* **Food and shopping.** Wikipedia-backed food streets, restaurants, cafés, markets and malls (47 places in 16 cities); opt-in as stops,
+  also used as meal venues; venue style and vegetarian-only filters (vegetarian only when the source says so); shopping time and
+  spend. `scripts/discover_food_shopping.py` documents open-data options; `scripts/import_osm_places.py` lists OSM places for review.
+* **UI.** Redesigned footer (call to action, link groups by visitor task, live dataset numbers, data note, attribution row),
+  destination filters, grouped pickers for 50 cities, meal entries in the timeline, time-use and scorecard charts (palette checked
+  for colour-blind safety, every chart backed by a table), provenance marks (`est.`, `OSM`, "Not rated").
+
+---
+
+## Data: sources, assumptions and limitations
+
+| Data | Source | Status |
+|---|---|---|
+| Destinations | The team's **Top-50** list (`data/catalog/top50.csv`, from `Top_50_Tourist_Destinations_India.xlsx`), a subset of the 200-destination catalog | Exactly the provided list |
+| Attraction names | The catalog's famous attractions, mapped by hand to Wikipedia articles or OSM (`data/curation/attraction_titles.csv`); names with no reliable location are kept out and listed on the Destinations page with the reason | Reviewed mapping |
+| Coordinates | Wikipedia, cross-checked against Wikidata and OpenStreetMap (Nominatim); disagreements > 2 km reviewed by hand (`data/curation/coordinate_review.csv`); 6 approximate in the original cities | Sourced (`coord_source`) |
+| Road links | OSRM on OpenStreetMap roads: each place to its 5 nearest places, plus intercity links for city pairs within 100 km. A few unrouted pairs use labelled straight-line estimates | Real roads, free-flow |
+| Road access | Places on treks, islands or reached by boat (16) are marked `no_road` with a note and never routed by road | Reviewed |
+| Traffic | One assumed multiplier, `TRAFFIC_FACTOR = 1.5` | **Assumption** |
+| Popularity | Newer cities: Wikipedia page views over 12 months, log-scaled with fixed bounds (1,000 → 0, 3,000,000 → 1). Original cities: hand-chosen | Sourced / illustrative |
+| Ratings | No open source exists: newer places are **not rated** (neutral 4.0 prior in the score); the original 60 keep hand-chosen ratings | Never invented |
+| Opening hours, fees, visit lengths | OpenStreetMap tags when present and readable; otherwise the documented default for that kind of place (`data/estimate_defaults.csv`). Original cities: hand-chosen | Labelled **estimate** / **illustrative** |
+| Descriptions | Wikipedia lead sentences (CC BY-SA) for newer places; written for the project for the original 60 | Attributed |
+| Photos | Wikimedia Commons, free licences only; author and licence in `data/image_credits.csv` and on the About page | Credited |
+
+**Readiness.** A city is *ready* when at least 3 attractions are reachable by road from its start point; *limited* with 1–2;
+*not plannable* with none. Current data: 45 ready, 4 limited (Katra, Alleppey, Sabarimala, Kanyakumari — sights on treks or
+islands), 1 not plannable (Kedarnath, a 16 km trek). The interface says so wherever the city appears.
+
+**Limitations**
+
+* The full problem is NP-hard; select-then-route can miss a better combination, and DP can lose to Greedy on a whole trip.
+* Days are planned in date order (myopic across days); one base for a multi-city trip (no overnight moves).
+* Most hours, fees and visit times in the newer cities are category defaults; weekly closing days are unknown.
+* Multi-city eligibility uses straight-line distance; road distance is shown where known.
+* Treks, ferries, rope-ways, ceremonies with changing times and timetabled trains are not modelled.
+* Food and shopping coverage follows Wikipedia and is thin in small towns; meal costs are not budgeted.
+* Map lines are straight segments in visit order, not road geometry (the map says so).
+
+### Rebuilding or extending the data (no algorithm changes)
+
+```bash
+python scripts/build_city_dataset.py fetch    # Wikipedia, Wikidata, page views, OSM -> data/curation/source_snapshot.json
+python scripts/build_city_dataset.py report   # coordinates that disagree, places with no location
+python scripts/build_city_dataset.py build    # snapshot + curation -> data/*.csv (original four cities untouched)
+python scripts/build_city_dataset.py images   # free-licence photos + data/image_credits.csv
+python scripts/build_travel_times.py          # OSRM road links for cities without any, and intercity links
+python -m database.seed_data && python -m pytest
+```
 
 ---
 
@@ -162,114 +256,48 @@ optimum; Held–Karp is exact for travel only (it ignores opening hours). No iti
 ```
 browser ──► Flask routes ──► services ──► algorithms (pure functions)
                               │
-                              └──► database (all SQL in database/queries.py)
+                              └──► database (all SQL in database/queries.py; migrations.py for safe updates)
 ```
 
 ```
 ADA PROJECT FINAL/
-├── app.py                      # create_app(): config, database, blueprints, error pages; `python app.py`
-├── config.py                   # every tunable number: weights, pace buffers, DP units, traffic factor, ...
-├── requirements.txt  pytest.ini  .gitignore  README.md
-├── algorithms/                 # our ADA implementations (no Flask / SQLite)
-│   ├── graph.py  dijkstra.py  sorting.py  scoring.py  knapsack_types.py
-│   ├── greedy.py  dynamic_programming.py
-│   ├── nearest_neighbor.py  two_opt.py  activity_selection.py  insertion.py  held_karp.py  tour.py
-├── services/                   # business logic between routes and algorithms
-│   ├── models.py               # dataclasses: Attraction, Window, TripRequest, Visit, Leg, DayPlan, Itinerary
-│   ├── trip_request.py         # server-side validation of every trip parameter
-│   ├── city_data.py            # load a city, build the graph, run Dijkstra (cached per city)
-│   ├── scheduler.py            # minute-by-minute day simulation
-│   ├── itinerary_generator.py  # the planning pipeline
-│   ├── validator.py            # independent constraint checker
-│   ├── comparison.py           # runs all strategies on identical input; crosscheck.py (NetworkX); timing.py
-│   └── timeutil.py  algorithm_info.py
-├── database/
-│   ├── schema.sql              # cities, places, attractions, categories, opening_hours, travel_edges (+ CHECKs, FKs)
-│   ├── db.py                   # one connection per request, foreign keys ON, init-db command
-│   ├── queries.py              # every SQL query, ? parameters only
-│   └── seed_data.py            # CSV → SQLite with validation (python -m database.seed_data)
-├── routes/
-│   ├── main_routes.py          # /, /cities, /attractions, /about
-│   ├── itinerary_routes.py     # /plan, /itinerary, /compare
-│   ├── api_routes.py           # /api/...
-│   └── helpers.py
-├── templates/                  # Jinja2: base.html, _macros.html, index, cities, attractions, planner, itinerary, compare, about, error
-├── static/
-│   ├── css/style.css           # the design system (Bootstrap themed through CSS variables)
-│   ├── js/                     # site.js, attractions.js, planner.js, itinerary.js (Leaflet), compare.js (Chart.js)
-│   ├── images/                 # city banners, attraction photos (Wikimedia Commons), placeholder
-│   ├── fonts/                  # Fraunces + Inter (SIL OFL)
-│   └── vendor/                 # Bootstrap 5.3.3, Bootstrap Icons 1.11.3, Leaflet 1.9.4, Chart.js 4.4.4
-├── data/                       # the source of truth (CSV)
-│   ├── cities.csv  start_points.csv  attractions.csv  opening_hours.csv  categories.csv
-│   ├── travel_times.csv        # 482 directed road links (OSRM)
-│   ├── image_credits.csv       # author + licence of every photo
-│   └── catalog/destinations.csv  # the team's 200-destination catalog (names only)
-├── scripts/                    # one-off data scripts, never run by the web app
-│   ├── build_travel_times.py   # OSRM road times → data/travel_times.csv (or --offline estimates)
-│   ├── fetch_wikimedia.py      # free-licensed photos + coordinate cross-check
-│   ├── import_catalog.py       # team spreadsheet (.xlsx) → data/catalog/destinations.csv
-│   └── benchmark.py            # → results/benchmarks.json
-├── results/                    # saved benchmark outputs (charted on /compare)
-├── tests/                      # pytest suite + tests/fixtures/tiny_city
-└── instance/                   # generated SQLite database (git-ignored)
+├── app.py  config.py  requirements.txt  pytest.ini  .gitignore  README.md
+├── algorithms/      graph, dijkstra, sorting, scoring, knapsack_types, greedy, dynamic_programming, max_visits,
+│                    nearest_neighbor, two_opt, activity_selection, insertion, held_karp, tour
+├── services/        models, trip_request, city_data (city groups), multicity, scheduler (meals), itinerary_generator,
+│                    validator, scorecard, comparison, versioning, crosscheck, timing, timeutil, algorithm_info
+├── database/        schema.sql, db.py, queries.py, seed_data.py, migrations.py
+├── routes/          main_routes.py, itinerary_routes.py, api_routes.py, helpers.py
+├── templates/       base (with footer), _macros, index, cities, attractions, planner, itinerary, compare, about, error
+├── static/          css/style.css, js/ (site, attractions, planner, itinerary, compare), images/, fonts/, vendor/
+├── data/            cities, start_points, attractions, opening_hours, categories, travel_times, intercity_times,
+│                    image_credits, estimate_defaults (.csv); catalog/ (team lists); curation/ (reviewed mappings + source snapshot)
+├── scripts/         build_city_dataset, build_travel_times, fetch_wikimedia, discover_food_shopping, import_osm_places,
+│                    import_catalog, benchmark, net
+├── results/         saved benchmark outputs (charted on /compare)
+├── tests/           pytest suite + tests/fixtures/tiny_city
+└── instance/        generated SQLite database and backups (git-ignored)
 ```
-
----
-
-## Data: sources, assumptions and limitations
-
-| Data | Source | Status |
-|---|---|---|
-| City and attraction names | Our team catalog `India_200_Tourist_Destinations_Attractions.xlsx` (200 destinations, 1,053 attraction names). Delhi, Agra, Jaipur and Varanasi were modelled in full: their catalog attractions plus well-known additions to fill multi-day trips (`in_team_catalog` column) | Names from the catalog |
-| Coordinates | 45 from Wikipedia article coordinates, 9 from OpenStreetMap Nominatim, 6 approximate (`coord_source` column) | Cross-checked |
-| Road links (482) | Each place to its 5 nearest places; driving time and distance from the public **OSRM** server on **OpenStreetMap** roads, fetched once offline | Real road network, free-flow (no traffic) |
-| Traffic | One assumed multiplier, `TRAFFIC_FACTOR = 1.5` in `config.py` | **Assumption**, not calibrated |
-| Opening hours, entry fees (Indian adult), ratings, popularity, visit durations | Plausible values chosen for this project | **Illustrative**: not verified, labelled in the UI |
-| Local transport cost | ₹12/km (`TRANSPORT_COST_PER_KM`) | **Illustrative** |
-| Photos | Wikimedia Commons, free licences only; author and licence in `data/image_credits.csv` and on the About page | Credited; 5 attractions use a placeholder |
-
-**Limitations**
-
-* The full problem is NP-hard; select-then-route can miss a better combination.
-* Days are planned in date order, so the plan is myopic across days.
-* Composing local links can make a long trip slightly slower than the true direct road time.
-* One mode of transport; free-flow road times × one traffic factor; no live traffic.
-* Fixed visit durations; no queues, security checks, lunch break or ticket booking.
-* Activity selection's optimality proof does not transfer to flexible windows with travel; here it is a heuristic.
-* Map lines are straight segments in visit order, not road geometry (the map says so).
-* Hours, fees, ratings and durations are illustrative until verified (`python -m database.seed_data --strict` refuses them).
-
-### Adding a city (no algorithm changes)
-
-1. Add rows to `data/cities.csv`, `data/start_points.csv`, `data/attractions.csv` and `data/opening_hours.csv`
-   (days like `Daily`, `Tue-Sun`, `Sat-Thu`; two rows on one day = split hours; no row = closed).
-2. `python scripts/build_travel_times.py` (road links from OSRM; `--offline` for straight-line estimates).
-3. Optional: `python scripts/fetch_wikimedia.py --coords --images` for coordinates check and photos.
-4. `python -m database.seed_data`, then `python -m pytest`.
 
 ---
 
 ## Viva notes
 
-* **Why Dijkstra if we have coordinates?** We store only local road links; Dijkstra composes them into shortest travel
-  times between every pair. Coordinates give straight lines, not roads. (The compare page shows a 5-link composed path.)
-* **Why not Floyd–Warshall?** O(V³). Dijkstra from every node is O(V(V+E) log V), cheaper on a sparse graph.
-* **Negative weights?** Not possible: travel minutes are positive; `build_graph` and the schema reject them.
-* **Why is the DP pseudo-polynomial?** Its cost depends on the numeric capacities T and M, not only on n.
-* **Where is travel time in the knapsack?** Each stop's weight includes its cheapest trip out, a lower bound; the scheduler checks the real timeline.
-* **Show Greedy failing.** 300 min; X = 180 min, score 90; Y = Z = 150 min, score 60. Greedy 90, DP 120 (compare page, run live).
-* **Is DP's itinerary always better?** No. On the identical knapsack DP ≥ Greedy is guaranteed; on whole itineraries
-  (after routing, repair and multi-day effects) our 2,520-trip sweep found DP ahead in 989, Greedy in 361 and ties in 1,170.
-* **Is 2-opt optimal?** No, it is a local optimum; Held–Karp gives the exact tour for ≤ 10 stops so we can report the gap.
-* **Why recompute the whole route cost in 2-opt?** Travel times are directed; reversing a segment reverses its inner legs.
+* **Why Dijkstra if we have coordinates?** We store only local road links; Dijkstra composes them (and intercity links) into shortest travel times. Coordinates give straight lines, not roads.
+* **Why round travel up to 10 minutes?** Road times are estimates; rounding up means a plan that fits on paper does not fail because a ride took 14 minutes. The whole path is rounded, not each link, so composing links does not inflate it.
+* **Where is travel time in the knapsack?** Each stop's weight includes its cheapest way out (a lower bound); the capacity also removes the shortest first ride, the unavoidable extra of the ride home and the meals.
+* **How is Max visits different from DP?** Same DP, different values: `B + score` with `B = Σ scores + 1` makes one extra place worth more than any score difference — count first, value second.
+* **Show the strategies differing.** Greedy trap (90 vs 120) and value vs count (2 valuable stops vs 3 ordinary ones), both run live on `/compare`.
+* **Is DP's itinerary always better?** No. On the identical knapsack it is guaranteed; on whole itineraries routing, meals, repair and multi-day effects can reverse it — in our 648-trip sweep DP was ahead in 126, Greedy in 3, equal in 519.
+* **Why does a longer day sometimes change nothing?** Because everything still open is already planned; the day summary lists the closing times. The tests check that stops never decrease as the day grows.
+* **How do you know plans are reproducible?** Same inputs + data + settings → same plan fingerprint, tested under three different hash seeds.
+* **What is the 100 km rule exactly?** Every pair of cities in the trip, straight-line distance between city centres; a road estimate is labelled when no road link is stored.
 * **How do you know Dijkstra is correct?** Unit tests plus 0 mismatches against NetworkX on every pair, in every city and on random graphs.
-* **What if no plan is possible?** We return the days that work, mark the rest empty with a specific reason, and offer one-click fixes. We never invent stops.
 
 ---
 
 ## Credits
 
 Map tiles © OpenStreetMap contributors · Routing data © OpenStreetMap contributors (ODbL), computed with OSRM ·
-Photos: Wikimedia Commons contributors (see `data/image_credits.csv`) · Fonts: Fraunces and Inter (SIL OFL) ·
-Bootstrap, Bootstrap Icons, Leaflet and Chart.js (MIT / BSD licences).
+Descriptions from Wikipedia (CC BY-SA) where marked · Wikidata (CC0) · Photos: Wikimedia Commons contributors (see
+`data/image_credits.csv`) · Fonts: Fraunces and Inter (SIL OFL) · Bootstrap, Bootstrap Icons, Leaflet and Chart.js (MIT / BSD licences).

@@ -2,7 +2,7 @@
 
 Two databases are built once per test session in a temporary folder:
   tiny_db -- the hand-made fixture city in tests/fixtures/tiny_city (answers checkable on paper)
-  real_db -- the real data in data/ (Delhi, Agra, Jaipur, Varanasi)
+  real_db -- the real data in data/ (the 50 destinations)
 The real instance/itinerary.db is never touched by the tests.
 """
 
@@ -18,8 +18,8 @@ sys.path.insert(0, ROOT)
 from app import create_app                                  # noqa: E402
 from database.db import connect                             # noqa: E402
 from database.seed_data import seed_database                # noqa: E402
-from services.city_data import clear_cache, load_city       # noqa: E402
-from services.models import TripRequest                     # noqa: E402
+from services.city_data import clear_cache, load_area, load_city  # noqa: E402
+from services.models import MealSetting, TripRequest        # noqa: E402
 
 FIXTURE_DIR = os.path.join(ROOT, "tests", "fixtures", "tiny_city")
 DATA_DIR = os.path.join(ROOT, "data")
@@ -60,6 +60,38 @@ def real_cities(real_db):
 
 
 @pytest.fixture(scope="session")
+def tiny_area(tiny_db):
+    """Loader for a group of fixture cities: tiny_area("testville", "riverton")."""
+    cache = {}
+
+    def load(*slugs):
+        if slugs not in cache:
+            conn = connect(tiny_db)
+            try:
+                cache[slugs] = load_area(conn, list(slugs), traffic_factor=1.0)
+            finally:
+                conn.close()
+        return cache[slugs]
+    return load
+
+
+@pytest.fixture(scope="session")
+def real_area(real_db):
+    """Loader for a group of real cities: real_area("agra", "mathura")."""
+    cache = {}
+
+    def load(*slugs):
+        if slugs not in cache:
+            conn = connect(real_db)
+            try:
+                cache[slugs] = load_area(conn, list(slugs), traffic_factor=1.5)
+            finally:
+                conn.close()
+        return cache[slugs]
+    return load
+
+
+@pytest.fixture(scope="session")
 def app(real_db):
     clear_cache()
     return create_app({"TESTING": True, "DATABASE": real_db, "AUTO_SEED": False})
@@ -77,3 +109,7 @@ def make_trip(**overrides):
                   strategy="dp", exclude=())
     values.update(overrides)
     return TripRequest(**values)
+
+
+LUNCH = MealSetting("lunch", 12 * 60, 14 * 60 + 30, 45)
+DINNER = MealSetting("dinner", 19 * 60, 21 * 60 + 30, 60)
