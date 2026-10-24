@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block title %}How it works{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="container">
+    <span class="eyebrow">About &amp; methodology</span>
+    <h1>How the planner thinks</h1>
+    <p class="lead">An Analysis and Design of Algorithms project. It splits a hard, real planning problem into textbook sub-problems,
+      solves each with a classic algorithm, and is honest about where the guarantees stop.</p>
+  </div>
+</section>
+
+<section class="pb-5">
+  <div class="container">
+    <div class="row g-5">
+      <aside class="col-lg-3 d-none d-lg-block">
+        <nav class="toc" aria-label="On this page">
+          <a href="#problem">The problem</a>
+          <a href="#pipeline">The pipeline</a>
+          <a href="#algorithms">The algorithms</a>
+          <a href="#model">Scoring and the knapsack model</a>
+          <a href="#architecture">Architecture</a>
+          <a href="#data">Data and honesty</a>
+          <a href="#limitations">Limitations</a>
+          <a href="#team">Team and credits</a>
+        </nav>
+      </aside>
+      <div class="col-lg-9">
+
+        <section id="problem" class="mb-5">
+          <h2 class="h2">The problem</h2>
+          <p>A tourist has a few days in a city and far more attractions than time. Each attraction has a value (rating, popularity and
+            whether it matches the traveller's interests), a visit duration, an entry fee and opening hours that differ by weekday. Moving
+            between places takes time and money. We must choose which attractions to visit on which day, and in what order, so the
+            plan is worth as much as possible without breaking the daily time window, any opening hours or the budget.</p>
+          <p>This is the multi-day <strong>Orienteering Problem with Time Windows</strong>, which is NP-hard: no known algorithm solves it
+            optimally in polynomial time. So we do not claim optimal itineraries. Instead we <strong>decompose</strong> it into
+            sub-problems that each have a well-understood algorithm: shortest paths, selection, route ordering and scheduling.</p>
+          <div class="row g-3 mt-2">
+            <div class="col-md-4"><div class="card-soft card-pad-sm h-100"><div class="small-caps text-accent mb-1">Input</div><p class="small mb-0">City, start date, days, daily window, optional budget, interests, pace, start point, selection strategy.</p></div></div>
+            <div class="col-md-4"><div class="card-soft card-pad-sm h-100"><div class="small-caps text-accent mb-1">Hard constraints</div><p class="small mb-0">Opening windows and last entry on that weekday · back at the start by day end · daily budget · no repeats · only reachable places.</p></div></div>
+            <div class="col-md-4"><div class="card-soft card-pad-sm h-100"><div class="small-caps text-accent mb-1">Output</div><p class="small mb-0">Ordered stops per day with arrive/start/end/leave times, travel legs, costs, and a reason for every left-out attraction.</p></div></div>
+          </div>
+        </section>
+
+        <section id="pipeline" class="mb-5">
+          <h2 class="h2">The pipeline</h2>
+          <p>Dijkstra runs once per city. Then each day goes through select → route → check → repair, in date order.</p>
+          <div class="pipeline">
+            {% set steps = [
+              ('Build the travel table (once per city)', 'Load places and road links from SQLite into an adjacency list, then run Dijkstra from every place. Result: the shortest travel time (and road km) between every pair, or ∞ if unreachable.'),
+              ('Score every attraction (once per trip)', 'score = round(100 × (0.5·rating/5 + 0.3·popularity + 0.2·interest match)). Weights are a documented design choice in config.py.'),
+              ('Filter today\'s candidates', 'Keep attractions not yet planned, not excluded, open on this weekday, reachable both ways, affordable alone, and able to fit in the day alone. Every rejection is recorded with its reason.'),
+              ('Select (DP by default, or Greedy)', 'A 0/1 knapsack over (minutes, rupees) picks the most valuable set. Each stop\'s time weight includes its cheapest way to leave, a lower bound on real travel.'),
+              ('Route: two branches', 'Travel-first: Nearest Neighbour then 2-opt. Window-first: stops taken in closing-time order (the activity-selection rule) and inserted where every opening window still holds, then 2-opt that only accepts feasible moves. Keep the feasible branch with less travel.'),
+              ('Check and repair', 'The scheduler simulates the day minute by minute. If no branch works, or the day is over budget, the weakest stop (lowest score per minute or per rupee, from a min-heap) leaves the pool and selection runs again. The pool shrinks each round, so this always ends.'),
+              ('Validate independently', 'After the last day, a separate validator re-checks every constraint from the raw data. A violation would be a bug, so the tests require zero.'),
+            ] %}
+            {% for title, text in steps %}
+              <div class="card-soft pipe-step"><span class="pipe-num">{{ loop.index }}</span><div><h3>{{ title }}</h3><p>{{ text }}</p></div></div>
+              {% if not loop.last %}<div class="pipe-arrow" aria-hidden="true"><i class="bi bi-arrow-down"></i></div>{% endif %}
+            {% endfor %}
+          </div>
+        </section>
+
+        <section id="algorithms" class="mb-5">
+          <h2 class="h2">The algorithms</h2>
+          <p>All implemented by us in plain Python (no optimisation libraries), one per file in <code>algorithms/</code>, each with unit tests.
+            NetworkX appears only as an independent cross-check of Dijkstra.</p>
+          <div class="row g-3">
+            {% for a in algorithms %}
+              <div class="col-md-6">
+                <article class="card-soft algo-tile" id="algo-{{ a.key }}">
+                  <div class="d-flex justify-content-between align-items-start gap-2">
+                    <span class="algo-icon"><i class="bi {{ a.icon }}"></i></span>
+                    <span class="chip {{ 'chip-green' if 'Main' in a.role or 'Default' in a.role else '' }}">{{ a.role }}</span>
+                  </div>
+                  <h3 class="mt-2">{{ a.name }}</h3>
+                  <p>{{ a.summary }}</p>
+                  <div class="d-flex flex-wrap gap-2 align-items-center mt-auto">
+                    <span class="complexity" title="Time complexity">time {{ a.time }}</span>
+                    <span class="complexity" title="Space complexity">space {{ a.space }}</span>
+                    <code class="ms-auto">{{ a.file }}</code>
+                  </div>
+                </article>
+              </div>
+            {% endfor %}
+          </div>
+          <p class="small text-muted mt-3">V = places, E = road links, n = candidate attractions, k = stops in a day, T and M = time and money units in the DP table.</p>
+        </section>
+
+        <section id="model" class="mb-5">
+          <h2 class="h2">Scoring and the knapsack model</h2>
+          <div class="card-soft card-pad">
+            <p><strong>Where is travel time in the knapsack?</strong> Travel depends on the order, which is decided after selection.
+              So each stop's weight is <code>visit + pace buffer + cheapest trip out of it</code>, and the capacity is the day length minus the
+              shortest first ride. Every route leaves each stop exactly once, so these weights can only <em>under</em>-estimate the real day:
+              the knapsack never throws away a set that truly fits. The scheduler then checks the real timeline, and repair fixes optimism.</p>
+            <p><strong>Discretisation.</strong> Weights are rounded <em>up</em> to 10-minute units and the capacity <em>down</em>; fees are rounded up to
+              money units of max(₹10, budget/100). So anything the DP accepts really fits, and the table stays small (≤ ~100 money cells).
+              Greedy and DP receive the identical integer instance, which keeps the comparison fair.</p>
+            <p class="mb-0"><strong>What "optimal" means here.</strong> DP is optimal for this rounded knapsack model on each day. 2-opt reaches a
+              local optimum. Held–Karp is exact for travel only, ignores opening hours, and is used on the comparison page as a lower bound.
+              None of this makes the whole multi-day itinerary provably optimal.</p>
+          </div>
+        </section>
+
+        <section id="architecture" class="mb-5">
+          <h2 class="h2">Architecture</h2>
+          <p>Calls flow one way. Algorithms never import Flask or SQLite, so each can be tested on plain lists and dicts.</p>
+          <div class="d-grid gap-2">
+            {% set layers = [
+              ('Browser', 'Jinja2 templates + Bootstrap 5 + small scripts for filters, the live trip summary, Leaflet maps and Chart.js charts. Every page works without JavaScript; scripts only enhance.'),
+              ('Flask routes', 'routes/main_routes.py, itinerary_routes.py, api_routes.py: parse and validate the query string, call one service, render a template or return JSON.'),
+              ('Services', 'services/: trip validation, city cache (graph + Dijkstra table), scheduler, itinerary pipeline, validator, comparison runner, NetworkX cross-check.'),
+              ('Algorithms', 'algorithms/: graph, Dijkstra, merge sort, greedy, dynamic programming, nearest neighbour, 2-opt, activity selection, insertion, Held–Karp.'),
+              ('Database', 'database/: schema.sql, db.py (one connection per request, foreign keys on), queries.py (all SQL, ? parameters), seed_data.py (CSV → SQLite with validation).'),
+            ] %}
+            {% for tag, text in layers %}
+              <div class="card-soft layer"><span class="layer-tag">{{ tag }}</span><p>{{ text }}</p></div>
+            {% endfor %}
+          </div>
+        </section>
+
+        <section id="data" class="mb-5">
+          <h2 class="h2">Data and honesty</h2>
+          <div class="row g-3">
+            <div class="col-md-6"><div class="card-soft card-pad-sm h-100">
+              <h3 class="h6"><i class="bi bi-journal-text me-1 text-accent"></i>Cities and attraction names</h3>
+              <p class="small mb-0">Our research catalog lists {{ catalog_size }} destinations with their famous attractions (names only). Delhi, Agra, Jaipur and
+                Varanasi were modelled in full: the catalog's attractions plus a few well-known additions to fill multi-day trips, all marked in the data.</p>
+            </div></div>
+            <div class="col-md-6"><div class="card-soft card-pad-sm h-100">
+              <h3 class="h6"><i class="bi bi-geo-alt me-1 text-accent"></i>Coordinates</h3>
+              <p class="small mb-0">{{ coord_sources.get('wikipedia', 0) }} from Wikipedia article coordinates, {{ coord_sources.get('openstreetmap', 0) }} from
+                OpenStreetMap (Nominatim) and {{ coord_sources.get('approximate', 0) }} approximate where neither had a reliable match.</p>
+            </div></div>
+            <div class="col-md-6"><div class="card-soft card-pad-sm h-100">
+              <h3 class="h6"><i class="bi bi-signpost-split me-1 text-accent"></i>Travel times</h3>
+              <p class="small mb-0">{{ counts.edges }} directed road links (each place to its 5 nearest neighbours) with driving time and distance from
+                OSRM on OpenStreetMap roads, fetched once offline. OSRM times assume free-flowing traffic, so we multiply them by an
+                <strong>assumed</strong> factor of {{ TRAFFIC_FACTOR }}. There is no live traffic and only one mode of transport.</p>
+            </div></div>
+            <div class="col-md-6"><div class="card-soft card-pad-sm h-100">
+              <h3 class="h6"><i class="bi bi-exclamation-triangle me-1 text-accent"></i>Hours, fees, ratings, durations</h3>
+              <p class="small mb-0"><strong>Illustrative.</strong> Plausible values chosen for this project, not verified against official sources, and labelled
+                that way in the interface. Fees are for Indian adults. Local transport is estimated at ₹{{ TRANSPORT_RATE }}/km.</p>
+            </div></div>
+          </div>
+        </section>
+
+        <section id="limitations" class="mb-5">
+          <h2 class="h2">Limitations</h2>
+          <ul class="highlight-list">
+            <li><i class="bi bi-dot"></i>The full problem is NP-hard; select-then-route is a decomposition heuristic and can miss a better combination.</li>
+            <li><i class="bi bi-dot"></i>Days are planned in date order, so the plan is myopic: an early day may take an attraction a later, more restricted day needed.</li>
+            <li><i class="bi bi-dot"></i>Composing local links can make a long trip slightly slower than the true direct road time.</li>
+            <li><i class="bi bi-dot"></i>Fixed visit durations; no queues, security checks, lunch breaks or ticket booking.</li>
+            <li><i class="bi bi-dot"></i>Activity selection's optimality proof assumes fixed intervals with no travel, so here it is a heuristic.</li>
+            <li><i class="bi bi-dot"></i>Map lines are straight segments in visit order, not road geometry.</li>
+            <li><i class="bi bi-dot"></i>Opening hours, fees, ratings and durations are illustrative until verified.</li>
+          </ul>
+        </section>
+
+        <section id="team">
+          <h2 class="h2">Team and credits</h2>
+          <div class="row g-3 mb-4">
+            <div class="col-md-6"><div class="card-soft card-pad-sm"><strong>Shreyas Singh</strong><div class="small text-muted">B.Tech CSE, Section B · Faculty of Technology, University of Delhi</div></div></div>
+            <div class="col-md-6"><div class="card-soft card-pad-sm"><strong>Priyanshi Gupta</strong><div class="small text-muted">B.Tech CSE, Section B · Faculty of Technology, University of Delhi</div></div></div>
+          </div>
+          <p class="small">Built with Python, Flask, SQLite, Jinja2, Bootstrap 5, Bootstrap Icons, Leaflet, Chart.js and NetworkX (cross-check only).
+            Map tiles &copy; OpenStreetMap contributors. Routing data &copy; OpenStreetMap contributors (ODbL), computed with OSRM. Fonts: Fraunces and Inter (SIL Open Font License).</p>
+          <details id="credits">
+            <summary class="fw-semibold" style="cursor:pointer;">Photo credits ({{ credits|selectattr('image')|list|length }} attraction photos + {{ cities|selectattr('hero_credit')|list|length }} city banners, Wikimedia Commons)</summary>
+            <div class="card-soft overflow-auto mt-3" style="max-height: 420px;">
+              <table class="table table-soft credit-table">
+                <thead><tr><th>Photo</th><th>City</th><th>Author and licence</th></tr></thead>
+                <tbody>
+                  {% for c in cities if c.hero_credit %}
+                    <tr><td>{{ c.name }} banner</td><td>{{ c.name }}</td><td><a href="{{ c.hero_source_url }}" rel="noopener">{{ c.hero_credit }}</a></td></tr>
+                  {% endfor %}
+                  {% for a in credits if a.image %}
+                    <tr><td>{{ a.name }}</td><td>{{ a.city_name }}</td><td><a href="{{ a.image_source_url }}" rel="noopener">{{ a.image_credit }}</a></td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </section>
+
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

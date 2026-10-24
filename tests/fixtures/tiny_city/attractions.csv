@@ -1,0 +1,8 @@
+city,slug,name,lat,lng,coord_source,categories,rating,popularity,visit_minutes,fee_inr,in_team_catalog,data_status,wiki_title,description
+testville,fort,Fort,10.0200,10.0000,approximate,history;architecture,4.5,0.9,60,50,no,illustrative,,Open daily 09:00-17:00 (last entry 16:30).
+testville,museum,Museum,10.0300,10.0200,approximate,museums,4.0,0.6,90,100,no,illustrative,,Closed on Mondays.
+testville,temple,Temple,9.9800,10.0300,approximate,spirituality,4.8,0.7,45,0,no,illustrative,,Split hours: closed 12:00-16:00.
+testville,garden,Garden,10.0000,10.0400,approximate,nature,4.2,0.5,60,0,no,illustrative,,Free and open all day.
+testville,island,Island,10.1000,10.1000,approximate,nature,4.9,0.9,60,0,no,illustrative,,No road reaches it (unreachable on purpose).
+testville,aarti,Evening Aarti,10.0100,10.0500,approximate,spirituality,4.7,0.8,60,0,no,illustrative,,Evening only: 18:00-19:30 (last entry 18:30).
+testville,palace,Palace,9.9700,9.9800,approximate,history,4.6,0.8,120,600,no,illustrative,,Expensive: Rs 600 entry.

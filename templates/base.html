@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Smart Itinerary Planner{% endblock %} · Smart Itinerary</title>
+  <meta name="description" content="{% block description %}Plan realistic day-by-day sightseeing itineraries for Indian cities, built on graph algorithms, dynamic programming and route optimisation.{% endblock %}">
+  <script>document.documentElement.classList.add("js");</script>
+  <link rel="icon" href="{{ url_for('static', filename='images/favicon.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', filename='fonts/fonts.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.min.css') }}">
+  {% block head_extra %}{% endblock %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <a class="visually-hidden-focusable" href="#main">Skip to content</a>
+
+  {% set nav = [
+    ('main.cities', 'Cities'),
+    ('main.attractions', 'Attractions'),
+    ('planner.compare', 'Compare algorithms'),
+    ('main.about', 'How it works'),
+  ] %}
+  <header class="site-nav {% block nav_class %}{% endblock %}" id="site-nav">
+    <nav class="navbar navbar-expand-lg container" aria-label="Main">
+      <a class="brand" href="{{ url_for('main.index') }}" aria-label="Smart Itinerary home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="18" r="2.3" fill="currentColor" stroke="none"/><circle cx="18.5" cy="6" r="2.3" fill="currentColor" stroke="none"/><path d="M8.5 18H14a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h5.5"/></svg>
+        </span>
+        <span class="brand-name">Smart Itinerary<small>Travel optimisation</small></span>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav-links"
+              aria-controls="nav-links" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="nav-links">
+        <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
+          {% for endpoint, label in nav %}
+            <li class="nav-item">
+              <a class="nav-link {% if active_endpoint == endpoint %}active{% endif %}"
+                 {% if active_endpoint == endpoint %}aria-current="page"{% endif %}
+                 href="{{ url_for(endpoint) }}">{{ label }}</a>
+            </li>
+          {% endfor %}
+          <li class="nav-item ms-lg-2">
+            <a class="btn btn-brand" href="{{ url_for('planner.plan') }}"><i class="bi bi-compass me-1"></i>Plan a trip</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+  <main id="main">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="row gy-5">
+        <div class="col-lg-4">
+          <a class="brand mb-3" href="{{ url_for('main.index') }}">
+            <span class="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="18" r="2.3" fill="currentColor" stroke="none"/><circle cx="18.5" cy="6" r="2.3" fill="currentColor" stroke="none"/><path d="M8.5 18H14a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h5.5"/></svg>
+            </span>
+            <span class="brand-name">Smart Itinerary<small>Travel optimisation</small></span>
+          </a>
+          <p class="mt-3 mb-0" style="max-width: 24rem;">An Analysis &amp; Design of Algorithms project that turns graph search, dynamic programming and route optimisation into realistic, day-by-day travel plans.</p>
+        </div>
+        <div class="col-6 col-lg-2">
+          <h3>Explore</h3>
+          <ul>
+            <li><a href="{{ url_for('main.cities') }}">Cities</a></li>
+            <li><a href="{{ url_for('main.attractions') }}">Attractions</a></li>
+            <li><a href="{{ url_for('planner.plan') }}">Plan a trip</a></li>
+            <li><a href="{{ url_for('planner.compare') }}">Compare algorithms</a></li>
+          </ul>
+        </div>
+        <div class="col-6 col-lg-2">
+          <h3>Project</h3>
+          <ul>
+            <li><a href="{{ url_for('main.about') }}">Methodology</a></li>
+            <li><a href="{{ url_for('main.about') }}#algorithms">Algorithms</a></li>
+            <li><a href="{{ url_for('main.about') }}#limitations">Limitations</a></li>
+            <li><a href="{{ url_for('api.health') }}">API status</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-4">
+          <h3>Data &amp; credits</h3>
+          <ul>
+            <li>Map tiles &copy; <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap contributors</a></li>
+            <li>Road times computed with <a href="https://project-osrm.org/" rel="noopener">OSRM</a> on OpenStreetMap data (ODbL)</li>
+            <li>Photos from <a href="https://commons.wikimedia.org/" rel="noopener">Wikimedia Commons</a> — <a href="{{ url_for('main.about') }}#credits">individual credits</a></li>
+            <li>Opening hours, fees, ratings and visit times are <strong>illustrative</strong>, not verified.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>Shreyas Singh &amp; Priyanshi Gupta · B.Tech CSE (Section B), Faculty of Technology, University of Delhi</span>
+        <span>ADA Project · {{ today.year }}</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/site.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

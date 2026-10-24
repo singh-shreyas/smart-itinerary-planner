@@ -1,0 +1,9 @@
+city,slug,days,open,close,last_entry
+testville,fort,Daily,09:00,17:00,16:30
+testville,museum,Tue-Sun,10:00,17:00,
+testville,temple,Daily,06:00,12:00,
+testville,temple,Daily,16:00,20:00,
+testville,garden,Daily,06:00,19:00,
+testville,island,Daily,09:00,17:00,
+testville,aarti,Daily,18:00,19:30,18:30
+testville,palace,Daily,09:00,17:00,

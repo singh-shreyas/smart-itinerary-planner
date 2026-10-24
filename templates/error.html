@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="card-soft empty-state mx-auto" style="max-width: 640px; padding: 64px 32px;">
+      <div class="empty-icon"><i class="bi {{ 'bi-signpost-split' if code == 404 else 'bi-exclamation-triangle' }}"></i></div>
+      <div class="small-caps text-accent mb-2">Error {{ code }}</div>
+      <h1 class="h2">{{ title }}</h1>
+      <p class="mb-4">{{ message }}</p>
+      <div class="d-flex flex-wrap justify-content-center gap-2">
+        <a class="btn btn-brand" href="{{ url_for('main.index') }}">Back to home</a>
+        <a class="btn btn-outline-brand" href="{{ url_for('main.cities') }}">Browse cities</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

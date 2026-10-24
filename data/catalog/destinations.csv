@@ -1,0 +1,201 @@
+destination_id,region,state_ut,destination,attractions,attraction_count,state_rank_domestic_visits_2024
+1,North India,Uttar Pradesh,Agra,Taj Mahal; Agra Fort; Itmad-ud-Daulah; Mehtab Bagh; Akbar's Tomb; Jama Masjid,6,1
+2,North India,Uttar Pradesh,Fatehpur Sikri,Buland Darwaza; Jama Masjid; Panch Mahal; Diwan-i-Khas; Tomb of Salim Chishti; Jodha Bai Palace,6,1
+3,North India,Uttar Pradesh,Varanasi,Kashi Vishwanath Temple; Dashashwamedh Ghat; Assi Ghat; Sarnath; Manikarnika Ghat; Ramnagar Fort,6,1
+4,North India,Uttar Pradesh,Lucknow,Bara Imambara; Chota Imambara; Rumi Darwaza; British Residency; Hazratganj; Dilkusha Kothi,6,1
+5,North India,Uttar Pradesh,Mathura,Krishna Janmabhoomi; Dwarkadhish Temple; Vishram Ghat; Mathura Museum; Kusum Sarovar,5,1
+6,North India,Uttar Pradesh,Vrindavan,Banke Bihari Temple; Prem Mandir; ISKCON Temple; Radha Raman Temple; Nidhivan; Govardhan Hill,6,1
+7,North India,Uttar Pradesh,Ayodhya,Ram Mandir; Hanuman Garhi; Kanak Bhawan; Saryu Ghats; Ram Ki Paidi; Dasharath Bhavan,6,1
+8,North India,Uttar Pradesh,Prayagraj,Triveni Sangam; Allahabad Fort; Anand Bhavan; Khusro Bagh; All Saints Cathedral; Akshayavat,6,1
+9,North India,Uttar Pradesh,Kushinagar,Mahaparinirvana Temple; Ramabhar Stupa; Wat Thai Temple; Japanese Temple; Kushinagar Museum,5,1
+10,North India,Uttar Pradesh,Vindhyachal,Vindhyavasini Devi Temple; Ashtabhuja Temple; Kali Khoh Temple; Vindhyachal Ghats,4,1
+11,North India,Uttar Pradesh,Jhansi,Jhansi Fort; Rani Mahal; Government Museum; Parichha Dam; Orchha (nearby),5,1
+12,South India,Tamil Nadu,Chennai,Marina Beach; Kapaleeshwarar Temple; Fort St. George; San Thome Basilica; Government Museum; Besant Nagar Beach,6,2
+13,South India,Tamil Nadu,Madurai,Meenakshi Amman Temple; Thirumalai Nayakkar Palace; Gandhi Memorial Museum; Alagar Koyil; Teppakulam,5,2
+14,South India,Tamil Nadu,Ooty,Ooty Lake; Botanical Gardens; Doddabetta Peak; Rose Garden; Nilgiri Mountain Railway; Tea Museum,6,2
+15,South India,Tamil Nadu,Kodaikanal,Kodaikanal Lake; Coaker's Walk; Bryant Park; Pillar Rocks; Silver Cascade Falls; Guna Caves,6,2
+16,South India,Tamil Nadu,Mahabalipuram,Shore Temple; Pancha Rathas; Arjuna's Penance; Krishna's Butter Ball; Mahabalipuram Beach,5,2
+17,South India,Tamil Nadu,Thanjavur,Brihadeeswarar Temple; Thanjavur Palace; Saraswathi Mahal Library; Art Gallery; Sangeetha Mahal,5,2
+18,South India,Tamil Nadu,Rameswaram,Ramanathaswamy Temple; Pamban Bridge; Dhanushkodi; Abdul Kalam Memorial; Agni Theertham,5,2
+19,South India,Tamil Nadu,Kanyakumari,Vivekananda Rock Memorial; Thiruvalluvar Statue; Kanyakumari Beach; Bhagavathy Amman Temple; Sunset Point,5,2
+20,South India,Tamil Nadu,Coimbatore,Marudamalai Temple; Isha Yoga Center; Gedee Car Museum; VOC Park; Eachanari Vinayagar Temple,5,2
+21,South India,Tamil Nadu,Kanchipuram,Kailasanathar Temple; Ekambareswarar Temple; Kamakshi Amman Temple; Varadharaja Perumal Temple; Vaikunta Perumal Temple,5,2
+22,South India,Tamil Nadu,Tiruchirappalli,Sri Ranganathaswamy Temple (Srirangam); Rockfort Ucchi Pillayar Temple; Jambukeswarar Temple; Kallanai Dam,4,2
+23,South India,Tamil Nadu,Tiruvannamalai,Arunachaleswarar Temple; Sri Ramana Ashram; Arunachala Hill (Girivalam); Skandashram,4,2
+24,South India,Tamil Nadu,Velankanni,Basilica of Our Lady of Good Health; Velankanni Beach; Our Lady's Tank; Shrine Museum,4,2
+25,South India,Tamil Nadu,Palani,Arulmigu Dhandayuthapani Swamy Temple; Palani Rope Car; Idumban Temple; Thiru Avinankudi Temple,4,2
+26,South India,Tamil Nadu,Yercaud,Yercaud Lake; Lady's Seat; Killiyur Falls; Shevaroy Temple; Pagoda Point,5,2
+27,South India,Tamil Nadu,Kumbakonam,Adi Kumbeswarar Temple; Mahamaham Tank; Airavatesvara Temple (Darasuram); Sarangapani Temple,4,2
+28,South India,Karnataka,Bengaluru,Bangalore Palace; Lalbagh Botanical Garden; Cubbon Park; Vidhana Soudha; ISKCON Temple; Tipu Sultan's Palace,6,3
+29,South India,Karnataka,Mysuru,Mysore Palace; Chamundi Hill; Brindavan Gardens; St. Philomena's Cathedral; Mysuru Zoo; Devaraja Market,6,3
+30,South India,Karnataka,Hampi,Virupaksha Temple; Vittala Temple; Stone Chariot; Hampi Bazaar; Lotus Mahal; Elephant Stables,6,3
+31,South India,Karnataka,Madikeri (Coorg),Abbey Falls; Raja's Seat; Madikeri Fort; Omkareshwara Temple; Dubare Elephant Camp; Talakaveri,6,3
+32,South India,Karnataka,Gokarna,Om Beach; Kudle Beach; Half Moon Beach; Mahabaleshwar Temple; Paradise Beach; Yana Caves,6,3
+33,South India,Karnataka,Udupi,Sri Krishna Temple; Malpe Beach; St. Mary's Island; Kaup Beach; Anantheshwara Temple,5,3
+34,South India,Karnataka,Chikmagalur,Mullayanagiri; Baba Budangiri; Jhari Falls; Hebbe Falls; Coffee Plantations; Bhadra Wildlife Sanctuary,6,3
+35,South India,Karnataka,Badami,Badami Cave Temples; Agastya Lake; Bhutanatha Temples; Badami Fort; Archaeological Museum,5,3
+36,South India,Karnataka,Dharmasthala,Sri Manjunatha Temple; Bahubali Statue; Manjusha Museum; Car Museum,4,3
+37,South India,Karnataka,Murudeshwar,Murudeshwar Temple & Shiva Statue; Raja Gopura; Murudeshwar Beach; Netrani Island,4,3
+38,South India,Karnataka,Belur & Halebidu,Chennakeshava Temple; Hoysaleswara Temple; Kedareshwara Temple; Yagachi Dam,4,3
+39,South India,Karnataka,Shravanabelagola,Gommateshwara (Bahubali) Statue; Vindhyagiri Hill; Chandragiri Hill; Bhandari Basadi,4,3
+40,South India,Karnataka,Vijayapura (Bijapur),Gol Gumbaz; Ibrahim Rauza; Jama Masjid; Malik-e-Maidan; Bara Kaman,5,3
+41,South India,Andhra Pradesh,Tirupati,Tirumala Venkateswara Temple; Kapila Theertham; Govindaraja Swamy Temple; Akasaganga Teertham; Talakona Waterfalls,5,4
+42,South India,Andhra Pradesh,Visakhapatnam,RK Beach; Kailasagiri; INS Kurusura Submarine Museum; Borra Caves; Araku Valley; Yarada Beach,6,4
+43,South India,Andhra Pradesh,Vijayawada,Kanaka Durga Temple; Prakasam Barrage; Undavalli Caves; Bhavani Island; Kondapalli Fort,5,4
+44,South India,Andhra Pradesh,Araku Valley,Araku Valley Viewpoints; Borra Caves; Tribal Museum; Coffee Plantations; Chaparai Waterfalls,5,4
+45,South India,Andhra Pradesh,Srisailam,Mallikarjuna Jyotirlinga Temple; Srisailam Dam; Akkamahadevi Caves; Pathala Ganga; Sakshi Ganapati Temple,5,4
+46,South India,Andhra Pradesh,Srikalahasti,Srikalahasteeswara Temple; Bharadwaja Theertham; Sri Durgambika Temple; Kannappa Temple,4,4
+47,South India,Andhra Pradesh,Puttaparthi,Prasanthi Nilayam; Sai Kulwant Hall; Chaitanya Jyoti Museum; Hill View Stadium,4,4
+48,South India,Andhra Pradesh,Amaravati,Amaravati Stupa; Amareswara Temple; Archaeological Museum; Dhyana Buddha Statue,4,4
+49,North India,Rajasthan,Jaipur,Amber Fort; City Palace; Hawa Mahal; Jantar Mantar; Jal Mahal; Nahargarh Fort; Jaigarh Fort; Albert Hall Museum,8,5
+50,North India,Rajasthan,Udaipur,City Palace; Lake Pichola; Lake Palace; Jag Mandir; Jagdish Temple; Sajjangarh (Monsoon Palace); Fateh Sagar Lake; Saheliyon-ki-Bari,8,5
+51,North India,Rajasthan,Jodhpur,Mehrangarh Fort; Umaid Bhawan Palace; Jaswant Thada; Clock Tower; Sardar Market; Mandore Gardens; Rao Jodha Desert Rock Park,7,5
+52,North India,Rajasthan,Jaisalmer,Jaisalmer Fort; Patwon Ki Haveli; Salim Singh Ki Haveli; Nathmal Ki Haveli; Gadisar Lake; Sam Sand Dunes; Kuldhara Village,7,5
+53,North India,Rajasthan,Pushkar,Pushkar Lake; Brahma Temple; Savitri Temple; Varaha Temple; Rangji Temple; Pushkar Bazaar; Man Mahal,7,5
+54,North India,Rajasthan,Bikaner,Junagarh Fort; Karni Mata Temple; Lalgarh Palace; Rampuria Havelis; Gajner Palace; National Research Centre on Camel,6,5
+55,North India,Rajasthan,Mount Abu,Dilwara Jain Temples; Nakki Lake; Guru Shikhar; Toad Rock; Mount Abu Wildlife Sanctuary; Sunset Point,6,5
+56,North India,Rajasthan,Ajmer,Ajmer Sharif Dargah; Ana Sagar Lake; Adhai Din Ka Jhonpra; Akbari Fort; Nareli Jain Temple; Prithviraj Smarak,6,5
+57,North India,Rajasthan,Chittorgarh,Chittorgarh Fort; Vijay Stambh; Kirti Stambh; Rana Kumbha Palace; Padmini Palace; Meera Temple,6,5
+58,North India,Rajasthan,Bundi,Bundi Palace; Taragarh Fort; Raniji ki Baori; Nawal Sagar Lake; 84-Pillared Cenotaph; Chitrashala,6,5
+59,North India,Rajasthan,Sawai Madhopur,Ranthambore National Park; Ranthambore Fort; Trinetra Ganesh Temple; Padam Lake; Surwal Lake,5,5
+60,North India,Rajasthan,Bharatpur,Keoladeo National Park; Lohagarh Fort; Bharatpur Palace; Government Museum; Deeg Palace,5,5
+61,North India,Rajasthan,Kota,Garh Palace; Seven Wonders Park; Chambal Garden; Kishore Sagar Lake; Garadia Mahadev Temple,5,5
+62,North India,Rajasthan,Nathdwara,Shrinathji Temple; Statue of Belief (Vishwas Swaroopam); Lalbagh; Pichwai art market,4,5
+63,North India,Rajasthan,Kumbhalgarh,Kumbhalgarh Fort & Walls; Badal Mahal; Neelkanth Mahadev Temple; Kumbhalgarh Wildlife Sanctuary; Ranakpur Jain Temple,5,5
+64,West India,Maharashtra,Mumbai,Gateway of India; Marine Drive; CSMT; Elephanta Caves; Colaba Causeway; Siddhivinayak Temple,6,6
+65,West India,Maharashtra,Pune,Aga Khan Palace; Shaniwar Wada; Sinhagad Fort; Pataleshwar Cave Temple; Raja Dinkar Kelkar Museum,5,6
+66,West India,Maharashtra,Aurangabad,Ajanta Caves; Ellora Caves; Bibi Ka Maqbara; Daulatabad Fort; Panchakki,5,6
+67,West India,Maharashtra,Nashik,Trimbakeshwar Temple; Sula Vineyards; Panchavati; Kalaram Temple; Pandavleni Caves; Ram Kund,6,6
+68,West India,Maharashtra,Lonavala,Tiger Point; Rajmachi Fort; Bhaja Caves; Karla Caves; Lohagad Fort; Pawna Lake,6,6
+69,West India,Maharashtra,Mahabaleshwar,Arthur's Seat; Venna Lake; Pratapgad Fort; Mapro Garden; Elephant's Head Point; Lingmala Waterfall,6,6
+70,West India,Maharashtra,Shirdi,Sai Baba Temple; Dwarkamai; Chavadi; Gurusthan; Dixit Wada Museum,5,6
+71,West India,Maharashtra,Kolhapur,Mahalakshmi Temple; Panhala Fort; New Palace; Rankala Lake; Jyotiba Temple,5,6
+72,West India,Maharashtra,Alibaug,Alibaug Beach; Kolaba Fort; Kihim Beach; Nagaon Beach; Kanakeshwar Temple,5,6
+73,West India,Maharashtra,Nagpur,Deekshabhoomi; Sitabuldi Fort; Maharajbagh Zoo; Futala Lake; Dragon Palace Temple,5,6
+74,West India,Maharashtra,Pandharpur,Vithoba (Vitthal Rukmini) Temple; Chandrabhaga River Ghats; Pundalik Temple; Kaikadi Maharaj Math,4,6
+75,West India,Maharashtra,Matheran,Panorama Point; Charlotte Lake; Echo Point; Louisa Point; Matheran Toy Train,5,6
+76,West India,Maharashtra,Ganpatipule,Swayambhu Ganpati Temple; Ganpatipule Beach; Aare Ware Beach; Jaigad Fort; Prachin Konkan Museum,5,6
+77,West India,Maharashtra,Tarkarli (Malvan),Tarkarli Beach; Sindhudurg Fort; Devbag Beach; Tsunami Island; Scuba diving,5,6
+78,East India,West Bengal,Kolkata,Victoria Memorial; Howrah Bridge; Indian Museum; St. Paul's Cathedral; Marble Palace; Dakshineswar Temple,6,7
+79,East India,West Bengal,Darjeeling,Tiger Hill; Darjeeling Himalayan Railway; Batasia Loop; Himalayan Mountaineering Institute; Peace Pagoda; Tea Gardens,6,7
+80,East India,West Bengal,Kalimpong,Deolo Hill; Durpin Monastery; Cactus Nursery; Morgan House; Zang Dhok Palri Phodang Monastery,5,7
+81,East India,West Bengal,Siliguri,Mahananda Wildlife Sanctuary; ISKCON Temple; Bengal Safari; Salugara Monastery; Coronation Bridge,5,7
+82,East India,West Bengal,Shantiniketan,Visva-Bharati University; Tagore's Ashram; Amar Kutir; Sonajhuri Haat; Uttarayan Complex,5,7
+83,East India,West Bengal,Digha,Digha Beach; New Digha; Marine Aquarium; Amarabati Park; Chandaneswar Temple; Mandarmani Beach,6,7
+84,East India,West Bengal,Gangasagar,Kapil Muni Ashram; Sagar Island Beach; Gangasagar Mela grounds; Sagar Lighthouse,4,7
+85,East India,West Bengal,Sundarbans,Sundarban National Park; Sajnekhali Watch Tower; Dobanki Canopy Walk; Sudhanyakhali; Netidhopani,5,7
+86,East India,West Bengal,Murshidabad,Hazarduari Palace; Katra Masjid; Nizamat Imambara; Motijheel; Kathgola Palace,5,7
+87,West India,Gujarat,Ahmedabad,Sabarmati Ashram; Adalaj Stepwell; Sidi Saiyyed Mosque; Kankaria Lake; Sabarmati Riverfront; Science City,6,8
+88,West India,Gujarat,Vadodara,Laxmi Vilas Palace; Sayaji Garden; Baroda Museum; EME Temple; Kirti Mandir,5,8
+89,West India,Gujarat,Dwarka,Dwarkadhish Temple; Bet Dwarka; Nageshwar Jyotirlinga; Rukmini Temple; Gomti Ghat,5,8
+90,West India,Gujarat,Somnath,Somnath Temple; Triveni Sangam; Bhalka Tirth; Somnath Beach; Prabhas Patan Museum,5,8
+91,West India,Gujarat,Bhuj,Aina Mahal; Prag Mahal; Kutch Museum; Hamirsar Lake; Bhuj Chhatardi; Rann of Kutch,6,8
+92,West India,Gujarat,Sasan Gir,Gir National Park; Devalia Safari Park; Kamleshwar Dam; Gir Interpretation Zone,4,8
+93,West India,Gujarat,Kevadia,Statue of Unity; Valley of Flowers; Sardar Sarovar Dam; Jungle Safari; Cactus Garden; Ekta Nagar,6,8
+94,West India,Gujarat,Ambaji,Ambaji Temple; Gabbar Hill; Kumbhariya Jain Temples; Kailash Tekri,4,8
+95,West India,Gujarat,Saputara,Saputara Lake; Sunset Point; Gira Waterfalls; Artist Village; Saputara Ropeway,5,8
+96,West India,Gujarat,Palitana,Shatrunjaya Hill Jain Temples; Adinath Temple; Hastagiri Jain Tirth; Palitana Jain Museum,4,8
+97,West India,Gujarat,Patan & Modhera,Rani ki Vav; Sahastralinga Talav; Patola weaving houses; Modhera Sun Temple,4,8
+98,West India,Gujarat,Junagadh,Uparkot Fort; Girnar Hill Temples; Mahabat Maqbara; Sakkarbaug Zoo; Ashokan Rock Edicts,5,8
+99,Central India,Madhya Pradesh,Bhopal,Upper Lake; Van Vihar National Park; Taj-ul-Masajid; State Museum; Bharat Bhavan; Bhojpur Temple,6,9
+100,Central India,Madhya Pradesh,Indore,Rajwada Palace; Lal Bagh Palace; Kanch Mandir; Sarafa Bazaar; Annapurna Temple; Patalpani Waterfall,6,9
+101,Central India,Madhya Pradesh,Ujjain,Mahakaleshwar Temple; Kal Bhairav Temple; Ram Ghat; Harsiddhi Temple; Vedh Shala; Mangalnath Temple,6,9
+102,Central India,Madhya Pradesh,Khajuraho,Khajuraho Group of Monuments; Kandariya Mahadeva Temple; Lakshmana Temple; Western Group; Light & Sound Show,5,9
+103,Central India,Madhya Pradesh,Gwalior,Gwalior Fort; Jai Vilas Palace; Sas Bahu Temple; Teli Ka Mandir; Sun Temple; Tomb of Tansen,6,9
+104,Central India,Madhya Pradesh,Pachmarhi,Bee Falls; Dhupgarh; Jata Shankar Cave; Pandav Caves; Apsara Vihar; Satpura National Park,6,9
+105,Central India,Madhya Pradesh,Orchha,Orchha Fort; Jahangir Mahal; Raj Mahal; Ram Raja Temple; Chaturbhuj Temple; Betwa River,6,9
+106,Central India,Madhya Pradesh,Sanchi,Great Stupa; Stupa No. 2; Ashoka Pillar; Sanchi Museum; Buddhist Monasteries,5,9
+107,Central India,Madhya Pradesh,Mandu,Jahaz Mahal; Hindola Mahal; Rani Roopmati Pavilion; Baz Bahadur's Palace; Hoshang Shah's Tomb; Jami Masjid,6,9
+108,Central India,Madhya Pradesh,Omkareshwar,Omkareshwar Jyotirlinga; Mamleshwar Temple; Statue of Oneness; Siddhnath Temple; Narmada Ghats,5,9
+109,Central India,Madhya Pradesh,Maheshwar,Ahilya Fort; Maheshwar Ghats; Rajwada; Maheshwari saree weaving; Sahastradhara,5,9
+110,Central India,Madhya Pradesh,Jabalpur,Bhedaghat Marble Rocks; Dhuandhar Falls; Madan Mahal Fort; Chausath Yogini Temple,4,9
+111,Central India,Madhya Pradesh,Kanha,Kanha National Park; Bamni Dadar (Sunset Point); Kanha Museum; Shravan Tal,4,9
+112,Central India,Madhya Pradesh,Bandhavgarh,Bandhavgarh National Park; Bandhavgarh Fort; Shesh Shaiya; Climber's Point,4,9
+113,North India,Himachal Pradesh,Shimla,The Ridge; Mall Road; Christ Church; Jakhu Temple; Viceregal Lodge; Kufri; Shimla State Museum,7,
+114,North India,Himachal Pradesh,Manali,Solang Valley; Rohtang Pass; Hadimba Temple; Old Manali; Manu Temple; Vashisht Hot Springs; Atal Tunnel,7,
+115,North India,Himachal Pradesh,Dharamshala,Dal Lake; Dharamshala Stadium; Kangra Art Museum; War Memorial; Tea Gardens; Bhagsu Waterfall,6,
+116,North India,Himachal Pradesh,McLeod Ganj,Tsuglagkhang Complex; Namgyal Monastery; Bhagsunag Temple; Bhagsu Waterfall; Triund,5,
+117,North India,Himachal Pradesh,Kasol,Parvati Valley; Manikaran Sahib; Chalal Village; Tosh; Malana; Parvati River,6,
+118,North India,Himachal Pradesh,Dalhousie,Khajjiar; Dainkund Peak; St. John's Church; Panchpula; Subhash Baoli; Kalatop Wildlife Sanctuary,6,
+119,North India,Himachal Pradesh,Kullu,Great Himalayan National Park; Raghunath Temple; Bijli Mahadev Temple; Naggar Castle; Kullu Valley,5,
+120,North India,Himachal Pradesh,Kalpa,Kinnaur Kailash Viewpoint; Narayan-Nagini Temple; Roghi Village; Suicide Point; Hu-Bu-Lan-Kar Monastery,5,
+121,North India,Himachal Pradesh,Kaza (Spiti),Key Monastery; Kibber Village; Langza; Chandratal Lake; Dhankar Monastery; Tabo Monastery,6,
+122,North India,Uttarakhand,Rishikesh,Triveni Ghat; Beatles Ashram; Ram Jhula; Laxman Jhula area; Neelkanth Mahadev Temple; Ganga Aarti,6,
+123,North India,Uttarakhand,Haridwar,Har Ki Pauri; Mansa Devi Temple; Chandi Devi Temple; Daksheswar Mahadev Temple; Bharat Mata Mandir,5,
+124,North India,Uttarakhand,Mussoorie,Mall Road; Gun Hill; Kempty Falls; Lal Tibba; Company Garden; Camel's Back Road,6,
+125,North India,Uttarakhand,Nainital,Naini Lake; Naina Devi Temple; Snow View Point; Tiffin Top; Eco Cave Gardens; Mall Road,6,
+126,North India,Uttarakhand,Dehradun,Robber's Cave; Sahastradhara; Forest Research Institute; Tapkeshwar Temple; Mindrolling Monastery,5,
+127,North India,Uttarakhand,Auli,Auli Ski Resort; Auli Ropeway; Gurso Bugyal; Auli Artificial Lake; Nanda Devi Viewpoint,5,
+128,North India,Uttarakhand,Ramnagar,Jim Corbett National Park; Corbett Waterfall; Garjiya Devi Temple; Sitabani Wildlife Reserve,4,
+129,North India,Uttarakhand,Almora,Kasar Devi Temple; Bright End Corner; Chitai Golu Devta Temple; Binsar Wildlife Sanctuary; Katarmal Sun Temple,5,
+130,North India,Uttarakhand,Kedarnath,Kedarnath Temple; Bhairavnath Temple; Adi Shankaracharya Samadhi; Vasuki Tal; Chorabari Tal,5,
+131,North India,Uttarakhand,Badrinath,Badrinath Temple; Tapt Kund; Mana Village; Vasudhara Falls; Brahma Kapal,5,
+132,North India,Delhi,Delhi,India Gate; Red Fort; Qutub Minar; Humayun's Tomb; Lotus Temple; Akshardham; Jama Masjid; Chandni Chowk,8,
+133,North India,Punjab,Amritsar,Golden Temple; Jallianwala Bagh; Wagah-Attari Border; Partition Museum; Durgiana Temple,5,
+134,North India,Punjab,Patiala,Qila Mubarak; Moti Bagh Palace; Sheesh Mahal; Baradari Gardens; Patiala Heritage Walk,5,
+135,North India,Punjab,Anandpur Sahib,Takht Sri Kesgarh Sahib; Virasat-e-Khalsa; Anandgarh Fort; Gurdwara Sis Ganj Sahib,4,
+136,North India,Chandigarh,Chandigarh,Rock Garden; Sukhna Lake; Capitol Complex; Rose Garden; Government Museum & Art Gallery,5,
+137,North India,Jammu & Kashmir,Srinagar,Dal Lake; Mughal Gardens; Shankaracharya Temple; Hazratbal Shrine; Pari Mahal; Old City,6,
+138,North India,Jammu & Kashmir,Gulmarg,Gulmarg Gondola; Gulmarg Ski Resort; Khilanmarg; Alpather Lake; St. Mary's Church,5,
+139,North India,Jammu & Kashmir,Pahalgam,Betaab Valley; Aru Valley; Baisaran Valley; Lidder River; Pahalgam Golf Course,5,
+140,North India,Jammu & Kashmir,Jammu,Bahu Fort; Raghunath Temple; Mubarak Mandi Palace; Amar Mahal Palace; Bagh-e-Bahu,5,
+141,North India,Jammu & Kashmir,Katra,Vaishno Devi Temple; Banganga; Charan Paduka; Ardhkuwari Cave; Bhairavnath Temple,5,
+142,North India,Jammu & Kashmir,Sonamarg,Thajiwas Glacier; Zoji La; Vishansar Lake; Krishansar Lake; Sindh River,5,
+143,North India,Ladakh,Leh,Leh Palace; Shanti Stupa; Thiksey Monastery; Magnetic Hill; Hall of Fame; Namgyal Tsemo Monastery,6,
+144,North India,Ladakh,Kargil,Kargil War Memorial; Mulbekh Monastery; Drass Valley; Tiger Hill Viewpoint; Suru Valley,5,
+145,North India,Ladakh,Nubra Valley (Diskit),Diskit Monastery; Maitreya Buddha; Hunder Sand Dunes; Turtuk Village; Panamik Hot Springs,5,
+146,West India,Goa,Panaji,Basilica of Bom Jesus; Se Cathedral; Fontainhas; Miramar Beach; Dona Paula; Reis Magos Fort,6,
+147,West India,Goa,Calangute,Calangute Beach; Baga Beach; Calangute Market; St. Alex Church; Aguada Fort,5,
+148,West India,Goa,Anjuna,Anjuna Beach; Anjuna Flea Market; Chapora Fort; Vagator Beach; Ozran Beach,5,
+149,West India,Goa,Margao,Colva Beach; Holy Spirit Church; Margao Municipal Garden; Our Lady of Mercy Church; Chandor,5,
+150,West India,Daman & Diu,Diu,Diu Fort; Naida Caves; Nagoa Beach; St. Paul's Church; Diu Museum; Ghoghla Beach,6,
+151,South India,Kerala,Kochi,Fort Kochi; Chinese Fishing Nets; Mattancherry Palace; Jewish Synagogue; St. Francis Church; Marine Drive,6,
+152,South India,Kerala,Munnar,Eravikulam National Park; Mattupetty Dam; Tea Museum; Top Station; Echo Point; Tea Gardens,6,
+153,South India,Kerala,Alleppey,Alleppey Backwaters; Alappuzha Beach; Houseboat Cruises; Vembanad Lake; Marari Beach,5,
+154,South India,Kerala,Kovalam,Lighthouse Beach; Hawa Beach; Samudra Beach; Vizhinjam Lighthouse; Vellayani Lake,5,
+155,South India,Kerala,Wayanad,Edakkal Caves; Soochipara Falls; Banasura Sagar Dam; Wayanad Wildlife Sanctuary; Chembra Peak,5,
+156,South India,Kerala,Thiruvananthapuram,Padmanabhaswamy Temple; Kovalam; Napier Museum; Kuthira Malika Palace; Shangumugham Beach,5,
+157,South India,Kerala,Thekkady,Periyar Wildlife Sanctuary; Periyar Lake; Bamboo Rafting; Spice Plantations; Mangala Devi Temple,5,
+158,South India,Kerala,Varkala,Varkala Cliff; Papanasam Beach; Janardhana Swamy Temple; Sivagiri Mutt; Black Sand Beach,5,
+159,South India,Kerala,Guruvayur,Guruvayur Sri Krishna Temple; Punnathur Kotta Elephant Sanctuary; Mammiyur Temple; Chavakkad Beach,4,
+160,South India,Kerala,Sabarimala,Sabarimala Ayyappa Temple; Pamba River; Sannidhanam; Malikappuram Temple,4,
+161,South India,Telangana,Hyderabad,Charminar; Golconda Fort; Hussain Sagar Lake; Salar Jung Museum; Chowmahalla Palace; Qutb Shahi Tombs,6,
+162,South India,Telangana,Warangal,Warangal Fort; Thousand Pillar Temple; Ramappa Temple; Bhadrakali Temple; Pakhal Lake,5,
+163,South India,Puducherry,Pondicherry,Promenade Beach; Sri Aurobindo Ashram; French Quarter; Auroville; Paradise Beach; Basilica of the Sacred Heart,6,
+164,Islands,Lakshadweep,Kavaratti,Kavaratti Beach; Ujra Mosque; Marine Aquarium; Lagoon; Water Sports Centre,5,
+165,Islands,Andaman & Nicobar,Port Blair,Cellular Jail; Corbyn's Cove; Samudrika Museum; Anthropological Museum; Ross Island; North Bay Island,6,
+166,Islands,Andaman & Nicobar,Havelock Island (Swaraj Dweep),Radhanagar Beach; Elephant Beach; Kalapathar Beach; Govind Nagar Beach; Scuba Diving Sites,5,
+167,Islands,Andaman & Nicobar,Neil Island (Shaheed Dweep),Bharatpur Beach; Laxmanpur Beach; Natural Bridge; Sitapur Beach; Neil Island Jetty,5,
+168,East India,Odisha,Puri,Jagannath Temple; Puri Beach; Gundicha Temple; Narendra Tank; Raghurajpur Artist Village,5,
+169,East India,Odisha,Bhubaneswar,Lingaraj Temple; Udayagiri & Khandagiri Caves; Mukteshwar Temple; Dhauli Shanti Stupa; Odisha State Museum,5,
+170,East India,Odisha,Konark,Konark Sun Temple; Chandrabhaga Beach; Archaeological Museum; Ramachandi Temple,4,
+171,East India,Odisha,Cuttack,Barabati Fort; Cuttack Chandi Temple; Netaji Birth Place Museum; Maritime Museum; Dhabaleswar Temple,5,
+172,East India,Odisha,Chilika (Satapada),Chilika Lake; Irrawaddy dolphin spotting; Kalijai Temple; Nalabana Bird Sanctuary; Rajhans Island,5,
+173,East India,Bihar,Bodh Gaya,Mahabodhi Temple; Great Buddha Statue; Thai Monastery; Bodhi Tree; Japanese Temple,5,
+174,East India,Bihar,Nalanda,Nalanda Mahavihara Ruins; Nalanda Archaeological Museum; Xuanzang Memorial; Hiuen Tsang Memorial Hall,4,
+175,East India,Bihar,Rajgir,Gridhakuta Hill; Vishwa Shanti Stupa; Rajgir Ropeway; Hot Springs; Venuvana; Cyclopean Wall,6,
+176,East India,Bihar,Patna,Golghar; Patna Museum; Bihar Museum; Takht Sri Patna Sahib; Gandhi Maidan; Kumhrar,6,
+177,East India,Bihar,Vaishali,Ashokan Pillar; Relic Stupa; Vishwa Shanti Stupa; Abhishek Pushkarini; Kundalpur,5,
+178,East India,Jharkhand,Ranchi,Dassam Falls; Hundru Falls; Jagannath Temple; Rock Garden; Tagore Hill; Birsa Zoological Park,6,
+179,East India,Jharkhand,Deoghar,Baidyanath Temple; Trikuta Parvat; Nandan Pahar; Tapovan; Basukinath Temple,5,
+180,East India,Sikkim,Gangtok,MG Marg; Rumtek Monastery; Tsomgo Lake; Nathula Pass; Hanuman Tok; Namgyal Institute of Tibetology,6,
+181,East India,Sikkim,Pelling,Pemayangtse Monastery; Rabdentse Ruins; Khecheopalri Lake; Skywalk; Singshore Bridge,5,
+182,East India,Sikkim,Lachung,Yumthang Valley; Zero Point; Lachung Monastery; Shingba Rhododendron Sanctuary; Bhim Nala Waterfall,5,
+183,Northeast India,Assam,Guwahati,Kamakhya Temple; Umananda Island; Assam State Museum; Srimanta Sankardev Kalakshetra; Brahmaputra River,5,
+184,Northeast India,Assam,Kaziranga,Kaziranga National Park; Kohora Range; Agoratoli Range; Kaziranga Orchid Park; Wildlife Safaris,5,
+185,Northeast India,Assam,Majuli,Kamalabari Satra; Auniati Satra; Samaguri Satra; Mishing Villages; Brahmaputra Landscapes,5,
+186,Northeast India,Assam,Sivasagar,Sivasagar Sivadol; Rang Ghar; Talatal Ghar; Ahom Museum; Joysagar,5,
+187,Northeast India,Meghalaya,Shillong,Umiam Lake; Shillong Peak; Elephant Falls; Ward's Lake; Don Bosco Museum; Laitlum Canyon,6,
+188,Northeast India,Meghalaya,Cherrapunji,Nohkalikai Falls; Mawsmai Cave; Seven Sisters Falls; Double Decker Living Root Bridge; Dainthlen Falls,5,
+189,Northeast India,Meghalaya,Mawlynnong,Living Root Bridge; Mawlynnong Village; Balancing Rock; Church of Epiphany; Sky View Point,5,
+190,Northeast India,Arunachal Pradesh,Tawang,Tawang Monastery; Sela Pass; Bum La Pass; Madhuri Lake; Tawang War Memorial; Nuranang Falls,6,
+191,Northeast India,Arunachal Pradesh,Ziro,Ziro Valley; Talley Valley Wildlife Sanctuary; Apatani Villages; Meghna Cave Temple; Pine Forests,5,
+192,Northeast India,Arunachal Pradesh,Bomdila,Bomdila Monastery; Eagle's Nest Wildlife Sanctuary; Bomdila View Point; Apple Orchards; Sela Pass Route,5,
+193,Northeast India,Nagaland,Kohima,Kisama Heritage Village; Kohima War Cemetery; Naga Heritage Village; Japfu Peak; Dzukou Valley,5,
+194,Northeast India,Nagaland,Dimapur,Kachari Ruins; Diezephe Village; Rangapahar Reserve Forest; Triple Falls; Nagaland Zoological Park,5,
+195,Northeast India,Manipur,Imphal,Kangla Fort; Loktak Lake; Ima Keithel; Shree Govindajee Temple; Manipur State Museum; Khonghampat Orchidarium,6,
+196,Northeast India,Mizoram,Aizawl,Durtlang Hills; Solomon's Temple; Mizoram State Museum; Reiek; Bara Bazar; Hmuifang,6,
+197,Northeast India,Tripura,Agartala,Ujjayanta Palace; Neermahal Palace; Tripura Government Museum; Jagannath Temple; Sepahijala Wildlife Sanctuary,5,
+198,Central India,Chhattisgarh,Raipur,Purkhauti Muktangan; Mahant Ghasidas Memorial Museum; Nandan Van Zoo & Safari; Vivekananda Sarovar; Telibandha Lake,5,
+199,Central India,Chhattisgarh,Jagdalpur,Chitrakote Falls; Tirathgarh Falls; Kanger Valley National Park; Kutumsar Cave; Danteshwari Temple,5,
+200,North India,Haryana,Kurukshetra,Brahma Sarovar; Jyotisar; Sannihit Sarovar; Kurukshetra Panorama & Science Centre; Sri Krishna Museum,5,

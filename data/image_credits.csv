@@ -1,0 +1,60 @@
+city,slug,image_path,credit,license,source_url
+delhi,india-gate,images/attractions/delhi/india-gate.jpg,AKS.9955,CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:India_Gate_front.jpg
+delhi,red-fort,images/attractions/delhi/red-fort.jpg,PerSona77,CC BY-SA 3.0,https://commons.wikimedia.org/wiki/File:Delhi_fort.jpg
+delhi,qutub-minar,images/attractions/delhi/qutub-minar.jpg,Wasir kasab,CC BY 4.0,https://commons.wikimedia.org/wiki/File:Qutb_Minar_2022.jpg
+delhi,humayuns-tomb,images/attractions/delhi/humayuns-tomb.jpg,Muhammad Mahdi Karim,GFDL 1.2,"https://commons.wikimedia.org/wiki/File:Tomb_of_Humayun,_Delhi.jpg"
+delhi,hero,images/cities/delhi.jpg,Muhammad Mahdi Karim,GFDL 1.2,"https://commons.wikimedia.org/wiki/File:Tomb_of_Humayun,_Delhi.jpg"
+delhi,lotus-temple,images/attractions/delhi/lotus-temple.jpg,Vandelizer,CC BY 2.0,https://commons.wikimedia.org/wiki/File:LotusDelhi.jpg
+delhi,akshardham,images/attractions/delhi/akshardham.jpg,Swaminarayan Sanstha,CC BY-SA 3.0,https://commons.wikimedia.org/wiki/File:New_Delhi_Temple.jpg
+delhi,jama-masjid-delhi,images/attractions/delhi/jama-masjid-delhi.jpg,Bikashrd,CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:Jama_Masjid_-_In_the_Noon.jpg
+delhi,chandni-chowk,images/attractions/delhi/chandni-chowk.jpg,Goutam1962,CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:Gurudwara_Sisganj_Sahib_Chandni_Chowk_19.jpg
+delhi,national-museum,images/attractions/delhi/national-museum.jpg,Miya.m,CC BY-SA 3.0,https://commons.wikimedia.org/wiki/File:India_national_museum_01.jpg
+delhi,lodhi-garden,images/attractions/delhi/lodhi-garden.jpg,Amaninder,CC BY-SA 3.0,https://commons.wikimedia.org/wiki/File:Lodhi_Gardens_on_a_sunny_day.jpg
+delhi,raj-ghat,images/attractions/delhi/raj-ghat.jpg,"Humayunn Niaz Ahmed Peerzaada from Mumbai, India",CC BY-SA 2.0,https://commons.wikimedia.org/wiki/File:Gandhi_Memorial.jpg
+delhi,bangla-sahib,images/attractions/delhi/bangla-sahib.jpg,"Ken Wieland from Philadelphia, USA",CC BY-SA 2.0,"https://commons.wikimedia.org/wiki/File:Front_view_of_Gurudwara_Bangla_Sahib,_Delhi.jpg"
+delhi,jantar-mantar-delhi,images/attractions/delhi/jantar-mantar-delhi.jpg,AKS.9955,CC BY-SA 4.0,"https://commons.wikimedia.org/wiki/File:Jantar_Mantar,_New_Delhi_(Misra_Yantra).jpg"
+delhi,agrasen-ki-baoli,images/attractions/delhi/agrasen-ki-baoli.jpg,Slyronit,CC BY-SA 4.0,"https://commons.wikimedia.org/wiki/File:Agrasen_ki_Baoli,_New_Delhi.jpg"
+delhi,safdarjung-tomb,images/attractions/delhi/safdarjung-tomb.jpg,Chitranshi,CC BY-SA 3.0,"https://commons.wikimedia.org/wiki/File:Safdar_Jang%E2%80%99s_Tomb,_Delhi_.jpg"
+delhi,hauz-khas,images/attractions/delhi/hauz-khas.jpg,Nvvchar (talk),CC BY-SA 3.0,https://commons.wikimedia.org/wiki/File:Feroze_Shah%27s_Tomb.JPG
+delhi,purana-qila,images/attractions/delhi/purana-qila.jpg,Airknight at English Wikipedia,CC BY 3.0,https://commons.wikimedia.org/wiki/File:Purana_Qila_01.jpg
+delhi,sunder-nursery,images/attractions/delhi/sunder-nursery.jpg,Gryffindor,CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:Sunder_Nursery_Sep-2019.jpg
+delhi,dilli-haat,images/attractions/delhi/dilli-haat.jpg,JyotiPN,CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:Dilli_Haat_-_INA.jpg
+agra,taj-mahal,images/attractions/agra/taj-mahal.jpeg,Yann; edited by Jim Carter,CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:Taj_Mahal_(Edited).jpeg
+agra,hero,images/cities/agra.jpeg,Yann; edited by Jim Carter,CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:Taj_Mahal_(Edited).jpeg
+agra,agra-fort,images/attractions/agra/agra-fort.jpg,A.Savin,FAL,https://commons.wikimedia.org/wiki/File:Agra_03-2016_16_Agra_Fort.jpg
+agra,itmad-ud-daulah,images/attractions/agra/itmad-ud-daulah.jpg,Muhammad Mahdi Karim,GFDL 1.2,"https://commons.wikimedia.org/wiki/File:I%27tim%C4%81d-ud-Daulah,_Agra.jpg"
+agra,mehtab-bagh,images/attractions/agra/mehtab-bagh.jpg,g.kaustav,CC BY-SA 3.0,https://commons.wikimedia.org/wiki/File:Mehtab_Bagh_facing_Taj_Mahal.JPG
+agra,akbars-tomb,images/attractions/agra/akbars-tomb.jpg,Darshanavenugopal,CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:Akbar%27s_Tomb_in_Sikandra_15.jpg
+agra,jama-masjid-agra,images/attractions/agra/jama-masjid-agra.jpg,Anupam Mukherjee,CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:Jami_Masjid_-Agra_-Uttar_Pradesh_-IMG_0282.jpg
+agra,chini-ka-rauza,images/attractions/agra/chini-ka-rauza.jpg,Rangan Datta Wiki,CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:Chini_ki_Rauza_4.jpg
+agra,ram-bagh,images/attractions/agra/ram-bagh.jpg,Rangan Datta Wiki,CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:Chhatri_at_Arambagh_2.jpg
+agra,mariam-tomb,images/attractions/agra/mariam-tomb.jpg,Sauravmitra,CC BY-SA 3.0,"https://commons.wikimedia.org/wiki/File:Mariam%27s_Tomb,_Sikandra,_Agra.JPG"
+agra,guru-ka-taal,images/attractions/agra/guru-ka-taal.jpg,Wikijib,CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:Guru-ka-Tal_wikijib-14.jpg
+jaipur,amber-fort,images/attractions/jaipur/amber-fort.jpg,Jakub Hałun,CC BY-SA 4.0,"https://commons.wikimedia.org/wiki/File:20191219_Fort_Amber,_Amer,_Jaipur_0955_9481.jpg"
+jaipur,hero,images/cities/jaipur.jpg,Jakub Hałun,CC BY-SA 4.0,"https://commons.wikimedia.org/wiki/File:20191219_Fort_Amber,_Amer,_Jaipur_0955_9481.jpg"
+jaipur,city-palace-jaipur,images/attractions/jaipur/city-palace-jaipur.jpg,Jakub Hałun,CC BY-SA 4.0,"https://commons.wikimedia.org/wiki/File:Chandra_Mahal,_City_Palace,_Jaipur,_20191218_0951_9043.jpg"
+jaipur,hawa-mahal,images/attractions/jaipur/hawa-mahal.jpg,Chainwit.,CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:East_facade_Hawa_Mahal_Jaipur_from_ground_level_(July_2022)_-_img_01.jpg
+jaipur,jantar-mantar-jaipur,images/attractions/jaipur/jantar-mantar-jaipur.jpg,Knowledge Seeker,Public domain,https://commons.wikimedia.org/wiki/File:Jantar_Mantar_at_Jaipur.jpg
+jaipur,jal-mahal,images/attractions/jaipur/jal-mahal.jpg,A.Savin,FAL,https://commons.wikimedia.org/wiki/File:Jaipur_03-2016_39_Jal_Mahal_-_Water_Palace.jpg
+jaipur,nahargarh-fort,images/attractions/jaipur/nahargarh-fort.jpg,Sanyam Bahga,CC BY-SA 3.0,https://commons.wikimedia.org/wiki/File:Nahargarh_13.jpg
+jaipur,jaigarh-fort,images/attractions/jaipur/jaigarh-fort.jpg,Acred99,CC BY-SA 3.0,https://commons.wikimedia.org/wiki/File:Rajasthan-Jaipur-Jaigarh-Fort-compound-Apr-2004-00.JPG
+jaipur,albert-hall,images/attractions/jaipur/albert-hall.jpg,Ajit Kumar Majhi,CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:Albert_Hall_(_Jaipur_).jpg
+jaipur,birla-mandir-jaipur,images/attractions/jaipur/birla-mandir-jaipur.jpg,Chainwit.,CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:Birla_Mandir_Jaipur_(2022-07).jpg
+jaipur,galtaji,images/attractions/jaipur/galtaji.jpg,Sharvarism,CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:Zanana_Kund_Aur_Galta_Ji_Ka_Mandir_-_edited.jpg
+jaipur,patrika-gate,images/attractions/jaipur/patrika-gate.jpg,Chainwit.,CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:Patrika_Gate_Jawahar_Circle_Jaipur_2022-07.jpg
+jaipur,govind-dev-ji,images/attractions/jaipur/govind-dev-ji.jpg,Sameergoyal (talk),CC BY-SA 3.0,https://commons.wikimedia.org/wiki/File:Govind_dev_ji.jpg
+jaipur,sisodia-rani-garden,images/attractions/jaipur/sisodia-rani-garden.jpg,Shishir.k 96,CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:Rani_Sisodia_Garden.jpg
+varanasi,kashi-vishwanath,images/attractions/varanasi/kashi-vishwanath.jpg,Architkumar1234,CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:Kashi_Vishwanath.jpg
+varanasi,dashashwamedh-ghat,images/attractions/varanasi/dashashwamedh-ghat.jpg,Saaremees,CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:Dasaswamedh_ghat-varanasi_india-andres_larin.jpg
+varanasi,hero,images/cities/varanasi.jpg,Saaremees,CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:Dasaswamedh_ghat-varanasi_india-andres_larin.jpg
+varanasi,assi-ghat,images/attractions/varanasi/assi-ghat.jpg,Titodutta,CC0,https://commons.wikimedia.org/wiki/File:Assi_Ghat_Varanasi_morning_Aarti.jpg
+varanasi,sarnath,images/attractions/varanasi/sarnath.jpg,GONG JIE,CC BY-SA 3.0,"https://commons.wikimedia.org/wiki/File:Dhamek_Stupa,_Sarnath.jpg"
+varanasi,manikarnika-ghat,images/attractions/varanasi/manikarnika-ghat.jpg,Aleksandr Zykov from Russia,CC BY-SA 2.0,"https://commons.wikimedia.org/wiki/File:Manikarnika_Ghat,_Varanasi,_Uttar_Pradesh,_India_(2011)_5.jpg"
+varanasi,ramnagar-fort,images/attractions/varanasi/ramnagar-fort.jpg,Sidhiwasi,CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:Entrance_area_of_Ramnagar_Fort.jpg
+varanasi,bharat-kala-bhavan,images/attractions/varanasi/bharat-kala-bhavan.jpg,"Jeff Hart from Bloomington, IN, USA",CC BY 2.0,"https://commons.wikimedia.org/wiki/File:Bharat_Kala_Bhavan_Museum,_Banaras_Hindu_University,_Varanasi.jpg"
+varanasi,sankat-mochan,images/attractions/varanasi/sankat-mochan.jpg,Vinayaraj,CC BY-SA 4.0,"https://commons.wikimedia.org/wiki/File:Sankat_Mochan_temple_entrance,_Varanasi_-_IRCTC_2017_(1).jpg"
+varanasi,durga-kund,images/attractions/varanasi/durga-kund.jpg,AKS.9955,CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:Durga_Temple_gate.JPG
+varanasi,tulsi-manas,images/attractions/varanasi/tulsi-manas.jpg,Nikhil399792,CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:Manas_Mandir.jpg
+varanasi,new-vishwanath-bhu,images/attractions/varanasi/new-vishwanath-bhu.jpg,"Kuber Patel, Rosehub",CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:New_Vishwanath_Temple_at_BHU.jpg
+varanasi,sarnath-museum,images/attractions/varanasi/sarnath-museum.jpg,सत्यम् मिश्र,CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:Sarnath_Museum_Front.jpg
+varanasi,kaal-bhairav,images/attractions/varanasi/kaal-bhairav.jpg,Rabin Tuladhar,CC BY-SA 4.0,"https://commons.wikimedia.org/wiki/File:Kaal_Bhairab,_Kathmandu,_Nepal.jpg"

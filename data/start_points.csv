@@ -1,0 +1,10 @@
+city,slug,name,lat,lng
+delhi,cp-start,Connaught Place (hotel area),28.6315,77.2167
+delhi,ndls-start,New Delhi Railway Station,28.6430,77.2194
+delhi,aerocity-start,Aerocity (near the airport),28.5491,77.1210
+agra,tajganj-start,Taj Ganj / Fatehabad Road (hotel area),27.1640,78.0460
+agra,agra-cantt-start,Agra Cantt Railway Station,27.1580,77.9905
+jaipur,mi-road-start,MI Road (hotel area),26.9157,75.8064
+jaipur,jaipur-jn-start,Jaipur Junction Railway Station,26.9196,75.7878
+varanasi,godowlia-start,Godowlia Chowk (old city),25.3089,83.0060
+varanasi,varanasi-jn-start,Varanasi Junction Railway Station,25.3266,82.9875

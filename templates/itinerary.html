@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block title %}{{ trip.days }}-day {{ city.name }} itinerary{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}">{% endblock %}
+
+{% block content %}
+{% set first_date = trip.dates()[0] %}
+{% set last_date = trip.dates()[-1] %}
+{% set window = trip.day_end - trip.day_start %}
+<section class="trip-header">
+  <div class="container">
+    <div class="page-banner">
+      {{ ui.image(city.info.hero_image, '', eager=True, width=1920, height=900) }}
+      <div class="w-100 d-flex flex-wrap justify-content-between align-items-end gap-3">
+        <div>
+          <span class="eyebrow on-dark">Your itinerary</span>
+          <h1>{{ trip.days }} day{{ 's' if trip.days > 1 }} in {{ city.name }}</h1>
+          <p>{{ first_date|short_date }}{% if trip.days > 1 %} – {{ last_date|short_date }}{% endif %} {{ last_date.year }}
+            · from {{ it.start_place.name }} · {{ pace.label }} pace{% if trip.interests %} · {{ trip.interests|map('title')|join(', ') }}{% endif %}</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2 no-print">
+          <a class="btn btn-ghost-light" href="{{ url_for('planner.plan', **trip.to_query()) }}"><i class="bi bi-pencil-square me-1"></i>Change preferences</a>
+          <a class="btn btn-brand" href="{{ url_for('planner.compare', **trip.to_query()) }}"><i class="bi bi-bar-chart-line me-1"></i>Compare algorithms</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mt-4">
+      <div class="status-row">
+        {% if not it.violations %}
+          <span class="chip chip-success"><i class="bi bi-shield-check"></i>All constraints verified by the independent validator</span>
+        {% else %}
+          <span class="chip chip-danger"><i class="bi bi-exclamation-octagon"></i>{{ it.violations|length }} constraint problem{{ 's' if it.violations|length > 1 }}</span>
+        {% endif %}
+        {% if trip.budget is not none %}
+          <span class="chip chip-green"><i class="bi bi-wallet2"></i>Every day within ₹{{ trip.budget }}{{ ' incl. transport' if trip.include_transport else ' (entry fees)' }}</span>
+        {% else %}
+          <span class="chip"><i class="bi bi-wallet2"></i>No budget limit</span>
+        {% endif %}
+        {% if it.illustrative %}<span class="chip chip-warning"><i class="bi bi-info-circle"></i>Illustrative hours &amp; fees</span>{% endif %}
+      </div>
+      <div class="d-flex align-items-center gap-2 no-print">
+        <span class="small text-muted">Selection:</span>
+        <nav class="segmented" aria-label="Selection strategy">
+          {% for key, label in STRATEGIES.items() %}
+            <a href="{{ url_for('planner.itinerary', **trip.to_query(strategy=key)) }}" class="{{ 'active' if trip.strategy == key }}"
+               {% if trip.strategy == key %}aria-current="true"{% endif %} title="{{ label }}">{{ {'dp': 'DP', 'greedy': 'Greedy', 'max_visits': 'Max visits'}[key] }}</a>
+          {% endfor %}
+        </nav>
+      </div>
+    </div>
+
+    {% if it.violations %}
+      <div class="notice notice-danger mt-3" role="alert"><i class="bi bi-bug"></i>
+        <div><p><strong>The validator found problems with this plan</strong> (this is a planner bug, please report it):</p>
+          <ul class="mb-0 small">{% for v in it.violations %}<li>{{ v }}</li>{% endfor %}</ul></div>
+      </div>
+    {% endif %}
+
+    <div class="metric-row mt-4">
+      <div class="metric is-accent"><div class="metric-label"><i class="bi bi-pin-map"></i>Stops</div>
+        <div class="metric-value">{{ it.stops }}</div><div class="metric-sub">across {{ trip.days }} day{{ 's' if trip.days > 1 }}</div></div>
+      <div class="metric"><div class="metric-label"><i class="bi bi-camera"></i>Sightseeing</div>
+        <div class="metric-value">{{ it.sight_min|duration }}</div><div class="metric-sub">time inside attractions</div></div>
+      <div class="metric"><div class="metric-label"><i class="bi bi-car-front"></i>Travel</div>
+        <div class="metric-value">{{ it.travel_min|duration }}</div><div class="metric-sub">{{ it.km }} km by road (estimated)</div></div>
+      <div class="metric"><div class="metric-label"><i class="bi bi-ticket-perforated"></i>Entry fees</div>
+        <div class="metric-value">{{ it.fees|inr }}</div><div class="metric-sub">+ ~{{ it.transport_cost|inr }} local transport</div></div>
+      <div class="metric"><div class="metric-label"><i class="bi bi-stars"></i>Value score</div>
+        <div class="metric-value">{{ it.score }}</div><div class="metric-sub">planned in {{ '%.1f'|format(it.runtime_ms) }} ms</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="pt-4">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-lg-7">
+        <ul class="nav day-tabs mb-3 no-print" role="tablist" aria-label="Days">
+          {% for day in it.days %}
+            <li class="nav-item" role="presentation">
+              <button class="nav-link {{ 'active' if loop.first }}" id="tab-day-{{ day.index }}" data-bs-toggle="tab"
+                      data-bs-target="#day-{{ day.index }}" data-day="{{ day.index }}" type="button" role="tab"
+                      aria-controls="day-{{ day.index }}" aria-selected="{{ 'true' if loop.first else 'false' }}">
+                <strong>{% if not day.visits %}<span class="day-dot" style="background: var(--muted)"></span>{% endif %}Day {{ day.index }}</strong>
+                <small>{{ day.date|short_date }} · {{ day.visits|length }} stop{{ 's' if day.visits|length != 1 }}</small>
+              </button>
+            </li>
+          {% endfor %}
+        </ul>
+
+        <div class="tab-content">
+          {% for day in it.days %}
+            <div class="tab-pane fade {{ 'show active' if loop.first }}" id="day-{{ day.index }}" role="tabpanel" aria-labelledby="tab-day-{{ day.index }}" tabindex="0">
+              <h2 class="h4 d-none d-print-block">Day {{ day.index }} · {{ day.date|long_date }}</h2>
+
+              {% if not day.visits %}
+                <div class="card-soft empty-state">
+                  <div class="empty-icon"><i class="bi bi-calendar-x"></i></div>
+                  <h3>No stops on {{ day.date|long_date }}</h3>
+                  <p class="mx-auto" style="max-width: 32rem;">{{ day.empty_reason }}</p>
+                  {% if day.suggestions %}
+                    <div class="d-flex flex-wrap justify-content-center gap-2 mt-3">
+                      {% for s in day.suggestions %}<a class="btn btn-outline-brand btn-sm" href="{{ url_for('planner.itinerary', **s.query) }}">{{ s.label }}</a>{% endfor %}
+                    </div>
+                  {% endif %}
+                </div>
+              {% else %}
+                {% set used = day.return_time - day.depart %}
+                {% set free = window - used %}
+                <div class="card-soft card-pad-sm day-summary mb-4">
+                  <div class="d-flex flex-wrap justify-content-between gap-2 mb-2">
+                    <div><strong>{{ day.date|long_date }}</strong>
+                      <div class="small text-muted">{{ day.visits|length }} stops · {{ day.depart|hhmm }} – {{ day.return_time|hhmm }} ·
+                        {{ {'travel-first': 'route: nearest neighbour + 2-opt', 'window-first': 'route: closing-time insertion + 2-opt', 'activity-selection': 'route: earliest closing time first'}.get(day.branch, '') }}</div></div>
+                    <span class="chip chip-success align-self-start"><i class="bi bi-clock-history"></i>Back by {{ day.return_time|hhmm }} · {{ (trip.day_end - day.return_time)|duration }} spare</span>
+                  </div>
+                  <div class="bar my-3" role="img" aria-label="How the {{ window|duration }} day is used">
+                    <span class="seg-sight" style="width: {{ 100 * day.sight_min / window }}%"></span>
+                    <span class="seg-travel" style="width: {{ 100 * day.travel_min / window }}%"></span>
+                    <span class="seg-wait" style="width: {{ 100 * day.wait_min / window }}%"></span>
+                    <span class="seg-buffer" style="width: {{ 100 * day.buffer_min / window }}%"></span>
+                  </div>
+                  <div class="row g-3">
+                    <div class="col-sm-6">
+                      <ul class="breakdown">
+                        <li><span><i class="legend-dot seg-sight"></i>Sightseeing</span><span>{{ day.sight_min|duration }}</span></li>
+                        <li><span><i class="legend-dot seg-travel"></i>Travel ({{ day.km }} km)</span><span>{{ day.travel_min|duration }}</span></li>
+                        <li><span><i class="legend-dot seg-wait"></i>Waiting for opening</span><span>{{ day.wait_min|duration }}</span></li>
+                        <li><span><i class="legend-dot seg-buffer"></i>Pace buffer</span><span>{{ day.buffer_min|duration }}</span></li>
+                        <li><span><i class="legend-dot seg-free"></i>Free time</span><span>{{ free|duration }}</span></li>
+                      </ul>
+                    </div>
+                    <div class="col-sm-6">
+                      <ul class="breakdown">
+                        <li><span>Entry fees</span><span>{{ day.fees|inr }}</span></li>
+                        <li><span>Local transport (est.)</span><span>{{ day.transport_cost|inr }}</span></li>
+                        <li class="border-top pt-2"><span><strong>Day total</strong></span><span>{{ (day.fees + day.transport_cost)|inr }}</span></li>
+                      </ul>
+                      {% if trip.budget is not none %}
+                        {% set spend = day.spend(trip.include_transport) %}
+                        <div class="d-flex justify-content-between small mt-3 mb-1"><span>Budget used</span><span class="tabular">{{ spend|inr }} of {{ trip.budget|inr }}</span></div>
+                        <div class="budget-meter" role="progressbar" aria-valuenow="{{ spend }}" aria-valuemin="0" aria-valuemax="{{ trip.budget }}" aria-label="Budget used">
+                          <span style="width: {{ [100, (100 * spend / trip.budget) if trip.budget else 0]|min }}%"></span>
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+
+                <ol class="timeline">
+                  <li class="tl-item">
+                    <span class="tl-node is-home"><i class="bi bi-house-door"></i></span>
+                    <div class="tl-endpoint"><div class="tl-time">{{ day.depart|hhmm }}</div><div class="text-muted">Leave {{ it.start_place.name }}</div></div>
+                  </li>
+                  {% for v in day.visits %}
+                    {% set a = v.attraction %}
+                    <li class="tl-item">
+                      <div class="tl-leg"><span><i class="bi bi-car-front me-1"></i>{{ v.leg.minutes|duration }} · {{ v.leg.km }} km</span>
+                        {% if v.leg.via %}<span class="via">via {{ v.leg.via|join(', ') }}</span>{% endif %}</div>
+                    </li>
+                    <li class="tl-item">
+                      <span class="tl-node is-stop">{{ loop.index }}</span>
+                      <article class="card-soft stop-card">
+                        <div class="stop-media">{{ ui.image(a.image, a.name, width=300, height=300) }}</div>
+                        <div class="stop-body">
+                          <div class="d-flex flex-wrap align-items-baseline gap-2">
+                            <span class="stop-time">{{ v.start|hhmm }} – {{ v.end|hhmm }}</span>
+                            <span class="small text-muted tabular">arrive {{ v.arrive|hhmm }} · depart {{ v.leave|hhmm }}</span>
+                          </div>
+                          <h3>{{ a.name }}</h3>
+                          <div class="stop-meta">
+                            <span class="chip"><i class="bi bi-hourglass-split"></i>{{ a.visit_min|duration }}</span>
+                            <span class="chip"><i class="bi bi-ticket-perforated"></i>{{ 'Free' if a.fee == 0 else a.fee|inr }}</span>
+                            <span class="chip"><i class="bi bi-clock"></i>Open {{ a.hours_label(day.weekday) }}</span>
+                            {% if v.wait > 0 %}<span class="chip chip-gold"><i class="bi bi-hourglass-bottom"></i>Waits {{ v.wait|duration }} for opening</span>{% endif %}
+                          </div>
+                          <div class="stop-why">
+                            <i class="bi bi-stars me-1"></i>Score {{ v.score }}/100 · rating {{ a.rating }} · popularity {{ (a.popularity * 100)|round|int }}%{% if a.categories|select('in', trip.interests)|list %} · matches your interests{% endif %}
+                          </div>
+                        </div>
+                      </article>
+                    </li>
+                  {% endfor %}
+                  <li class="tl-item">
+                    <div class="tl-leg"><span><i class="bi bi-car-front me-1"></i>{{ day.return_leg.minutes|duration }} · {{ day.return_leg.km }} km</span>
+                      {% if day.return_leg.via %}<span class="via">via {{ day.return_leg.via|join(', ') }}</span>{% endif %}</div>
+                  </li>
+                  <li class="tl-item">
+                    <span class="tl-node is-home"><i class="bi bi-flag"></i></span>
+                    <div class="tl-endpoint"><div class="tl-time">{{ day.return_time|hhmm }}</div><div class="text-muted">Back at {{ it.start_place.name }}</div></div>
+                  </li>
+                </ol>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="col-lg-5">
+        <div class="map-shell">
+          <div class="card-soft map-card" id="map-card">
+            <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+              <strong class="small"><i class="bi bi-map me-1"></i>Route map · <span id="map-day-label">Day 1</span></strong>
+              <span class="small text-muted">numbers = visit order</span>
+            </div>
+            <div id="route-map" class="route-map" aria-label="Map of the day's stops"></div>
+            <div class="map-fallback"><i class="bi bi-map fs-3 d-block mb-2"></i>Map unavailable — the plan is complete without it.</div>
+            <div class="map-legend">
+              <span><span class="line-dashed"></span>Dashed lines join stops in visit order. They are <strong>straight lines, not the road path</strong>.</span>
+              <span>Travel times and km come from OpenStreetMap road data (OSRM, free-flow) × {{ TRAFFIC_FACTOR }} traffic factor. No live traffic.</span>
+            </div>
+          </div>
+          <div class="notice notice-info mt-3 small">
+            <i class="bi bi-lightbulb"></i>
+            <p>Try the <strong>Selection</strong> switch above: DP picks the best-value set for each day's time and budget; Greedy takes the best value per minute first. <a href="{{ url_for('planner.compare', **trip.to_query()) }}">See the measured difference</a>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-5">
+      <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+        <div>
+          <h2 class="h3 mb-1">Not included</h2>
+          <p class="mb-0 text-muted">{{ it.skipped|length }} of {{ city.attractions|length }} attractions are not in this plan. Every one has a reason.</p>
+        </div>
+      </div>
+      {% if it.skipped %}
+        <div class="accordion accordion-soft" id="skipped">
+          <div class="accordion-item">
+            <h3 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#skipped-body" aria-expanded="false" aria-controls="skipped-body">
+                Show the {{ it.skipped|length }} attractions and why they were left out
+              </button>
+            </h3>
+            <div id="skipped-body" class="accordion-collapse collapse">
+              <div class="accordion-body">
+                {% set labels = {'closed': ('chip-accent', 'Closed'), 'over_budget': ('chip-gold', 'Over budget'), 'does_not_fit': ('chip-warning', "Hours don't fit"),
+                                 'unreachable': ('chip-danger', 'Unreachable'), 'excluded': ('', 'Excluded'), 'dropped': ('chip-warning', 'Removed in repair'),
+                                 'not_selected': ('chip-green', 'Lower value')} %}
+                {% for s in it.skipped %}
+                  <div class="skip-row">
+                    {{ ui.image(s.attraction.image, '', width=112, height=112) }}
+                    <div class="flex-grow-1">
+                      <div class="d-flex flex-wrap align-items-center gap-2"><strong>{{ s.attraction.name }}</strong><span class="chip {{ labels[s.code][0] }}">{{ labels[s.code][1] }}</span></div>
+                      <div class="small">{{ s.reason }}</div>
+                      {% if s.details %}<div class="small text-muted">{{ s.details|join(' · ') }}</div>{% endif %}
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <div class="notice notice-info"><i class="bi bi-check2-circle"></i><p>Every attraction in {{ city.name }} made it into your plan.</p></div>
+      {% endif %}
+    </div>
+
+    <div class="card-soft card-pad mt-5 d-flex flex-wrap justify-content-between align-items-center gap-3 no-print">
+      <div>
+        <h2 class="h4 mb-1">Not quite right?</h2>
+        <p class="mb-0 text-muted">Change your hours, budget, pace or interests and plan again, or start over with another city.</p>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <button class="btn btn-quiet" type="button" onclick="window.print()"><i class="bi bi-printer me-1"></i>Print</button>
+        <a class="btn btn-outline-brand" href="{{ url_for('planner.plan') }}">Plan another trip</a>
+        <a class="btn btn-brand" href="{{ url_for('planner.plan', **trip.to_query()) }}"><i class="bi bi-pencil-square me-1"></i>Change preferences</a>
+      </div>
+    </div>
+  </div>
+</section>
+<script id="map-data" type="application/json">{{ map_data|tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}"></script>
+<script src="{{ url_for('static', filename='js/itinerary.js') }}"></script>
+{% endblock %}
