@@ -1,0 +1,396 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block title %}Algorithm comparison{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}">{% endblock %}
+
+{% block content %}
+<section class="page-header pb-3">
+  <div class="container">
+    <span class="eyebrow">Algorithm comparison</span>
+    <h1>Same trip, every algorithm</h1>
+    <p class="lead">Every number on this page comes from running our implementations on the trip below, just now.
+      Methods are only compared on identical input. Timings are medians of {{ result.repeats if result else 5 }} runs after a warm-up.</p>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <form class="card-soft card-pad-sm" method="get" action="{{ url_for('planner.compare') }}" data-loading="Running every algorithm…">
+      <div class="row g-3 align-items-end">
+        <div class="col-6 col-md-3 col-xl-2">
+          <label class="form-label small" for="c-city">City</label>
+          <select class="form-select {{ ui.invalid(errors, 'city') }}" id="c-city" name="city">
+            {% for c in cities %}<option value="{{ c.slug }}" {% if c.slug == values.city %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="col-6 col-md-3 col-xl-2">
+          <label class="form-label small" for="c-date">Start date</label>
+          <input class="form-control {{ ui.invalid(errors, 'start_date') }}" type="date" id="c-date" name="start_date" value="{{ values.start_date }}">
+        </div>
+        <div class="col-6 col-md-2 col-xl-1">
+          <label class="form-label small" for="c-days">Days</label>
+          <select class="form-select {{ ui.invalid(errors, 'days') }}" id="c-days" name="days">
+            {% for d in range(1, MAX_DAYS + 1) %}<option value="{{ d }}" {% if values.days|string == d|string %}selected{% endif %}>{{ d }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="col-6 col-md-3 col-xl-2">
+          <label class="form-label small" for="c-budget">Daily budget (₹)</label>
+          <input class="form-control {{ ui.invalid(errors, 'budget') }}" type="number" min="0" step="10" id="c-budget" name="budget" value="{{ values.budget }}" placeholder="No limit">
+        </div>
+        <div class="col-6 col-md-3 col-xl-2">
+          <label class="form-label small" for="c-pace">Pace</label>
+          <select class="form-select" id="c-pace" name="pace">
+            {% for key, p in PACES.items() %}<option value="{{ key }}" {% if values.pace == key %}selected{% endif %}>{{ p.label }}</option>{% endfor %}
+          </select>
+        </div>
+        {% for i in values.interests %}<input type="hidden" name="interests" value="{{ i }}">{% endfor %}
+        <input type="hidden" name="day_start" value="{{ values.day_start }}">
+        <input type="hidden" name="day_end" value="{{ values.day_end }}">
+        <div class="col-12 col-md-4 col-xl-3 d-grid">
+          <button class="btn btn-brand" type="submit"><i class="bi bi-arrow-repeat me-1"></i>Run comparison</button>
+        </div>
+        <div class="col-12">
+          <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" role="switch" id="c-transport" name="transport" value="on" {% if values.transport %}checked{% endif %}>
+            <label class="form-check-label small" for="c-transport">Count local transport (about ₹{{ TRANSPORT_RATE }}/km) in the daily budget</label>
+          </div>
+        </div>
+      </div>
+      {% if errors %}
+        <div class="notice notice-danger mt-3"><i class="bi bi-exclamation-triangle"></i><p>{% for k, v in errors.items() %}{{ v }} {% endfor %}</p></div>
+      {% endif %}
+    </form>
+    {% set presets = [
+      ('Tight budget: Varanasi, ₹300/day incl. transport', {'city': 'varanasi', 'days': 1, 'start_date': '2026-11-02', 'budget': 300, 'transport': 'on', 'interests': 'history'}),
+      ('Delhi weekend, history lover', {'city': 'delhi', 'days': 2, 'start_date': '2026-11-07', 'interests': 'history'}),
+      ('Agra on a Friday (Taj Mahal closed)', {'city': 'agra', 'days': 1, 'start_date': '2026-11-06'}),
+      ('Evening aarti: Varanasi until 20:00', {'city': 'varanasi', 'days': 1, 'start_date': '2026-11-03', 'day_end': '20:00', 'interests': 'spirituality'}),
+      ('Jaipur, 3 days, ₹600/day', {'city': 'jaipur', 'days': 3, 'start_date': '2026-11-02', 'budget': 600}),
+    ] %}
+    <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
+      <span class="small text-muted me-1">Try a scenario:</span>
+      {% for label, q in presets %}<a class="chip" href="{{ url_for('planner.compare', **q) }}">{{ label }}</a>{% endfor %}
+    </div>
+  </div>
+</section>
+
+{% if result %}
+{% set colors = {'slot1': '#2a7a52', 'slot2': '#e8894a', 'slot3': '#3f6fb6'} %}
+<section>
+  <div class="container">
+    <p class="small text-muted mt-3 mb-0">
+      Scenario: <strong>{{ city.name }}</strong> · {{ trip.days }} day{{ 's' if trip.days > 1 }} from {{ trip.start_date|short_date }} ·
+      {{ trip.day_start|hhmm }}–{{ trip.day_end|hhmm }} · from {{ city.place(trip.start).name }} · {{ PACES[trip.pace].label }} pace ·
+      {{ ('₹' ~ trip.budget ~ '/day' ~ (' incl. transport' if trip.include_transport else '')) if trip.budget is not none else 'no budget limit' }}
+      · <a href="{{ url_for('planner.itinerary', **trip.to_query(strategy='dp')) }}">open the DP itinerary</a>
+    </p>
+
+    <!-- 1. Whole itineraries -->
+    <div class="compare-section" id="itineraries">
+      <span class="eyebrow">1 · Whole itineraries</span>
+      <h2 class="mt-2">Dynamic programming vs Greedy vs Activity selection</h2>
+      <div class="shows">
+        <div><i class="bi bi-check2"></i>Shows: the complete plan each selection strategy produces with the same routing, scheduling and repair steps.</div>
+        <div><i class="bi bi-dash-circle"></i>Does not show: a guaranteed winner. DP is optimal for each day's knapsack model, not for the whole multi-day trip.</div>
+      </div>
+      {% set dp, gr, mv = result.by_key['dp'], result.by_key['greedy'], result.by_key['max_visits'] %}
+      <div class="verdict mb-4 {{ 'is-neutral' if dp.score < gr.score }}">
+        <span class="verdict-icon"><i class="bi {{ 'bi-trophy' if dp.score >= gr.score else 'bi-info-lg' }}"></i></span>
+        <div>
+          {% if dp.score > gr.score %}
+            <strong>On this trip DP's plan scores {{ dp.score }} vs Greedy's {{ gr.score }} (+{{ '%.1f'|format(100 * (dp.score - gr.score) / gr.score) }}%).</strong>
+          {% elif dp.score == gr.score %}
+            <strong>DP and Greedy reach the same value score ({{ dp.score }}) on this trip.</strong>
+          {% else %}
+            <strong>Greedy's plan scores higher here ({{ gr.score }} vs DP's {{ dp.score }}).</strong> DP is optimal per day under the knapsack estimate; after real routing, repair and multi-day effects there is no guarantee.
+          {% endif %}
+          The activity-selection baseline schedules {{ mv.stops }} stops for a score of {{ mv.score }}. It maximises count by closing time and ignores value.
+          {% set rs = result.benchmarks.real_scenarios if result.benchmarks else none %}
+          {% if rs %}
+            <div class="small mt-2">Across {{ "{:,}".format(rs.scenarios) }} saved real-data scenarios (<code>results/benchmarks.json</code>), DP's itinerary scored higher in
+              {{ rs.dp_higher }} ({{ '%.0f'|format(100 * rs.dp_higher / rs.scenarios) }}%), Greedy's in {{ rs.greedy_higher }} ({{ '%.0f'|format(100 * rs.greedy_higher / rs.scenarios) }}%),
+              and they tied in {{ rs.equal }} ({{ '%.0f'|format(100 * rs.equal / rs.scenarios) }}%).</div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="row g-4">
+        <div class="col-lg-7">
+          <div class="card-soft overflow-auto">
+            <table class="table table-soft">
+              <thead><tr><th>Metric</th>
+                {% for s in result.strategies %}<th class="text-end">{{ {'dp': 'DP', 'greedy': 'Greedy', 'max_visits': 'Max visits'}[s.key] }}</th>{% endfor %}</tr></thead>
+              <tbody>
+                {% set rows = [
+                  ('Stops planned', 'stops', 'max', ''), ('Value score (Σ scores)', 'score', 'max', ''),
+                  ('Travel time (min)', 'travel_min', 'min', ''), ('Travel distance (km)', 'km', 'min', ''),
+                  ('Sightseeing (min)', 'sight_min', '', ''), ('Waiting for opening (min)', 'wait_min', 'min', ''),
+                  ('Entry fees (₹)', 'fees', '', ''), ('Total spend (₹)', 'spend', '', ''),
+                  ('Constraint violations', 'violations', 'min', ''), ('Empty days', 'empty_days', 'min', ''),
+                  ('Quality Q = score − ' ~ result['lambda'] ~ ' × travel', 'quality', 'max', ''),
+                  ('Planning time (ms, median)', 'runtime_ms', 'min', 'ms') ] %}
+                {% for label, key, best, fmt in rows %}
+                  {% set values_row = result.strategies|map(attribute=key)|list %}
+                  {% set target = (values_row|max) if best == 'max' else ((values_row|min) if best == 'min' else none) %}
+                  <tr><td>{{ label }}</td>
+                    {% for s in result.strategies %}
+                      <td class="text-end {{ 'is-best' if target is not none and s[key] == target and values_row|unique|list|length > 1 }}">
+                        {{ ('%.2f'|format(s[key])) if fmt == 'ms' else s[key] }}</td>
+                    {% endfor %}
+                  </tr>
+                {% endfor %}
+                <tr><td></td>{% for s in result.strategies %}<td class="text-end"><a class="small" href="{{ url_for('planner.itinerary', **trip.to_query(strategy=s.key)) }}">View plan</a></td>{% endfor %}</tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="small text-muted mt-2">Bold marks the best value where "better" is clear. Constraint violations are counted by the independent validator and must be 0.</p>
+        </div>
+        <div class="col-lg-5">
+          <div class="card-soft card-pad-sm h-100">
+            <h3 class="h6 mb-1">Value score per day</h3>
+            <p class="small text-muted mb-2">Sum of attraction scores planned on each day</p>
+            <div class="chart-box"><canvas id="chart-strategies" role="img" aria-label="Grouped bar chart of value score per day for each strategy; values are in the table"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Selection -->
+    <div class="compare-section" id="selection">
+      <span class="eyebrow">2 · Selection</span>
+      <h2 class="mt-2">Greedy vs DP on the identical knapsack</h2>
+      <div class="shows">
+        <div><i class="bi bi-check2"></i>Shows: both selectors solving exactly the same instance the planner built for each day (same items, weights, costs and capacities).</div>
+        <div><i class="bi bi-dash-circle"></i>Does not show: final itinerary quality. Weights are travel estimates; routing and repair come after selection.</div>
+      </div>
+      <div class="row g-4">
+        <div class="col-lg-8">
+          {% if result.selection %}
+          <div class="card-soft overflow-auto">
+            <table class="table table-soft">
+              <thead><tr><th>Day</th><th class="text-end">Candidates</th><th class="text-end">Capacity</th>
+                <th class="text-end">Greedy</th><th class="text-end">DP</th><th class="text-end">Gap</th>
+                <th class="text-end">Runtime (ms)<br><span class="text-lowercase">greedy / dp</span></th></tr></thead>
+              <tbody>
+                {% for r in result.selection %}
+                  <tr>
+                    <td class="text-nowrap">Day {{ r.day }} <span class="text-muted small">{{ r.date|weekday_short }}</span></td>
+                    <td class="text-end">{{ r.candidates }}</td>
+                    <td class="text-end text-nowrap">{{ r.time_cap_min|duration }}{% if r.money_cap is not none %}<br><span class="small text-muted">₹{{ r.money_cap }}</span>{% endif %}</td>
+                    <td class="text-end">{{ r.greedy.score }}<br><span class="small text-muted">{{ r.greedy.count }} stops</span></td>
+                    <td class="text-end is-best">{{ r.dp.score }}<br><span class="small text-muted">{{ r.dp.count }} stops</span></td>
+                    <td class="text-end">{% if r.gap > 0 %}<span class="chip chip-green">+{{ r.gap }} ({{ r.gap_pct }}%)</span>{% else %}<span class="chip">equal</span>{% endif %}</td>
+                    <td class="text-end text-nowrap">{{ '%.3f'|format(r.greedy_ms) }} / {{ '%.2f'|format(r.dp_ms) }}<br><span class="small text-muted">{{ "{:,}".format(r.cells) }} DP cells</span></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <p class="small text-muted mt-2">DP's score is never below Greedy's on the same instance (it is optimal for the knapsack model), so the gap is never negative. Greedy is consistently faster: O(n log n) vs O(n·T·M).</p>
+          {% else %}
+            <div class="card-soft empty-state"><div class="empty-icon"><i class="bi bi-grid-3x3"></i></div><h3>No feasible day to compare</h3><p class="mb-0">No day of this trip had candidate attractions. Try a longer daily window or a higher budget.</p></div>
+          {% endif %}
+        </div>
+        <div class="col-lg-4">
+          {% set trap = result.trap %}
+          <div class="card-soft card-pad-sm h-100">
+            <h3 class="h6 mb-1"><i class="bi bi-lightbulb me-1 text-accent"></i>The greedy trap (run live)</h3>
+            <p class="small text-muted">Capacity {{ trap.capacity_min }} minutes. Greedy takes the best score-per-minute first.</p>
+            <ul class="breakdown mb-3">
+              {% for it in trap.attractions %}<li><span><strong>{{ it.name }}</strong> · {{ it.minutes }} min · score {{ it.score }}</span><span>{{ it.density }}/min</span></li>{% endfor %}
+            </ul>
+            <div class="row g-2 text-center">
+              <div class="col-6"><div class="metric"><div class="metric-label justify-content-center">Greedy</div><div class="metric-value">{{ trap.greedy.score }}</div><div class="metric-sub">{{ trap.greedy.chosen|join(' + ') }}</div></div></div>
+              <div class="col-6"><div class="metric is-accent"><div class="metric-label justify-content-center">DP</div><div class="metric-value">{{ trap.dp.score }}</div><div class="metric-sub">{{ trap.dp.chosen|join(' + ') }}</div></div></div>
+            </div>
+            <p class="small text-muted mt-3 mb-0">After taking X, neither Y nor Z fits, so Greedy stops at {{ trap.greedy.score }}. DP considers every combination and finds Y + Z.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Routing -->
+    <div class="compare-section" id="routing">
+      <span class="eyebrow">3 · Routing</span>
+      <h2 class="mt-2">Nearest Neighbour, 2-opt and the exact optimum</h2>
+      <div class="shows">
+        <div><i class="bi bi-check2"></i>Shows: closed-tour travel time for each planned day's stops, against the Held–Karp optimum (exact, for ≤ 10 stops).</div>
+        <div><i class="bi bi-dash-circle"></i>Does not show: feasibility. Held–Karp and plain 2-opt ignore opening hours; the planner's final order must also satisfy them, so it can travel more.</div>
+      </div>
+      {% if result.routing %}
+      <div class="row g-4">
+        <div class="col-lg-7">
+          <div class="card-soft overflow-auto">
+            <table class="table table-soft">
+              <thead><tr><th>Day</th><th class="text-end">Stops</th><th class="text-end">NN</th><th class="text-end">NN + 2-opt</th><th class="text-end">Held–Karp</th><th class="text-end">Final plan</th><th class="text-end">Window violations<br><span class="text-lowercase">NN / 2-opt / EDF</span></th></tr></thead>
+              <tbody>
+                {% for r in result.routing %}
+                  <tr>
+                    <td class="text-nowrap">Day {{ r.day }} <span class="text-muted small">{{ r.weekday|weekday_short }}</span></td>
+                    <td class="text-end">{{ r.k }}</td>
+                    <td class="text-end text-nowrap">{{ r.nn.travel }} min{% if r.held_karp %}<br><span class="small text-muted">+{{ r.nn.gap_pct }}%</span>{% endif %}</td>
+                    <td class="text-end text-nowrap">{{ r.two_opt.travel }} min{% if r.held_karp %}<br><span class="small text-muted">+{{ r.two_opt.gap_pct }}%</span>{% endif %}</td>
+                    <td class="text-end is-best text-nowrap">{{ r.held_karp.travel ~ ' min' if r.held_karp else '—' }}</td>
+                    <td class="text-end text-nowrap">{{ r.final.travel }} min<br><span class="small text-muted">{{ r.final.branch }}</span></td>
+                    <td class="text-end">{{ r.nn.violations }} / {{ r.two_opt.violations }} / {{ r.edf.violations }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <p class="small text-muted mt-2">Percentages are the gap to the Held–Karp optimum. 2-opt never travels more than the NN route it starts from. "Window violations" counts opening-hour or end-of-day rules each order would break; the planner only accepts orders with 0.</p>
+
+          <div class="card-soft overflow-auto mt-4">
+            <table class="table table-soft">
+              <thead><tr><th>Day</th><th>Travel-first branch<br><span class="text-lowercase">NN → 2-opt</span></th><th>Window-first branch<br><span class="text-lowercase">closing-time insertion → 2-opt</span></th><th>Chosen</th></tr></thead>
+              <tbody>
+                {% for r in result.routing %}
+                  <tr><td>Day {{ r.day }}</td>
+                    {% for name in ['travel-first', 'window-first'] %}
+                      {% set b = r.branches[name] %}
+                      <td>{% if b.feasible %}<span class="chip chip-success"><i class="bi bi-check2"></i>feasible</span> {{ b.travel }} min{% else %}<span class="chip chip-danger"><i class="bi bi-x"></i>breaks a window</span>{% endif %}</td>
+                    {% endfor %}
+                    <td>{{ r.final.branch or '—' }}</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="col-lg-5">
+          <div class="card-soft card-pad-sm">
+            <h3 class="h6 mb-1">Travel minutes per day</h3>
+            <p class="small text-muted mb-2">Closed tour from the start point and back</p>
+            <div class="chart-box"><canvas id="chart-routing" role="img" aria-label="Grouped bar chart of travel minutes per day for NN plus 2-opt, NN and Held-Karp; values are in the table"></canvas></div>
+          </div>
+          <div class="card-soft map-card mt-4" id="compare-map-card">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 px-3 py-2 border-bottom">
+              <strong class="small"><i class="bi bi-map me-1"></i>Route shapes</strong>
+              <select class="form-select form-select-sm w-auto" id="route-day" aria-label="Day to draw">
+                {% for r in result.routing %}<option value="{{ loop.index0 }}">Day {{ r.day }}</option>{% endfor %}
+              </select>
+            </div>
+            <div id="compare-map" class="route-map" style="height: 320px;" aria-label="Map comparing the NN and 2-opt routes"></div>
+            <div class="map-fallback"><i class="bi bi-map fs-3 d-block mb-2"></i>Map unavailable; the tables above hold every number.</div>
+            <div class="map-legend">
+              <span><span class="swatch" style="background: {{ colors.slot2 }}"></span>Nearest Neighbour order · <span class="swatch ms-2" style="background: {{ colors.slot1 }}"></span>After 2-opt</span>
+              <span>Straight lines in visit order, not road paths.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% else %}
+        <div class="card-soft empty-state"><div class="empty-icon"><i class="bi bi-bezier2"></i></div><h3>No planned days to route</h3><p class="mb-0">This scenario produced no stops. Try another date, longer hours or a higher budget.</p></div>
+      {% endif %}
+    </div>
+
+    <!-- 4. Dijkstra -->
+    {% set dj = result.dijkstra %}
+    <div class="compare-section" id="dijkstra">
+      <span class="eyebrow">4 · Shortest paths</span>
+      <h2 class="mt-2">Our Dijkstra vs NetworkX</h2>
+      <div class="shows">
+        <div><i class="bi bi-check2"></i>Shows: correctness. Both compute shortest travel times between every ordered pair of places in {{ city.name }}'s road graph.</div>
+        <div><i class="bi bi-dash-circle"></i>Does not show: which is "faster" in a meaningful sense. Both are Python; the timing gap reflects implementation overhead, not Big-O.</div>
+      </div>
+      <div class="row g-4">
+        <div class="col-lg-5">
+          <div class="verdict {{ 'is-bad' if dj.mismatches }}">
+            <span class="verdict-icon"><i class="bi {{ 'bi-check2-all' if not dj.mismatches else 'bi-x-lg' }}"></i></span>
+            <div><strong>{{ dj.mismatches }} mismatches over {{ "{:,}".format(dj.pairs) }} ordered pairs</strong><br>
+              <span class="small">Largest difference: {{ dj.largest_difference }} min</span></div>
+          </div>
+          <div class="metric-row mt-3" style="grid-template-columns: repeat(2, 1fr);">
+            <div class="metric"><div class="metric-label">Places (V)</div><div class="metric-value">{{ dj.vertices }}</div></div>
+            <div class="metric"><div class="metric-label">Road links (E)</div><div class="metric-value">{{ dj.edges }}</div><div class="metric-sub">{% for src, n in dj.sources.items() %}{{ n }} from {{ 'OSRM' if src == 'osrm' else src }}{% endfor %}</div></div>
+            <div class="metric"><div class="metric-label">Ours, all pairs</div><div class="metric-value">{{ '%.2f'|format(dj.ours_ms) }}<small class="fs-6"> ms</small></div></div>
+            <div class="metric"><div class="metric-label">NetworkX, all pairs</div><div class="metric-value">{{ '%.2f'|format(dj.networkx_ms) }}<small class="fs-6"> ms</small></div></div>
+          </div>
+        </div>
+        <div class="col-lg-7">
+          {% if dj.example %}
+          <div class="card-soft card-pad-sm h-100">
+            <h3 class="h6">Why Dijkstra is needed: the longest composed path</h3>
+            <p class="small text-muted">We store each place's links to its 5 nearest neighbours only. {% if not dj.example.direct_link %}There is no direct link from {{ dj.example.from }} to {{ dj.example.to }};{% endif %}
+              Dijkstra chains {{ dj.example.path|length - 1 }} local links to find the shortest route: <strong>{{ dj.example.minutes }} min, {{ dj.example.km }} km</strong>.</p>
+            <ol class="list-unstyled d-flex flex-wrap align-items-center gap-2 mb-0">
+              {% for name in dj.example.path %}
+                <li class="d-inline-flex align-items-center gap-2"><span class="chip {{ 'chip-green' if loop.first or loop.last }}">{{ name }}</span>{% if not loop.last %}<i class="bi bi-arrow-right text-muted"></i>{% endif %}</li>
+              {% endfor %}
+            </ol>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Benchmarks -->
+    <div class="compare-section" id="benchmarks">
+      <span class="eyebrow">5 · Scaling</span>
+      <h2 class="mt-2">How running time grows with input size</h2>
+      {% set bm = result.benchmarks %}
+      {% if bm %}
+        <div class="shows">
+          <div><i class="bi bi-check2"></i>Shows: median runtimes and solution quality on seeded synthetic instances ({{ bm.meta.seeds|length }} per size), from <code>results/benchmarks.json</code>.</div>
+          <div><i class="bi bi-dash-circle"></i>Does not show: live numbers. Re-run <code>python scripts/benchmark.py</code> to regenerate. Generated {{ bm.meta.generated.replace('T', ' ') }} on {{ bm.meta.machine }}, Python {{ bm.meta.python }}.</div>
+        </div>
+        <div class="row g-4">
+          <div class="col-lg-4">
+            <div class="card-soft card-pad-sm">
+              <h3 class="h6 mb-1">Selection runtime vs attractions (n)</h3>
+              <p class="small text-muted mb-2">Milliseconds, log scale · Greedy O(n log n), DP O(n·T·M)</p>
+              <div class="chart-box"><canvas id="chart-bm-selection" role="img" aria-label="Line chart of selection runtime against n; values in the table below"></canvas></div>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="card-soft card-pad-sm">
+              <h3 class="h6 mb-1">Routing runtime vs stops (k)</h3>
+              <p class="small text-muted mb-2">Milliseconds, log scale · Held–Karp O(2ᵏ·k²) is exponential</p>
+              <div class="chart-box"><canvas id="chart-bm-routing" role="img" aria-label="Line chart of routing runtime against k; values in the table below"></canvas></div>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="card-soft card-pad-sm">
+              <h3 class="h6 mb-1">Gap to the optimal tour</h3>
+              <p class="small text-muted mb-2">Mean % above Held–Karp, by stops (k)</p>
+              <div class="chart-box"><canvas id="chart-bm-gap" role="img" aria-label="Line chart of the gap to the optimal tour against k; values in the table below"></canvas></div>
+            </div>
+          </div>
+        </div>
+        <details class="mt-4">
+          <summary class="fw-semibold" style="cursor: pointer;">Show the benchmark tables</summary>
+          <div class="row g-4 mt-1">
+            <div class="col-lg-4"><div class="card-soft overflow-auto"><table class="table table-soft">
+              <thead><tr><th>n</th><th class="text-end">Greedy ms</th><th class="text-end">DP ms</th><th class="text-end">Greedy % of DP</th></tr></thead>
+              <tbody>{% for r in bm.selection %}<tr><td>{{ r.n }}</td><td class="text-end">{{ '%.3f'|format(r.greedy_ms) }}</td><td class="text-end">{{ '%.2f'|format(r.dp_ms) }}</td><td class="text-end">{{ r.greedy_pct_of_dp }}%</td></tr>{% endfor %}</tbody>
+            </table></div></div>
+            <div class="col-lg-4"><div class="card-soft overflow-auto"><table class="table table-soft">
+              <thead><tr><th>k</th><th class="text-end">NN ms</th><th class="text-end">2-opt ms</th><th class="text-end">Held–Karp ms</th></tr></thead>
+              <tbody>{% for r in bm.routing %}<tr><td>{{ r.k }}</td><td class="text-end">{{ '%.3f'|format(r.nn_ms) }}</td><td class="text-end">{{ '%.3f'|format(r.two_opt_ms) }}</td><td class="text-end">{{ '%.2f'|format(r.held_karp_ms) }}</td></tr>{% endfor %}</tbody>
+            </table></div></div>
+            <div class="col-lg-4"><div class="card-soft overflow-auto"><table class="table table-soft">
+              <thead><tr><th>k</th><th class="text-end">NN gap</th><th class="text-end">2-opt gap</th><th class="text-end">2-opt optimal</th></tr></thead>
+              <tbody>{% for r in bm.routing %}<tr><td>{{ r.k }}</td><td class="text-end">{{ r.nn_gap_pct }}%</td><td class="text-end">{{ r.two_opt_gap_pct }}%</td><td class="text-end">{{ r.two_opt_optimal_pct }}%</td></tr>{% endfor %}</tbody>
+            </table></div></div>
+            <div class="col-lg-6"><div class="card-soft overflow-auto"><table class="table table-soft">
+              <thead><tr><th>Graph size V</th><th class="text-end">Pairs checked</th><th class="text-end">Mismatches</th><th class="text-end">Ours ms</th><th class="text-end">NetworkX ms</th></tr></thead>
+              <tbody>{% for r in bm.dijkstra %}<tr><td>{{ r.v }}</td><td class="text-end">{{ "{:,}".format(r.pairs_checked) }}</td><td class="text-end">{{ r.mismatches }}</td><td class="text-end">{{ '%.2f'|format(r.ours_ms) }}</td><td class="text-end">{{ '%.2f'|format(r.networkx_ms) }}</td></tr>{% endfor %}</tbody>
+            </table></div></div>
+          </div>
+        </details>
+      {% else %}
+        <div class="card-soft empty-state"><div class="empty-icon"><i class="bi bi-graph-up"></i></div><h3>No benchmark file yet</h3>
+          <p class="mb-0">Run <code>python scripts/benchmark.py</code> to measure runtime scaling on seeded instances. The charts appear here afterwards.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+<script id="chart-data" type="application/json">{{ chart_data|tojson }}</script>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if result %}
+<script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}"></script>
+<script src="{{ url_for('static', filename='js/compare.js') }}"></script>
+{% endif %}
+{% endblock %}

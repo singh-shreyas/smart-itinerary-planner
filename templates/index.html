@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block title %}Plan smarter days in India{% endblock %}
+{% block nav_class %}is-transparent{% endblock %}
+
+{% block content %}
+{% set hero = (cities|selectattr('slug', 'equalto', 'jaipur')|first) or (cities|first) %}
+<section class="hero">
+  <div class="hero-media">
+    {% if hero and hero.hero_image %}{{ ui.image(hero.hero_image, '', eager=True, width=1920, height=1440) }}{% endif %}
+  </div>
+  <div class="container">
+    <div class="row align-items-center gy-5">
+      <div class="col-lg-7 fade-up">
+        <span class="eyebrow on-dark">Smart Itinerary Planner</span>
+        <h1>Plan smarter days in India's <em>great cities</em>.</h1>
+        <p class="lead mb-4">Tell us where, when and how you like to travel. We pick the attractions worth your time and budget,
+          order them to cut travel, and check every opening hour, so each day actually works.</p>
+        <div class="d-flex flex-wrap gap-2">
+          <a class="btn btn-brand btn-lg" href="{{ url_for('planner.plan') }}"><i class="bi bi-compass me-1"></i>Plan my trip</a>
+          <a class="btn btn-ghost-light btn-lg" href="{{ url_for('main.cities') }}">Explore cities</a>
+        </div>
+      </div>
+      <div class="col-lg-5 col-xl-4 offset-xl-1">
+        <form class="quick-plan fade-up" action="{{ url_for('planner.itinerary') }}" method="get" data-loading="Planning your trip…">
+          <h2>Quick plan</h2>
+          <p class="text-muted small mb-3">Sensible defaults: 09:00–19:00, balanced pace, no budget limit.</p>
+          <div class="mb-3">
+            <label class="form-label" for="qp-city">Destination</label>
+            <select class="form-select" id="qp-city" name="city" required>
+              {% for c in cities %}<option value="{{ c.slug }}" {% if c.slug == 'delhi' %}selected{% endif %}>{{ c.name }}, {{ c.state }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="qp-date">Start date</label>
+            <input class="form-control" type="date" id="qp-date" name="start_date" value="{{ today.isoformat() }}" required>
+          </div>
+          <div class="mb-4">
+            <span class="form-label d-block" id="qp-days-label">Days</span>
+            <div class="segmented" role="radiogroup" aria-labelledby="qp-days-label">
+              {% for d in range(1, MAX_DAYS + 1) %}
+                <input type="radio" name="days" id="qp-days-{{ d }}" value="{{ d }}" {% if d == 2 %}checked{% endif %}>
+                <label for="qp-days-{{ d }}">{{ d }}</label>
+              {% endfor %}
+            </div>
+          </div>
+          <button class="btn btn-brand w-100" type="submit">Generate itinerary <i class="bi bi-arrow-right ms-1"></i></button>
+          <a class="d-block text-center small mt-3" href="{{ url_for('planner.plan') }}">More options: budget, interests, pace</a>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% if hero and hero.hero_credit %}
+    <div class="hero-credit">Photo: {{ hero.name }} · <a href="{{ hero.hero_source_url }}" rel="noopener">{{ hero.hero_credit }}</a></div>
+  {% endif %}
+</section>
+
+<div class="container">
+  <div class="stat-strip">
+    <div class="row g-0">
+      <div class="col-6 col-md-3 stat"><div class="stat-value tabular">{{ counts.cities }}</div><div class="stat-label">cities modelled</div></div>
+      <div class="col-6 col-md-3 stat"><div class="stat-value tabular">{{ counts.attractions }}</div><div class="stat-label">attractions with hours &amp; fees</div></div>
+      <div class="col-6 col-md-3 stat"><div class="stat-value tabular">{{ counts.edges }}</div><div class="stat-label">road links in the graph</div></div>
+      <div class="col-6 col-md-3 stat"><div class="stat-value tabular">{{ algorithms|length }}</div><div class="stat-label">algorithms we implemented</div></div>
+    </div>
+  </div>
+</div>
+
+<section class="section">
+  <div class="container">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 section-head" style="max-width:none">
+      <div style="max-width: 640px">
+        <span class="eyebrow">Destinations</span>
+        <h2>Four cities, planned down to the minute</h2>
+        <p>Each city is a weighted road graph of its attractions, with opening hours, entry fees and visit durations.</p>
+      </div>
+      <a class="link-arrow" href="{{ url_for('main.cities') }}">All destinations <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <div class="row g-4">
+      {% for c in cities %}
+        <div class="col-sm-6 col-xl-3">
+          <a class="dest-card lift" href="{{ url_for('main.attractions', city=c.slug) }}">
+            {{ ui.image(c.hero_image, c.name ~ ' — ' ~ c.tagline, width=960, height=1280) }}
+            <div class="dest-body">
+              <span class="dest-state">{{ c.state }}</span>
+              <h3>{{ c.name }}</h3>
+              <p>{{ c.tagline }}</p>
+              <div class="dest-meta">
+                <span class="glass-chip"><i class="bi bi-geo-alt"></i>{{ c.attraction_count }} attractions</span>
+                <span class="glass-chip"><i class="bi bi-house-door"></i>{{ c.start_count }} start points</span>
+              </div>
+            </div>
+          </a>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">How it works</span>
+      <h2>From a few preferences to a plan that fits</h2>
+      <p>Every itinerary goes through the same four steps, and the result is re-checked by an independent validator.</p>
+    </div>
+    <div class="row g-4">
+      {% set steps = [
+        ('Tell us your trip', 'Choose a city, dates, daily hours, an optional budget, your interests, pace and where you start each day.', 'Server-side validation'),
+        ('We pick the best stops', 'Each day, a 0/1 knapsack (dynamic programming) chooses the most valuable attractions that fit your time and budget.', 'Dynamic programming · Greedy'),
+        ('We order them smartly', 'Shortest road times from Dijkstra feed Nearest Neighbour and 2-opt, while a deadline-first insertion respects opening hours.', 'Dijkstra · NN · 2-opt · Activity selection'),
+        ('You get a day-by-day plan', 'Arrival and departure times, travel legs, fees and a map, plus a reason for every attraction that did not make it.', 'Independent validator'),
+      ] %}
+      {% for title, text, algo in steps %}
+        <div class="col-md-6 col-xl-3">
+          <div class="card-soft step-card lift">
+            <div class="step-num">{{ loop.index }}</div>
+            <h3>{{ title }}</h3>
+            <p>{{ text }}</p>
+            <div class="step-algo"><span class="chip chip-green">{{ algo }}</span></div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 section-head" style="max-width:none">
+      <div style="max-width: 640px">
+        <span class="eyebrow">Under the hood</span>
+        <h2>Classic algorithms, doing real work</h2>
+        <p>Each one is our own readable Python implementation with unit tests. The comparison page runs them side by side on the same input and reports what it measures.</p>
+      </div>
+      <a class="btn btn-outline-brand" href="{{ url_for('planner.compare') }}"><i class="bi bi-bar-chart-line me-1"></i>See them compete</a>
+    </div>
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-5 g-3">
+      {% for a in algorithms %}
+        <div class="col">
+          <a class="card-soft algo-tile lift text-decoration-none" href="{{ url_for('main.about') }}#algo-{{ a.key }}">
+            <span class="algo-icon"><i class="bi {{ a.icon }}"></i></span>
+            <h3>{{ a.name }}</h3>
+            <p>{{ a.summary|truncate(92) }}</p>
+            <span class="complexity mt-auto">{{ a.time }}</span>
+          </a>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section-sm section-alt">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="trust-item">
+          <span class="trust-icon"><i class="bi bi-shield-check"></i></span>
+          <div><h3>Every plan is re-checked</h3><p>An independent validator recomputes each timeline: opening hours, travel, budget and the ride back.</p></div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="trust-item">
+          <span class="trust-icon"><i class="bi bi-signpost-split"></i></span>
+          <div><h3>Real road network</h3><p>Travel times come from OpenStreetMap roads via OSRM, composed by our own Dijkstra and cross-checked with NetworkX.</p></div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="trust-item">
+          <span class="trust-icon"><i class="bi bi-info-circle"></i></span>
+          <div><h3>Honest about the data</h3><p>Hours, fees, ratings and visit times are illustrative estimates, and they are labelled that way wherever they appear.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section pb-0">
+  <div class="container">
+    <div class="card-soft card-pad text-center" style="padding: 56px 24px;">
+      <span class="eyebrow">Ready when you are</span>
+      <h2 class="mt-3 mb-3" style="font-size: clamp(1.8rem, 3vw, 2.4rem);">Build your first itinerary in seconds</h2>
+      <p class="mx-auto mb-4" style="max-width: 34rem;">Set your days and preferences, then switch between dynamic programming and greedy selection to see the difference.</p>
+      <a class="btn btn-brand btn-lg" href="{{ url_for('planner.plan') }}">Plan my trip <i class="bi bi-arrow-right ms-1"></i></a>
+    </div>
+  </div>
+</section>
+{% endblock %}

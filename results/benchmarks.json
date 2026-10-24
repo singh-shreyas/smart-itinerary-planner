@@ -1,0 +1,188 @@
+{
+  "meta": {
+    "generated": "2026-10-24T16:25:44",
+    "python": "3.11.9",
+    "networkx": "3.6.1",
+    "platform": "macOS-15.7.9-x86_64-i386-64bit",
+    "machine": "x86_64",
+    "processor": "i386",
+    "seeds": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "repeats": 5,
+    "timing": "median of repeats after one warm-up (perf_counter_ns)",
+    "selection_instance": "time cap 540 min (10-min units), budget Rs 1000 (Rs 10 units)",
+    "routing_instance": "start + k stops in a 15 x 15 km square, 25 km/h, up to 10% directional asymmetry",
+    "graph_instance": "V points in a 30 x 30 km square, 5 nearest neighbours each, both directions"
+  },
+  "selection": [
+    {
+      "n": 10,
+      "instances": 10,
+      "greedy_ms": 0.062711,
+      "dp_ms": 14.5969455,
+      "dp_cells": 61105,
+      "greedy_pct_of_dp": 93.54,
+      "dp_strictly_better_pct": 70.0
+    },
+    {
+      "n": 20,
+      "instances": 10,
+      "greedy_ms": 0.1491155,
+      "dp_ms": 31.2838445,
+      "dp_cells": 116655,
+      "greedy_pct_of_dp": 91.84,
+      "dp_strictly_better_pct": 90.0
+    },
+    {
+      "n": 30,
+      "instances": 10,
+      "greedy_ms": 0.2314465,
+      "dp_ms": 42.033311999999995,
+      "dp_cells": 172205,
+      "greedy_pct_of_dp": 92.2,
+      "dp_strictly_better_pct": 100.0
+    },
+    {
+      "n": 40,
+      "instances": 10,
+      "greedy_ms": 0.3290885,
+      "dp_ms": 56.158256,
+      "dp_cells": 227755,
+      "greedy_pct_of_dp": 91.82,
+      "dp_strictly_better_pct": 90.0
+    },
+    {
+      "n": 60,
+      "instances": 10,
+      "greedy_ms": 0.560438,
+      "dp_ms": 88.036975,
+      "dp_cells": 338855,
+      "greedy_pct_of_dp": 92.51,
+      "dp_strictly_better_pct": 100.0
+    }
+  ],
+  "routing": [
+    {
+      "k": 4,
+      "instances": 10,
+      "nn_ms": 0.0067755,
+      "two_opt_ms": 0.029926,
+      "held_karp_ms": 0.060505500000000004,
+      "nn_gap_pct": 4.9,
+      "two_opt_gap_pct": 0.02,
+      "two_opt_optimal_pct": 90.0
+    },
+    {
+      "k": 5,
+      "instances": 10,
+      "nn_ms": 0.009064,
+      "two_opt_ms": 0.0625725,
+      "held_karp_ms": 0.1572195,
+      "nn_gap_pct": 5.48,
+      "two_opt_gap_pct": 0.28,
+      "two_opt_optimal_pct": 80.0
+    },
+    {
+      "k": 6,
+      "instances": 10,
+      "nn_ms": 0.011532,
+      "two_opt_ms": 0.081012,
+      "held_karp_ms": 0.4164285,
+      "nn_gap_pct": 6.0,
+      "two_opt_gap_pct": 0.12,
+      "two_opt_optimal_pct": 90.0
+    },
+    {
+      "k": 7,
+      "instances": 10,
+      "nn_ms": 0.0142595,
+      "two_opt_ms": 0.088424,
+      "held_karp_ms": 1.271984,
+      "nn_gap_pct": 4.11,
+      "two_opt_gap_pct": 1.21,
+      "two_opt_optimal_pct": 50.0
+    },
+    {
+      "k": 8,
+      "instances": 10,
+      "nn_ms": 0.017025,
+      "two_opt_ms": 0.234213,
+      "held_karp_ms": 2.9320625,
+      "nn_gap_pct": 12.76,
+      "two_opt_gap_pct": 0.83,
+      "two_opt_optimal_pct": 70.0
+    },
+    {
+      "k": 9,
+      "instances": 10,
+      "nn_ms": 0.027103500000000003,
+      "two_opt_ms": 0.3845825,
+      "held_karp_ms": 11.1217455,
+      "nn_gap_pct": 7.57,
+      "two_opt_gap_pct": 1.97,
+      "two_opt_optimal_pct": 50.0
+    },
+    {
+      "k": 10,
+      "instances": 10,
+      "nn_ms": 0.024849,
+      "two_opt_ms": 0.4144955,
+      "held_karp_ms": 34.218176,
+      "nn_gap_pct": 4.48,
+      "two_opt_gap_pct": 2.29,
+      "two_opt_optimal_pct": 40.0
+    }
+  ],
+  "dijkstra": [
+    {
+      "v": 25,
+      "instances": 10,
+      "ours_ms": 2.139379,
+      "networkx_ms": 4.116845,
+      "pairs_checked": 6250,
+      "mismatches": 0
+    },
+    {
+      "v": 50,
+      "instances": 10,
+      "ours_ms": 5.773823,
+      "networkx_ms": 17.034686,
+      "pairs_checked": 25000,
+      "mismatches": 0
+    },
+    {
+      "v": 100,
+      "instances": 10,
+      "ours_ms": 28.347948000000002,
+      "networkx_ms": 54.8703845,
+      "pairs_checked": 100000,
+      "mismatches": 0
+    },
+    {
+      "v": 200,
+      "instances": 10,
+      "ours_ms": 108.01847000000001,
+      "networkx_ms": 223.244405,
+      "pairs_checked": 400000,
+      "mismatches": 0
+    }
+  ],
+  "real_scenarios": {
+    "scenarios": 2520,
+    "dp_higher": 989,
+    "greedy_higher": 361,
+    "equal": 1170,
+    "mean_dp_gain_pct": 1.14,
+    "grid": "4 cities x start dates Mon-Sun x 1-3 days x budget {none, 300, 600} (+/- transport) x interests {none, history, spirituality} x pace {balanced, relaxed}; 09:00-19:00"
+  }
+}
