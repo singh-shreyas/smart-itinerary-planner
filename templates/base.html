@@ -1,12 +1,35 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{ current_lang or 'en' }}" data-theme="light" data-bs-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Smart Itinerary Planner{% endblock %} · Smart Itinerary</title>
-  <meta name="description" content="{% block description %}Plan realistic day-by-day sightseeing itineraries for 50 Indian destinations, built on graph algorithms, dynamic programming and route optimisation.{% endblock %}">
+  <title>{% block title %}{{ _('Smart Itinerary Planner') }}{% endblock %} · Smart Itinerary</title>
+  <meta name="description" content="{% block description %}{{ _('Plan realistic day-by-day sightseeing itineraries for 50 Indian destinations, built on graph algorithms, dynamic programming and route optimisation.') }}{% endblock %}">
   <meta name="theme-color" content="#14243A">
-  <script>document.documentElement.classList.add("js");</script>
+  <script>
+    // Theme before the first paint (no flash): the saved choice, else light. Storage may be blocked: ignore that.
+    (function () {
+      var theme = "light";
+      try { theme = localStorage.getItem("theme") === "dark" ? "dark" : "light"; } catch (e) {}
+      document.documentElement.setAttribute("data-theme", theme);
+      document.documentElement.setAttribute("data-bs-theme", theme);
+    })();
+    window.I18N = { lang: "{{ current_lang or 'en' }}", texts: {{ (js_i18n or {})|tojson }},
+                    t: function (s) { return (window.I18N.texts && window.I18N.texts[s]) || s; } };
+    document.documentElement.dataset.photoMissing = {{ _('Photo not available')|tojson }};
+    document.documentElement.classList.add("js");
+    // A photo that fails to load is replaced by the neutral placeholder (no broken-image icon, same box size).
+    document.addEventListener("error", function (e) {
+      var img = e.target;
+      if (!img || img.tagName !== "IMG" || !img.hasAttribute("data-fallback")) return;
+      var box = document.createElement("div");
+      box.className = "img-fallback " + (img.className || "");
+      if (img.alt) { box.setAttribute("role", "img"); box.setAttribute("aria-label", img.alt); } else { box.setAttribute("aria-hidden", "true"); }
+      box.innerHTML = '<i class="bi bi-image" aria-hidden="true"></i><span></span>';
+      box.querySelector("span").textContent = document.documentElement.dataset.photoMissing || "Photo not available";
+      img.replaceWith(box);
+    }, true);
+  </script>
   <link rel="icon" href="{{ url_for('static', filename='images/favicon.svg') }}" type="image/svg+xml">
   <link rel="stylesheet" href="{{ url_for('static', filename='fonts/fonts.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}">
@@ -15,25 +38,36 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="{% block body_class %}{% endblock %}">
-  <a class="visually-hidden-focusable" href="#main">Skip to content</a>
+  <a class="visually-hidden-focusable" href="#main">{{ _('Skip to content') }}</a>
 
   {% set nav = [
-    ('main.cities', 'Destinations'),
-    ('main.attractions', 'Attractions'),
-    ('planner.compare', 'Compare algorithms'),
-    ('main.about', 'How it works'),
+    ('main.cities', _('Destinations')),
+    ('main.attractions', _('Attractions')),
+    ('planner.compare', _('Compare algorithms')),
+    ('main.about', _('How it works')),
   ] %}
   {% macro wordmark() -%}
     <span class="brand-mark" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="18" r="2.3" fill="currentColor" stroke="none"/><circle cx="18.5" cy="6" r="2.3" fill="currentColor" stroke="none"/><path d="M8.5 18H14a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h5.5"/></svg>
     </span>
-    <span class="brand-name">Smart Itinerary<small>Travel optimisation</small></span>
+    <span class="brand-name">{{ _('Smart Itinerary') }}<small>{{ _('Travel optimisation') }}</small></span>
   {%- endmacro %}
   <header class="site-nav {% block nav_class %}{% endblock %}" id="site-nav">
-    <nav class="navbar navbar-expand-lg container" aria-label="Main">
-      <a class="brand" href="{{ url_for('main.index') }}" aria-label="Smart Itinerary home">{{ wordmark() }}</a>
+    <nav class="navbar navbar-expand-lg container" aria-label="{{ _('Main') }}">
+      <a class="brand" href="{{ url_for('main.index') }}" aria-label="{{ _('Smart Itinerary home') }}">{{ wordmark() }}</a>
+      <div class="site-controls order-lg-last ms-lg-3">
+        <label class="visually-hidden" for="lang-select">{{ _('Language') }}</label>
+        <select class="form-select form-select-sm lang-select" id="lang-select" data-lang-switch>
+          {% for code, name in LANGUAGES.items() %}<option value="{{ code }}" lang="{{ code }}" {% if code == current_lang %}selected{% endif %}>{{ name }}</option>{% endfor %}
+        </select>
+        <button type="button" class="theme-toggle" id="theme-toggle" aria-pressed="false"
+                aria-label="{{ _('Switch to dark mode') }}" title="{{ _('Switch to dark mode') }}"
+                data-label-dark="{{ _('Switch to dark mode') }}" data-label-light="{{ _('Switch to light mode') }}">
+          <i class="bi bi-moon-stars-fill" aria-hidden="true"></i><i class="bi bi-sun-fill" aria-hidden="true"></i>
+        </button>
+      </div>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav-links"
-              aria-controls="nav-links" aria-expanded="false" aria-label="Toggle navigation">
+              aria-controls="nav-links" aria-expanded="false" aria-label="{{ _('Toggle navigation') }}">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="nav-links">
@@ -46,7 +80,7 @@
             </li>
           {% endfor %}
           <li class="nav-item ms-lg-2">
-            <a class="btn btn-brand" href="{{ url_for('planner.plan') }}"><i class="bi bi-compass me-1"></i>Plan a trip</a>
+            <a class="btn btn-brand" href="{{ url_for('planner.plan') }}"><i class="bi bi-compass me-1"></i>{{ _('Plan a trip') }}</a>
           </li>
         </ul>
       </div>
@@ -58,84 +92,81 @@
   </main>
 
   <footer class="site-footer" aria-labelledby="footer-heading">
-    <h2 id="footer-heading" class="visually-hidden">Site footer</h2>
+    <h2 id="footer-heading" class="visually-hidden">{{ _('Site footer') }}</h2>
     <div class="container">
       <div class="footer-cta">
         <div>
-          <span class="eyebrow on-dark">Ready when you are</span>
-          <p class="footer-cta-title">Turn a few preferences into a day-by-day plan that actually fits.</p>
+          <span class="eyebrow on-dark">{{ _('Ready when you are') }}</span>
+          <p class="footer-cta-title">{{ _('Turn a few preferences into a day-by-day plan that actually fits.') }}</p>
         </div>
         <div class="d-flex flex-wrap gap-2">
-          <a class="btn btn-light-solid" href="{{ url_for('planner.plan') }}"><i class="bi bi-compass me-1"></i>Plan a trip</a>
-          <a class="btn btn-ghost-light" href="{{ url_for('planner.compare') }}"><i class="bi bi-bar-chart-line me-1"></i>Compare algorithms</a>
+          <a class="btn btn-light-solid" href="{{ url_for('planner.plan') }}"><i class="bi bi-compass me-1"></i>{{ _('Plan a trip') }}</a>
+          <a class="btn btn-ghost-light" href="{{ url_for('planner.compare') }}"><i class="bi bi-bar-chart-line me-1"></i>{{ _('Compare algorithms') }}</a>
         </div>
       </div>
 
       <div class="row gy-5 footer-main">
         <div class="col-lg-4">
           <a class="brand" href="{{ url_for('main.index') }}">{{ wordmark() }}</a>
-          <p class="footer-about">An Analysis &amp; Design of Algorithms project that turns graph search, dynamic programming and route
-            optimisation into realistic travel plans for {{ footer.city_count or 50 }} Indian destinations.</p>
+          <p class="footer-about">{{ _('An Analysis & Design of Algorithms project that turns graph search, dynamic programming and route optimisation into realistic travel plans for {n} Indian destinations.', n=footer.city_count or 50) }}</p>
           {% if footer.city_count %}
-          <ul class="footer-stats" aria-label="Dataset in numbers">
-            <li><strong>{{ footer.city_count }}</strong><span>destinations</span></li>
-            <li><strong>{{ footer.attraction_count }}</strong><span>attractions</span></li>
-            <li><strong>{{ footer.edge_count }}</strong><span>road links</span></li>
+          <ul class="footer-stats" aria-label="{{ _('Dataset in numbers') }}">
+            <li><strong>{{ footer.city_count }}</strong><span>{{ _('destinations') }}</span></li>
+            <li><strong>{{ footer.attraction_count }}</strong><span>{{ _('attractions') }}</span></li>
+            <li><strong>{{ footer.edge_count }}</strong><span>{{ _('road links') }}</span></li>
           </ul>
           {% endif %}
         </div>
-        <nav class="col-6 col-md-3 col-lg-2" aria-label="Plan">
-          <h3>Plan</h3>
+        <nav class="col-6 col-md-3 col-lg-2" aria-label="{{ _('Plan') }}">
+          <h3>{{ _('Plan') }}</h3>
           <ul>
-            <li><a href="{{ url_for('planner.plan') }}">Trip planner</a></li>
-            <li><a href="{{ url_for('planner.plan') }}#step-destination">Multi-city trips</a></li>
-            <li><a href="{{ url_for('planner.compare') }}">Compare algorithms</a></li>
-            <li><a href="{{ url_for('main.attractions') }}">Browse attractions</a></li>
-            <li><a href="{{ url_for('main.cities') }}">All destinations</a></li>
+            <li><a href="{{ url_for('planner.plan') }}">{{ _('Trip planner') }}</a></li>
+            <li><a href="{{ url_for('planner.plan') }}#step-destination">{{ _('Multi-city trips') }}</a></li>
+            <li><a href="{{ url_for('planner.compare') }}">{{ _('Compare algorithms') }}</a></li>
+            <li><a href="{{ url_for('main.attractions') }}">{{ _('Browse attractions') }}</a></li>
+            <li><a href="{{ url_for('main.cities') }}">{{ _('All destinations') }}</a></li>
           </ul>
         </nav>
-        <nav class="col-6 col-md-3 col-lg-2" aria-label="Popular destinations">
-          <h3>Destinations</h3>
+        <nav class="col-6 col-md-3 col-lg-2" aria-label="{{ _('Popular destinations') }}">
+          <h3>{{ _('Destinations') }}</h3>
           <ul>
             {% for c in footer.cities %}<li><a href="{{ url_for('main.attractions', city=c.slug) }}">{{ c.name }}</a></li>{% endfor %}
-            <li><a class="footer-more" href="{{ url_for('main.cities') }}">All {{ footer.city_count or '' }} destinations <i class="bi bi-arrow-right"></i></a></li>
+            <li><a class="footer-more" href="{{ url_for('main.cities') }}">{{ _('All {n} destinations', n=footer.city_count or '') }} <i class="bi bi-arrow-right"></i></a></li>
           </ul>
         </nav>
-        <nav class="col-6 col-md-3 col-lg-2" aria-label="Features">
-          <h3>Features</h3>
+        <nav class="col-6 col-md-3 col-lg-2" aria-label="{{ _('Features') }}">
+          <h3>{{ _('Features') }}</h3>
           <ul>
-            <li><a href="{{ url_for('main.about') }}#multi-city">Nearby-city trips</a></li>
-            <li><a href="{{ url_for('main.about') }}#meals">Lunch &amp; dinner breaks</a></li>
-            <li><a href="{{ url_for('main.about') }}#food-shopping">Food &amp; shopping</a></li>
-            <li><a href="{{ url_for('main.about') }}#reproducible">Reproducible plans</a></li>
-            <li><a href="{{ url_for('main.about') }}#scoring">Algorithm scoring</a></li>
+            <li><a href="{{ url_for('main.about') }}#multi-city">{{ _('Nearby-city trips') }}</a></li>
+            <li><a href="{{ url_for('main.about') }}#meals">{{ _('Lunch & dinner breaks') }}</a></li>
+            <li><a href="{{ url_for('main.about') }}#food-shopping">{{ _('Food & shopping') }}</a></li>
+            <li><a href="{{ url_for('main.about') }}#reproducible">{{ _('Reproducible plans') }}</a></li>
+            <li><a href="{{ url_for('main.about') }}#scoring">{{ _('Algorithm scoring') }}</a></li>
           </ul>
         </nav>
-        <nav class="col-6 col-md-3 col-lg-2" aria-label="Project">
-          <h3>Project</h3>
+        <nav class="col-6 col-md-3 col-lg-2" aria-label="{{ _('Project') }}">
+          <h3>{{ _('Project') }}</h3>
           <ul>
-            <li><a href="{{ url_for('main.about') }}">Methodology</a></li>
-            <li><a href="{{ url_for('main.about') }}#algorithms">Algorithms</a></li>
-            <li><a href="{{ url_for('main.about') }}#data">Data &amp; sources</a></li>
-            <li><a href="{{ url_for('main.about') }}#limitations">Limitations</a></li>
-            <li><a href="{{ url_for('api.health') }}">API status</a></li>
+            <li><a href="{{ url_for('main.about') }}">{{ _('Methodology') }}</a></li>
+            <li><a href="{{ url_for('main.about') }}#algorithms">{{ _('Algorithms') }}</a></li>
+            <li><a href="{{ url_for('main.about') }}#data">{{ _('Data & sources') }}</a></li>
+            <li><a href="{{ url_for('main.about') }}#limitations">{{ _('Limitations') }}</a></li>
+            <li><a href="{{ url_for('api.health') }}">{{ _('API status') }}</a></li>
           </ul>
         </nav>
       </div>
 
       <div class="footer-note">
         <i class="bi bi-info-circle" aria-hidden="true"></i>
-        <p>Locations come from Wikipedia, Wikidata and OpenStreetMap; road times from OSRM. Opening hours, fees and visit lengths
-          are labelled estimates unless a source is shown. Always confirm with the venue before you travel.</p>
+        <p>{{ _('Locations come from Wikipedia, Wikidata and OpenStreetMap; road times from OSRM. Opening hours, fees and visit lengths are labelled estimates unless a source is shown. Always confirm with the venue before you travel.') }}</p>
       </div>
 
       <div class="footer-bottom">
-        <span>&copy; {{ today.year }} Smart Itinerary Planner · ADA project by Priyanshi Gupta &amp; Shreyas Singh, B.Tech CSE (Section B),
-          Faculty of Technology, University of Delhi</span>
-        <span class="footer-credits">Map data &copy; <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap contributors</a>
-          · Routing <a href="https://project-osrm.org/" rel="noopener">OSRM</a>
-          · Photos <a href="{{ url_for('main.about') }}#credits">Wikimedia Commons</a>
-          {% if footer.data_version %}· <span title="Fingerprint of the dataset this site was built from">data #{{ footer.data_version }}</span>{% endif %}</span>
+        <span>&copy; {{ today.year }} Smart Itinerary Planner · {{ _('ADA project by Priyanshi Gupta & Shreyas Singh, B.Tech CSE (Section B), Faculty of Technology, University of Delhi') }}</span>
+        <span class="footer-credits">{{ _('Map data') }} &copy; <a href="https://www.openstreetmap.org/copyright" rel="noopener">{{ _('OpenStreetMap contributors') }}</a>
+          · {{ _('Routing') }} <a href="https://project-osrm.org/" rel="noopener">{{ _('OSRM') }}</a>
+          · {{ _('Photos') }} <a href="{{ url_for('main.about') }}#credits">{{ _('Wikimedia Commons') }}</a>
+          {% if footer.data_version %}· <span title="{{ _('Fingerprint of the dataset this site was built from') }}">{{ _('data') }} #{{ footer.data_version }}</span>{% endif %}</span>
       </div>
     </div>
   </footer>

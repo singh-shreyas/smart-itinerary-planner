@@ -45,6 +45,7 @@ from dataclasses import dataclass, field
 
 import config
 from algorithms.day_partition import day_subsets, deviation, search, target_counts
+from services.i18n import gettext as _, ngettext
 from services.scheduler import simulate
 from services.timeutil import fmt_duration
 
@@ -76,8 +77,8 @@ class Distribution:
 
 
 class DayEvaluator:
-    """Is this set of stops a feasible day, and how good is it? Memoised per (weekday, set):
-    two Mondays of the same trip are the same planning problem."""
+    """Is this set of stops a feasible day, and how good is it? Memoised per (weekday, where the day
+    starts and ends, set): two Mondays at the same stay are the same planning problem."""
 
     def __init__(self, contexts, best_route, known=None):
         self.contexts = contexts                   # trip day index -> DayContext
@@ -85,7 +86,11 @@ class DayEvaluator:
         self.memo = {}
         self.calls = 0
         for (d, stops), (order, branch) in (known or {}).items():
-            self.memo[(contexts[d].weekday, frozenset(stops))] = self._measure(d, tuple(order), branch)
+            self.memo[self._key(d, stops)] = self._measure(d, tuple(order), branch)
+
+    def _key(self, d, stops):
+        ctx = self.contexts[d]
+        return (ctx.weekday, ctx.start_id, ctx.end, frozenset(stops))
 
     def _measure(self, d, order, branch):
         sim = simulate(list(order), self.contexts[d])
@@ -96,9 +101,14 @@ class DayEvaluator:
 
     def __call__(self, d, stops):
         if not stops:
+            if self.contexts[d].moves:                # a pure transfer day still has to fit the ride
+                key = self._key(d, ())
+                if key not in self.memo:
+                    self.memo[key] = self._measure(d, (), "")
+                return self.memo[key]
             return DayEval(True)
         ctx = self.contexts[d]
-        key = (ctx.weekday, frozenset(stops))
+        key = self._key(d, stops)
         if key not in self.memo:
             self.calls += 1
             lower_bound = sum(ctx.duration(a) + ctx.buffer for a in stops) + ctx.meal_minutes
@@ -130,7 +140,7 @@ def distribute(trip, contexts, places, scores, best_route, known=None, seed=None
             usable.append(p)
             alone_days[p] = len(ok)
         else:
-            reasons[p] = "does not fit any day of the trip on its own (opening hours, travel, access or meals)"
+            reasons[p] = _("does not fit any day of the trip on its own (opening hours, travel, access or meals)")
 
     def order_key(p):                              # hardest first: fewest possible days, then the longest
         return (alone_days[p], -max(ev(d, (p,)).busy for d in days if ev.feasible(d, (p,))), p)
@@ -168,10 +178,21 @@ def distribute(trip, contexts, places, scores, best_route, known=None, seed=None
 
     seeds = [seed] if seed else []
 
+    def spent():
+        """Effort cap: after MODE_SEARCH_BUDGET distinct days have been routed, each local search
+        keeps the best plan it has (every plan it holds is feasible) instead of looking further."""
+        return ev.calls >= config.MODE_SEARCH_BUDGET
+
     def best_over_subsets(k, cost):
-        best = None
+        best, seen = None, set()
         for subset in day_subsets(days, k):
-            found = search(usable, list(subset), ev.feasible, cost, seeds=seeds, order_key=order_key)
+            # Two choices of days with the same weekdays and stays are the same problem: search it once
+            # (on a 14-day trip, windows a week apart repeat). The earliest one is kept.
+            shape = tuple((contexts[d].weekday, contexts[d].start_id, contexts[d].end) for d in subset)
+            if shape in seen:
+                continue
+            seen.add(shape)
+            found = search(usable, list(subset), ev.feasible, cost, seeds=seeds, order_key=order_key, stop=spent)
             if found and (best is None or found[1] < best[1]):
                 best = found
         return best
@@ -194,7 +215,7 @@ def distribute(trip, contexts, places, scores, best_route, known=None, seed=None
     if not usable:
         chosen = None
     elif trip.mode == "evenly":
-        chosen = search(usable, days, ev.feasible, evenly_cost, seeds=seeds, order_key=order_key)[0]
+        chosen = search(usable, days, ev.feasible, evenly_cost, seeds=seeds, order_key=order_key, stop=spent)[0]
     else:
         k_min, found = minimum_days()
         result.min_days = k_min
@@ -202,6 +223,10 @@ def distribute(trip, contexts, places, scores, best_route, known=None, seed=None
         if trip.mode == "suggested" and k_min is not None:
             best = None
             for k in range(k_min, min(len(days), len(usable)) + 1):
+                # Every extra day adds at least SUGGESTED_DAY_COST and nothing is negative: once that alone
+                # reaches the best plan's cost, no longer plan can win, so the search stops (exact, not a guess).
+                if best is not None and config.SUGGESTED_DAY_COST * (k - k_min) >= best[0]:
+                    break
                 candidate = best_over_subsets(k, suggested_inner)
                 if candidate is None or candidate[0].unplaced():
                     continue
@@ -211,8 +236,11 @@ def distribute(trip, contexts, places, scores, best_route, known=None, seed=None
                 result.suggested_trials.append({"k": k, "cost": round(total, 1), "overload": overload,
                                                 "travel": sum(x.travel for x in e.values()),
                                                 "longest": max(x.busy for x in e.values())})
-                if best is None or total < best[0]:
-                    best = (total, candidate[0])
+                # Plans within SUGGESTED_TIE_MIN of each other count as equal: the one with fewer days, then
+                # the one starting earlier, wins (so a trip does not open with empty days for a few minutes).
+                key = (round(total / config.SUGGESTED_TIE_MIN), k, min(d for d in candidate[0].days))
+                if best is None or key < best[2]:
+                    best = (total, candidate[0], key)
             if best is not None:
                 chosen = best[1]
 
@@ -233,65 +261,104 @@ def distribute(trip, contexts, places, scores, best_route, known=None, seed=None
 
 # ------------------------------------------------------------------------------ plain-language summary
 
+def _places_phrase(n, picked, remaining):
+    """ "3 selected attractions", "1 remaining chosen attraction", ... (each form is its own text)."""
+    forms = {(True, False): ("{n} selected attraction", "{n} selected attractions"),
+             (True, True): ("{n} remaining selected attraction", "{n} remaining selected attractions"),
+             (False, False): ("{n} chosen attraction", "{n} chosen attractions"),
+             (False, True): ("{n} remaining chosen attraction", "{n} remaining chosen attractions")}
+    return ngettext(*forms[(bool(picked), bool(remaining))], n)
+
+
 def explain(dist, itinerary_days, selected_count, total_days, picked):
     """Sentences that describe the plan that was actually produced (never a canned claim)."""
     active = [d for d in itinerary_days if d.visits]
     scheduled = sum(len(d.visits) for d in active)
     counts = [len(d.visits) for d in itinerary_days]
     shape = " + ".join(str(c) for c in counts)
-    who = "selected" if picked else "chosen"
     lines = []
     missing = selected_count - scheduled
     if missing:
-        lines.append(f"{missing} of your {selected_count} {who} attractions could not be scheduled in "
-                     f"{total_days} day{'s' if total_days > 1 else ''}; each one is listed with the reason below.")
+        lines.append(ngettext(
+            "{missing} of your {total} selected attractions could not be scheduled in {n} day; each one is listed with "
+            "the reason below." if picked else
+            "{missing} of your {total} chosen attractions could not be scheduled in {n} day; each one is listed with "
+            "the reason below.",
+            "{missing} of your {total} selected attractions could not be scheduled in {n} days; each one is listed with "
+            "the reason below." if picked else
+            "{missing} of your {total} chosen attractions could not be scheduled in {n} days; each one is listed with "
+            "the reason below.", total_days, missing=missing, total=selected_count))
     free = total_days - len(active)
-    places = f"{scheduled} {'remaining ' if missing else ''}{who} attraction{'s' if scheduled != 1 else ''}"
+    places = _places_phrase(scheduled, picked, missing)
     if not active:
         return lines
     if total_days == 1:
-        lines.append(f"With a one-day trip, {'all ' if scheduled > 1 else ''}{places} {'are' if scheduled != 1 else 'is'} "
-                     f"on that day; the modes differ only on longer trips.")
+        lines.append(_("With a one-day trip, all {places} are on that day; the modes differ only on longer trips.",
+                       places=places) if scheduled > 1 else
+                     _("With a one-day trip, {places} is on that day; the modes differ only on longer trips.",
+                       places=places))
         return lines
     if dist.mode == "optimized":
-        text = (f"{'All ' if scheduled > 1 else ''}{places[0].upper() + places[1:] if scheduled == 1 else places} "
-                f"can be completed in {len(active)} active day{'s' if len(active) > 1 else ''}.")
+        if scheduled > 1:
+            parts = [ngettext("All {places} can be completed in {n} active day.",
+                              "All {places} can be completed in {n} active days.", len(active), places=places)]
+        else:
+            parts = [ngettext("{places} can be completed in {n} active day.",
+                              "{places} can be completed in {n} active days.", len(active), places=places)]
         if free:
-            text += f" The remaining {free} day{'s are' if free > 1 else ' is'} unscheduled, free for rest or optional activities."
+            parts.append(ngettext("The remaining {n} day is unscheduled, free for rest or optional activities.",
+                                  "The remaining {n} days are unscheduled, free for rest or optional activities.", free))
         elif len(active) > 1:
-            text += " No plan with fewer days was feasible (opening hours, travel and access time)."
-        lines.append(text)
+            parts.append(_("No plan with fewer days was feasible (opening hours, travel and access time)."))
+        lines.append(" ".join(parts))
     elif dist.mode == "evenly":
         ideal = " + ".join(str(c) for c in dist.target)
         if deviation(counts, dist.target) == 0:
             if scheduled >= total_days:
-                lines.append(f"Your {places} are distributed across all {total_days} selected days ({shape}).")
+                lines.append(_("Your {places} are distributed across all {days} selected days ({shape}).",
+                               places=places, days=total_days, shape=shape))
             else:
-                lines.append(f"Your {places} are on {scheduled} different days ({shape}); with fewer attractions "
-                             f"than days, {free} day{'s stay' if free > 1 else ' stays'} free.")
+                lines.append(ngettext(
+                    "Your {places} are on {scheduled} different days ({shape}); with fewer attractions than days, "
+                    "{n} day stays free.",
+                    "Your {places} are on {scheduled} different days ({shape}); with fewer attractions than days, "
+                    "{n} days stay free.", free, places=places, scheduled=scheduled, shape=shape))
         else:
-            lines.append(f"The even target was {ideal}, but the closest feasible distribution is {shape}: some places "
-                         f"cannot share a day or fit on certain days (opening hours, travel or access time).")
+            lines.append(_("The even target was {ideal}, but the closest feasible distribution is {shape}: some places "
+                           "cannot share a day or fit on certain days (opening hours, travel or access time).",
+                           ideal=ideal, shape=shape))
     else:
         trials = {t["k"]: t for t in dist.suggested_trials}
         k = len(active)
-        text = f"The suggested itinerary uses {k} active day{'s' if k > 1 else ''}"
         shortest = trials.get(dist.min_days)
         over = trials.get(k, {}).get("overload", 0)
+        comfort = fmt_duration(dist.comfort_min)
         if dist.min_days is not None and k > dist.min_days and shortest:
-            text += (f" to avoid overly long sightseeing days: the {dist.min_days}-day plan would have "
-                     f"{fmt_duration(shortest['overload'])} beyond a comfortable {fmt_duration(dist.comfort_min)} day"
-                     + (f" (this plan: {fmt_duration(over)})." if over else "."))
+            values = dict(n=k, min=dist.min_days, over=fmt_duration(shortest["overload"]), comfort=comfort)
+            text = (_("The suggested itinerary uses {n} active days to avoid overly long sightseeing days: the "
+                      "{min}-day plan would have {over} beyond a comfortable {comfort} day (this plan: {this}).",
+                      this=fmt_duration(over), **values) if over else
+                    _("The suggested itinerary uses {n} active days to avoid overly long sightseeing days: the "
+                      "{min}-day plan would have {over} beyond a comfortable {comfort} day.", **values))
         elif not over:
-            text += (f", the same as the fastest plan, because its days are already comfortable "
-                     f"(at most {fmt_duration(dist.comfort_min)} out).")
+            text = ngettext("The suggested itinerary uses {n} active day, the same as the fastest plan, because its "
+                            "days are already comfortable (at most {comfort} out).",
+                            "The suggested itinerary uses {n} active days, the same as the fastest plan, because its "
+                            "days are already comfortable (at most {comfort} out).", k, comfort=comfort)
         elif k == total_days:
-            text += (f"; some days are long ({fmt_duration(over)} beyond a comfortable "
-                     f"{fmt_duration(dist.comfort_min)} day in all), and the trip has no more days to spread them over.")
+            text = ngettext("The suggested itinerary uses {n} active day; some days are long ({over} beyond a "
+                            "comfortable {comfort} day in all), and the trip has no more days to spread them over.",
+                            "The suggested itinerary uses {n} active days; some days are long ({over} beyond a "
+                            "comfortable {comfort} day in all), and the trip has no more days to spread them over.",
+                            k, over=fmt_duration(over), comfort=comfort)
         else:
-            text += (", the fewest feasible: one more day would not shorten the long days enough to be worth it "
-                     "(it must remove at least 30 min beyond a comfortable day).")
+            text = ngettext("The suggested itinerary uses {n} active day, the fewest feasible: one more day would not "
+                            "shorten the long days enough to be worth it (it must remove at least 30 min beyond a "
+                            "comfortable day).",
+                            "The suggested itinerary uses {n} active days, the fewest feasible: one more day would not "
+                            "shorten the long days enough to be worth it (it must remove at least 30 min beyond a "
+                            "comfortable day).", k)
         if free:
-            text += f" {free} day{'s are' if free > 1 else ' is'} left free."
+            text += " " + ngettext("{n} day is left free.", "{n} days are left free.", free)
         lines.append(text)
     return lines

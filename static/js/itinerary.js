@@ -2,6 +2,7 @@
 // The itinerary is complete without it: if Leaflet or the tiles fail, a short note is shown instead.
 (function () {
   "use strict";
+  var t = window.I18N ? window.I18N.t : function (x) { return x; };
 
   var card = document.getElementById("map-card");
   var el = document.getElementById("route-map");
@@ -60,10 +61,16 @@
     var day = data.days.filter(function (d) { return d.index === dayIndex; })[0] || data.days[0];
     if (!day) return;
     layer.clearLayers();
-    var start = data.start;
+    // Each day starts at last night's stay and ends at tonight's (a different one on a travel day).
+    var start = day.from || data.start, finish = day.to || data.start;
+    var moves = start.lat !== finish.lat || start.lng !== finish.lng;
     var points = [[start.lat, start.lng]];
     pin(start.lat, start.lng, '<i class="bi bi-house-door"></i>', "is-home")
-      .bindPopup("<strong>" + esc(start.name) + "</strong><br>Start and end of the day").addTo(layer);
+      .bindPopup("<strong>" + esc(start.name) + "</strong><br>" + esc(t(moves ? "Start of the day" : "Start and end of the day"))).addTo(layer);
+    if (moves) {
+      pin(finish.lat, finish.lng, '<i class="bi bi-moon-stars"></i>', "is-home")
+        .bindPopup("<strong>" + esc(finish.name) + "</strong><br>" + esc(t("Tonight's stay"))).addTo(layer);
+    }
     day.stops.forEach(function (s) {
       points.push([s.lat, s.lng]);
       if (s.kind === "meal") {
@@ -74,15 +81,15 @@
           (data.cities && data.cities.length ? "<br><span class='text-muted'>" + esc(s.city) + "</span>" : "")).addTo(layer);
       }
     });
-    if (day.stops.length) {
-      points.push([start.lat, start.lng]);
+    if (day.stops.length || moves) {
+      points.push([finish.lat, finish.lng]);
       // Straight dashed segments in visit order -- deliberately NOT drawn as if they were roads.
       L.polyline(points, { color: "#1F4D3A", weight: 3, opacity: 0.85, dashArray: "6 9" }).addTo(layer);
       map.fitBounds(L.latLngBounds(points).pad(0.18), { maxZoom: 14 });
     } else {
       map.setView([start.lat, start.lng], 13);
     }
-    if (label) label.textContent = "Day " + day.index;
+    if (label) label.textContent = t("Day {n}").replace("{n}", day.index);
   }
 
   draw(1);

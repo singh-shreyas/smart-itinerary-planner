@@ -4,7 +4,7 @@ Generating a plan changes nothing on the server and always gives the same
 answer, so these are GET routes: the URL is a shareable, refresh-safe link.
 """
 
-from datetime import date
+from datetime import date, timedelta
 
 from flask import Blueprint, abort, current_app, render_template, request
 from werkzeug.datastructures import MultiDict
@@ -25,11 +25,13 @@ LIST_FIELDS = ("interests", "exclude", "also", "venue_style", "places")
 
 def default_values(city_slug=""):
     lunch, dinner = config.DEFAULT_LUNCH, config.DEFAULT_DINNER
-    return {"city": city_slug, "also": [], "start_date": date.today().isoformat(), "days": "2",
+    today = date.today()
+    return {"city": city_slug, "also": [], "start_date": today.isoformat(),
+            "end_date": (today + timedelta(days=1)).isoformat(), "days": "2",
             "day_start": config.DEFAULT_DAY_START, "day_end": config.DEFAULT_DAY_END,
             "interests": [], "interest_mode": "prefer", "pace": config.DEFAULT_PACE, "start": "",
             "strategy": config.DEFAULT_STRATEGY, "exclude": [], "mode": config.DEFAULT_MODE, "choose": "auto",
-            "places": [],
+            "places": [], "end": "", "overnight": "move",
             "lunch": "on", "lunch_from": lunch[0], "lunch_to": lunch[1], "lunch_min": str(lunch[2]),
             "dinner": "on", "dinner_from": dinner[0], "dinner_to": dinner[1], "dinner_min": str(dinner[2]),
             "venues": "on", "venue_style": [], "veg": "", "shop_min": ""}

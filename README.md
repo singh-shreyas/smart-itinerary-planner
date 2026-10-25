@@ -88,15 +88,18 @@ cities whose answers can be worked out on paper) and from `data/`; they never to
 ### Run the benchmarks
 
 ```bash
-python scripts/benchmark.py            # about 30 seconds; writes results/benchmarks.json and .csv
+python scripts/benchmark.py            # a few minutes; writes results/benchmarks.json and .csv
 python scripts/benchmark.py --quick    # fewer seeds
 ```
 
 Seeded synthetic instances (`random.Random(seed)`) measure how runtime grows with input size; a sweep of 648 real-data
 trips (the 12 highest-ranked plannable cities × 3 start days × 1–3 days × 2 paces × 3 interest settings, with lunch)
-counts how often each strategy ends up ahead. Latest run: DP's itinerary scored higher than Greedy's in 126 trips, Greedy's
-in 3, equal in 519; Max visits never planned more stops than DP and planned fewer in 6 (selection-level guarantees do not
-survive routing, meals and repair). The comparison page charts this file; nothing on it is typed in by hand.
+counts how often each strategy ends up ahead. Latest run: DP's itinerary scored higher than Greedy's in 106 trips, Greedy's
+in 10, equal in 532; Max visits planned more stops than DP in 7 and fewer in 11 (selection-level guarantees do not
+survive routing, meals, repair and the itinerary mode's re-spreading). A third experiment calibrates Suggested mode: 60 real-city trips (the
+10 highest-ranked ready cities × the 3, 4, 6 or 8 most popular places × 3 or 5 days). With the chosen cost of 60 minutes per extra
+day, Suggested used more days than Most Optimized in 66.7% of them (about 1 extra day, the longest day about 4 hours
+shorter on average); a cost of 30 gave the same choices and 0 added days for small gains, so 60 sits in the stable range. The comparison page charts this file; nothing on it is typed in by hand.
 
 ---
 
@@ -341,7 +344,7 @@ ADA PROJECT FINAL/
 * **Where is travel time in the knapsack?** Each stop's weight includes its cheapest way out (a lower bound); the capacity also removes the shortest first ride, the unavoidable extra of the ride home and the meals.
 * **How is Max visits different from DP?** Same DP, different values: `B + score` with `B = Σ scores + 1` makes one extra place worth more than any score difference — count first, value second.
 * **Show the strategies differing.** Greedy trap (90 vs 120) and value vs count (2 valuable stops vs 3 ordinary ones), both run live on `/compare`.
-* **Is DP's itinerary always better?** No. On the identical knapsack it is guaranteed; on whole itineraries routing, meals, repair and multi-day effects can reverse it — in our 648-trip sweep DP was ahead in 126, Greedy in 3, equal in 519.
+* **Is DP's itinerary always better?** No. On the identical knapsack it is guaranteed; on whole itineraries routing, meals, repair and multi-day effects can reverse it — in our 648-trip sweep DP was ahead in 106, Greedy in 10, equal in 532.
 * **Why does a longer day sometimes change nothing?** Because everything still open is already planned; the day summary lists the closing times. The tests check that stops never decrease as the day grows.
 * **How do you know plans are reproducible?** Same inputs + data + settings → same plan fingerprint, tested under three different hash seeds.
 * **How are the three modes different algorithms, not three labels?** Same search and feasibility check, different objective: Most Optimized minimises active days (then travel), Evenly minimises deviation from ⌊N/D⌋ + remainder, Suggested minimises a stated cost (over-long minutes × 2 + travel + ¼ unevenness + 60 per extra day). Tests A–I show them producing different plans from the same input.

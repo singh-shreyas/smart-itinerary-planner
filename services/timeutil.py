@@ -11,6 +11,8 @@ Two different kinds of time are kept apart on purpose:
 
 import math
 
+from services.i18n import gettext as _
+
 import config
 
 WEEKDAY_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
@@ -42,10 +44,10 @@ def fmt_duration(minutes):
     minutes = int(round(minutes))
     hours, rest = divmod(minutes, 60)
     if hours and rest:
-        return f"{hours} hr {rest} min"
+        return _("{h} hr {m} min", h=hours, m=rest)
     if hours:
-        return f"{hours} hr"
-    return f"{rest} min"
+        return _("{h} hr", h=hours)
+    return _("{m} min", m=rest)
 
 
 def round_up_travel(minutes, step=None):
@@ -69,9 +71,9 @@ def round_up_travel(minutes, step=None):
 def fmt_travel(minutes):
     """A planned travel duration for display: '20 min', '1 hr 10 min', 'no route', 'no travel'."""
     if minutes == math.inf or minutes is None:
-        return "no route"
+        return _("no route")
     if minutes == 0:
-        return "no travel"
+        return _("no travel")
     return fmt_duration(minutes)
 
 
@@ -90,3 +92,17 @@ def describe_days(weekdays):
                 return WEEKDAY_SHORT[start]
             return f"{WEEKDAY_SHORT[run[0]]}-{WEEKDAY_SHORT[run[-1]]}"
     return ", ".join(WEEKDAY_SHORT[d] for d in days)
+
+
+MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October",
+          "November", "December"]
+
+
+def fmt_short_date(d):
+    """'Mon 2 Nov' in the interface language (the date itself is never parsed from this text)."""
+    return f"{_(WEEKDAY_SHORT[d.weekday()])} {d.day} {_(MONTHS[d.month - 1][:3])}"
+
+
+def fmt_long_date(d):
+    """'Monday, 2 November 2026' in the interface language."""
+    return f"{_(WEEKDAY_LONG[d.weekday()])}, {d.day} {_(MONTHS[d.month - 1])} {d.year}"

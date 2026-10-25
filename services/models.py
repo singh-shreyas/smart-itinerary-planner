@@ -49,7 +49,8 @@ class Place:
     @property
     def stay_label(self):
         """'Paharganj (Central)': the name shown in the stay dropdown."""
-        return f"{self.name} ({self.direction.capitalize()}{'*' if self.direction_note else ''})"
+        from services.i18n import gettext
+        return f"{self.name} ({gettext(self.direction.capitalize())}{'*' if self.direction_note else ''})"
 
 
 ACCESS_LABELS = {
@@ -143,7 +144,8 @@ class Attraction:
     def hours_label(self, weekday):
         windows = self.windows_on(weekday)
         if not windows:
-            return f"Closed {WEEKDAY_SHORT[weekday]}"
+            from services.i18n import gettext
+            return gettext("Closed {day}", day=gettext(WEEKDAY_SHORT[weekday]))
         return ", ".join(f"{fmt_hhmm(w.open_min)}–{fmt_hhmm(w.close_min)}" for w in windows)
 
     @property
@@ -161,7 +163,8 @@ class Attraction:
 
     @property
     def access_label(self):
-        return ACCESS_LABELS.get(self.access_type, self.access_type)
+        from services.i18n import gettext
+        return gettext(ACCESS_LABELS.get(self.access_type, self.access_type))
 
     @property
     def is_food_or_shopping_only(self):
@@ -227,6 +230,13 @@ class TripRequest:
     shop_minutes: int | None = None      # time per shopping stop (None = the place's own estimate)
     mode: str = "suggested"              # evenly / suggested / optimized (services/distribution.py)
     places: tuple = ()                   # attraction slugs the traveller picked (empty = the planner chooses)
+    end: str = ""                        # stay area of the LAST night (any trip city); "" = the starting stay
+    overnight: str = "base"              # multi-city: "move" = the stay changes as you travel; "base" = day trips
+                                         # (the web form defaults to "move"; this default keeps older callers unchanged)
+
+    @property
+    def end_stay(self):
+        return self.end or self.start
 
     @property
     def city_slugs(self):
@@ -237,7 +247,12 @@ class TripRequest:
         return [m for m in (self.lunch, self.dinner) if m is not None]
 
     def dates(self):
+        """Every calendar day of the trip in order: day 1 = start_date ... last day = end_date."""
         return [self.start_date + timedelta(days=i) for i in range(self.days)]
+
+    @property
+    def end_date(self):
+        return self.start_date + timedelta(days=self.days - 1)
 
     def with_changes(self, **changes):
         return replace(self, **changes)
@@ -248,7 +263,7 @@ class TripRequest:
         query = {
             "city": trip.city,
             "start_date": trip.start_date.isoformat(),
-            "days": trip.days,
+            "end_date": trip.end_date.isoformat(),
             "day_start": fmt_hhmm(trip.day_start),
             "day_end": fmt_hhmm(trip.day_end),
             "pace": trip.pace,
@@ -261,6 +276,10 @@ class TripRequest:
             "venues": "on" if trip.food_venues else "off",
             "mode": trip.mode,
         }
+        if trip.end and trip.end != trip.start:
+            query["end"] = trip.end
+        if trip.extra_cities or trip.end:
+            query["overnight"] = trip.overnight
         if trip.places:
             query["choose"] = "pick"
             query["places"] = ",".join(trip.places)
@@ -392,10 +411,18 @@ class DayPlan:
     focus: str = ""                          # which city (or cities) the day was planned around
     free_time_notes: list = field(default_factory=list)
     filled: list = field(default_factory=list)     # attraction ids added by the fill step
+    is_free: bool = False                    # left free on purpose by the itinerary mode (not "nothing fits")
+    start_place: Place | None = None         # where the day starts (last night's stay)
+    end_place: Place | None = None           # where the traveller sleeps tonight
 
     @property
     def weekday(self):
         return self.date.weekday()
+
+    @property
+    def moves(self):
+        """A transfer day: the night is spent somewhere other than where the day began."""
+        return self.start_place is not None and self.end_place is not None and self.start_place.id != self.end_place.id
 
     @property
     def legs(self):
@@ -407,14 +434,15 @@ class DayPlan:
 
     @property
     def return_time(self):
-        if not self.visits:
+        """Arrival at tonight's stay (None on a day that goes nowhere)."""
+        if self.return_leg is None:
             return None
         return self.return_leg.arrive
 
     @property
     def end_time(self):
         """When the last activity of the day ends (the return, or a dinner near the base)."""
-        if not self.visits:
+        if self.return_leg is None:
             return None
         return max([self.return_time] + [m.end for m in self.meals])
 
@@ -475,14 +503,14 @@ class DayPlan:
     @property
     def free_min(self):
         """Time in the day window that is not used by anything above."""
-        if not self.visits:
+        if self.return_leg is None:
             return self.window_min
         used = self.travel_min + self.sight_min + self.meal_min + self.wait_min + self.buffer_min
         return self.window_min - used
 
     @property
     def free_after_min(self):
-        return 0 if not self.visits else self.day_end - self.end_time
+        return 0 if self.return_leg is None else self.day_end - self.end_time
 
     @property
     def score(self):
@@ -511,6 +539,7 @@ class Itinerary:
     interest_notes: list = field(default_factory=list)   # interests with no / little data in these cities
     versions: dict = field(default_factory=dict)         # data / config / plan fingerprints
     selected: list = field(default_factory=list)         # attraction ids the mode distributed
+    journey: list = field(default_factory=list)          # multi-city journey: [{city, stay, first_day, last_day, ...}]
     distribution: object = None                          # services.distribution.Distribution
     mode_notes: list = field(default_factory=list)       # plain-language summary of the plan's shape
 

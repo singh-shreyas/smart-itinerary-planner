@@ -20,6 +20,7 @@ import itertools
 import math
 
 import config
+from services.i18n import gettext as _
 
 
 def haversine_km(lat1, lng1, lat2, lng2):
@@ -54,8 +55,8 @@ def group_problems(group, limit_km=None):
     for a, b in itertools.combinations(group, 2):
         km = centre_distance_km(a, b)
         if km > limit_km:
-            problems.append(f"{a['name']} and {b['name']} are {km:.0f} km apart in a straight line "
-                            f"(the limit is {limit_km:.0f} km between every pair of cities).")
+            problems.append(_("{a} and {b} are {km} km apart in a straight line (the limit is {limit} km between every "
+                              "pair of cities).", a=a["name"], b=b["name"], km=f"{km:.0f}", limit=f"{limit_km:.0f}"))
     return problems
 
 

@@ -10,8 +10,8 @@
       <h1 class="h2">{{ title }}</h1>
       <p class="mb-4">{{ message }}</p>
       <div class="d-flex flex-wrap justify-content-center gap-2">
-        <a class="btn btn-brand" href="{{ url_for('main.index') }}">Back to home</a>
-        <a class="btn btn-outline-brand" href="{{ url_for('main.cities') }}">Browse cities</a>
+        <a class="btn btn-brand" href="{{ url_for('main.index') }}">{{ _('Back to home') }}</a>
+        <a class="btn btn-outline-brand" href="{{ url_for('main.cities') }}">{{ _('Browse cities') }}</a>
       </div>
     </div>
   </div>

@@ -83,6 +83,7 @@ from algorithms.two_opt import two_opt
 from services import versioning
 from services.city_data import group_name
 from services.distribution import distribute, explain as explain_mode
+from services.i18n import gettext as _, ngettext
 from services.models import DayPlan, Itinerary, Skipped
 from services.scheduler import DayContext, simulate
 from services.timeutil import WEEKDAY_LONG, WEEKDAY_SHORT, fmt_duration, fmt_hhmm
@@ -135,15 +136,16 @@ def trip_context(city, trip):
     for aid in sorted(city.attractions):
         a = city.attractions[aid]
         if aid in excluded:
-            blocked[aid] = ("excluded", "You excluded it from this trip.")
+            blocked[aid] = ("excluded", _("You excluded it from this trip."))
         elif not a.timed:
-            blocked[aid] = ("access_unknown", f"{a.access_note or 'How to reach it is not in our data.'} "
-                                              "Verify access locally before you go.")
+            blocked[aid] = ("access_unknown", _("{note} Verify access locally before you go.",
+                                                note=_(a.access_note) if a.access_note else
+                                                _("How to reach it is not in our data.")))
         elif trip.interest_mode == "only" and trip.interests and not matches_interests(a.categories, trip.interests, parents):
-            blocked[aid] = ("interest", "Doesn't match your interests (you chose only matching places).")
+            blocked[aid] = ("interest", _("Doesn't match your interests (you chose only matching places)."))
         elif a.is_food_or_shopping_only and not matches_interests(a.categories, opt_in_interests, parents):
-            blocked[aid] = ("opt_in", "Food and shopping places are planned only when you pick a matching "
-                                      "food or shopping interest.")
+            blocked[aid] = ("opt_in", _("Food and shopping places are planned only when you pick a matching "
+                                        "food or shopping interest."))
 
     venues = []
     if trip.meals and trip.food_venues:
@@ -171,57 +173,64 @@ def interest_notes(city, trip, tctx):
         matching = [a for aid, a in city.attractions.items()
                     if a.timed and tctx.blocked.get(aid, ("",))[0] != "excluded"
                     and matches_interests(a.categories, [interest], tctx.parents)]
-        label = names.get(interest, interest)
+        label = _(names.get(interest, interest))
         if not matching:
             notes.append({"interest": interest, "count": 0,
-                          "text": f"No “{label}” places in our data for {city.name}, so this interest "
-                                  f"cannot change your plan."})
+                          "text": _("No “{label}” places in our data for {city}, so this interest cannot change "
+                                    "your plan.", label=label, city=city.name)})
         elif len(matching) <= 2:
             listed = ", ".join(a.name for a in matching)
             notes.append({"interest": interest, "count": len(matching),
-                          "text": f"Only {len(matching)} “{label}” place{'s' if len(matching) > 1 else ''} "
-                                  f"in our data for {city.name}: {listed}."})
+                          "text": ngettext("Only {n} “{label}” place in our data for {city}: {listed}.",
+                                           "Only {n} “{label}” places in our data for {city}: {listed}.",
+                                           len(matching), label=label, city=city.name, listed=listed)})
     return notes
 
 
 # ------------------------------------------------------------------------------ step 1: filter
 
-def day_context(city, trip, day_date, tctx=None):
+def day_context(city, trip, day_date, tctx=None, start_id=None, end_id=None):
+    """The planning problem of one day. start_id / end_id: where the day starts and where the
+    traveller sleeps that night (default: the trip's stay area, both ways)."""
     meals = tuple(sorted((m for m in trip.meals if m.needed(trip.day_start, trip.day_end)),
                          key=lambda m: (m.earliest, m.kind)))
+    start = start_id if start_id is not None else city.place(trip.start).id
     return DayContext(city=city, weekday=day_date.weekday(), day_start=trip.day_start, day_end=trip.day_end,
-                      start_id=city.place(trip.start).id, buffer=config.PACES[trip.pace]["buffer"],
+                      start_id=start, buffer=config.PACES[trip.pace]["buffer"],
                       meals=meals, venues=tctx.venues if tctx else (),
-                      durations=tctx.durations if tctx else {})
+                      durations=tctx.durations if tctx else {},
+                      end_id=end_id if end_id not in (None, start) else None)
 
 
 def filter_candidates(city, trip, ctx, unavailable, log, day_index):
     """Attractions that could be visited today on their own. Rejections go into `log`."""
     start = ctx.start_id
-    weekday = WEEKDAY_LONG[ctx.weekday]
+    weekday = _(WEEKDAY_LONG[ctx.weekday])
     candidates = []
     for aid in sorted(city.attractions):
         if aid in unavailable:
             continue
         attraction = city.attractions[aid]
-        if city.dist[start][aid] == math.inf or city.dist[aid][start] == math.inf:
-            log[aid].append((day_index, "unreachable", "No road route between it and your start point"))
+        if city.dist[start][aid] == math.inf or city.dist[aid][ctx.end] == math.inf:
+            log[aid].append((day_index, "unreachable", _("No route between it and your stay area")))
             continue
         if not attraction.windows_on(ctx.weekday):
-            log[aid].append((day_index, "closed", f"Closed on {weekday}"))
+            log[aid].append((day_index, "closed", _("Closed on {day}", day=weekday)))
             continue
         alone = simulate([aid], ctx)
         if not alone.feasible:
-            meals = " and your meal breaks" if ctx.meals else ""
-            trip_parts = city.segments(start, aid) + city.segments(aid, start)
+            meals = _(" and your meal breaks") if ctx.meals else ""
+            trip_parts = city.segments(start, aid) + city.segments(aid, ctx.end)
             access = sum(p.minutes for p in trip_parts if not p.is_road)
             modes = "/".join(dict.fromkeys(p.mode for p in trip_parts if not p.is_road))
-            extra = (f" (the round trip includes {fmt_duration(access)} by {modes}, "
-                     f"{fmt_duration(city.plan[start][aid] + city.plan[aid][start])} in all)") if access else ""
+            modes = "/".join(_(m) for m in modes.split("/")) if modes else modes
+            extra = _(" (the round trip includes {access} by {modes}, {total} in all)", access=fmt_duration(access),
+                      modes=modes, total=fmt_duration(city.plan[start][aid] + city.plan[aid][ctx.end])) if access else ""
             log[aid].append((day_index, "does_not_fit",
-                             f"Open {attraction.hours_label(ctx.weekday)} on {WEEKDAY_SHORT[ctx.weekday]}; "
-                             f"a {fmt_duration(ctx.duration(aid))} visit plus the round trip{extra}{meals} doesn't fit "
-                             f"{fmt_hhmm(trip.day_start)}–{fmt_hhmm(trip.day_end)}"))
+                             _("Open {hours} on {day}; a {visit} visit plus the round trip{extra}{meals} doesn't fit "
+                               "{start}–{end}", hours=attraction.hours_label(ctx.weekday),
+                               day=_(WEEKDAY_SHORT[ctx.weekday]), visit=fmt_duration(ctx.duration(aid)), extra=extra,
+                               meals=meals, start=fmt_hhmm(trip.day_start), end=fmt_hhmm(trip.day_end))))
             continue
         candidates.append(aid)
     return candidates
@@ -232,7 +241,7 @@ def filter_candidates(city, trip, ctx, unavailable, log, day_index):
 def knapsack_instance(city, trip, ctx, candidates, scores):
     """Turn today's candidates into an integer 0/1 knapsack over time units."""
     plan, start = city.plan, ctx.start_id
-    nodes = candidates + ([start] if start not in candidates else [])
+    nodes = candidates + [n for n in dict.fromkeys((start, ctx.end)) if n not in candidates]
     unit = config.DP_TIME_UNIT_MIN
 
     def cheapest_exit(table, i):
@@ -247,7 +256,7 @@ def knapsack_instance(city, trip, ctx, candidates, scores):
     #   the unavoidable extra of the ride home beyond the last stop's cheapest exit, and
     #   the meal breaks the day must contain.
     first_ride = min(plan[start][i] for i in candidates)
-    return_extra = max(0, min(plan[i][start] - cheapest_exit(plan, i) for i in candidates))
+    return_extra = max(0, min(plan[i][ctx.end] - cheapest_exit(plan, i) for i in candidates))
     reserved = {"first ride": first_ride, "ride home (extra)": return_extra, "meals": ctx.meal_minutes}
     time_cap = max(0, math.floor((ctx.day_end - ctx.day_start - sum(reserved.values())) / unit))
 
@@ -268,7 +277,7 @@ def route_branches(stops, ctx):
     Orders are compared on RAW travel minutes (finer than the 10-minute planning
     values); feasibility is always checked on the real, rounded timeline.
     """
-    city, start, dist = ctx.city, ctx.start_id, ctx.city.dist
+    city, start, dist = ctx.city, ctx.start_id, ctx.route_dist
 
     def feasible(route):
         return simulate(route, ctx).feasible
@@ -276,9 +285,9 @@ def route_branches(stops, ctx):
     branches = {}
     # Travel-first: Nearest Neighbour, then 2-opt on travel time only.
     nn = nearest_neighbor_route(start, stops, dist)
-    route, _ = two_opt(start, nn, dist)
+    route, _gain = two_opt(start, nn, dist)
     if not feasible(route) and feasible(nn):
-        route, _ = two_opt(start, nn, dist, is_feasible=feasible)     # keep the windows NN already met
+        route, _gain = two_opt(start, nn, dist, is_feasible=feasible)     # keep the windows NN already met
     branches["travel-first"] = (route, feasible(route))
 
     # Window-first: stops taken in closing-time order (Activity Selection rule), each inserted where it
@@ -288,14 +297,14 @@ def route_branches(stops, ctx):
     if unplaced:
         branches["window-first"] = (route + unplaced, False)
     else:
-        route, _ = two_opt(start, route, dist, is_feasible=feasible)
+        route, _gain = two_opt(start, route, dist, is_feasible=feasible)
         branches["window-first"] = (route, True)
     return branches
 
 
 def best_route(stops, ctx):
     """The feasible branch with less travel (ties go to travel-first), or None."""
-    start, dist = ctx.start_id, ctx.city.dist
+    start, dist = ctx.start_id, ctx.route_dist
     options = [(name, route) for name, (route, ok) in route_branches(stops, ctx).items() if ok]
     if not options:
         return None
@@ -321,7 +330,7 @@ def weakest_key(strategy, aid, scores, per_unit):
 
 def fill_route(route, pool, ctx, scores, strategy):
     """Step 5: try every leftover candidate at its cheapest feasible position (deterministic order)."""
-    start, dist = ctx.start_id, ctx.city.dist
+    start, dist = ctx.start_id, ctx.route_dist
 
     def feasible(candidate):
         return simulate(candidate, ctx).feasible
@@ -338,7 +347,7 @@ def fill_route(route, pool, ctx, scores, strategy):
             route = inserted
             added.append(aid)
     if added:
-        route, _ = two_opt(start, route, dist, is_feasible=feasible)
+        route, _gain = two_opt(start, route, dist, is_feasible=feasible)
     return route, added
 
 
@@ -377,10 +386,13 @@ def solve_pool(city, trip, ctx, pool, scores):
 
 # ------------------------------------------------------------------------------ one day
 
-def plan_day(city, trip, tctx, day_index, day_date, used, log, trace=None):
-    ctx = day_context(city, trip, day_date, tctx)
+def plan_day(city, trip, tctx, day_index, day_date, used, log, trace=None, ctx=None, allowed=None):
+    """Steps 1-5 for one day. ctx: a given day (e.g. a transfer day between two stays);
+    allowed: only these attractions may be chosen (one city of a multi-city journey)."""
+    ctx = ctx or day_context(city, trip, day_date, tctx)
     blocked = set(tctx.blocked)
-    candidates = filter_candidates(city, trip, ctx, used | blocked, log, day_index)
+    outside = set(city.attractions) - set(allowed) if allowed is not None else set()
+    candidates = filter_candidates(city, trip, ctx, used | blocked | outside, log, day_index)
     scores = tctx.scores
 
     # Pools: everything together, plus (multi-city) each city on its own.
@@ -409,15 +421,15 @@ def plan_day(city, trip, tctx, day_index, day_date, used, log, trace=None):
     chosen = set(order)
     for aid in record["dropped"]:
         log[aid].append((day_index, "dropped",
-                         "Selected, then removed because the day's timeline did not work out"))
+                         _("Selected, then removed because the day's timeline did not work out")))
     for aid in candidates:
         if aid in chosen or aid in record["dropped"]:
             continue
         if aid in record["pool"]:
             log[aid].append((day_index, "not_selected",
-                             f"Other stops gave more value for the time (score {scores[aid]})"))
+                             _("Other stops gave more value for the time (score {score})", score=scores[aid])))
         else:
-            log[aid].append((day_index, "not_selected", f"Day {day_index} was planned around {focus}"))
+            log[aid].append((day_index, "not_selected", _("Day {n} was planned around {focus}", n=day_index, focus=focus)))
 
     if trace is not None:
         trace.append({"day": day_index, "ctx": ctx, "candidates": candidates, "order": order,
@@ -430,7 +442,8 @@ def plan_day(city, trip, tctx, day_index, day_date, used, log, trace=None):
                                                 set(tctx.blocked), log, bool(candidates))
         return DayPlan(index=day_index, date=day_date, depart=trip.day_start, visits=[], return_leg=None,
                        empty_reason=reason, suggestions=suggestions,
-                       day_start=trip.day_start, day_end=trip.day_end)
+                       day_start=trip.day_start, day_end=trip.day_end,
+                       start_place=city.places[ctx.start_id], end_place=city.places[ctx.end])
 
     schedule = simulate(order, ctx, scores, detailed=True)
     day = DayPlan(index=day_index, date=day_date, depart=schedule.depart, visits=schedule.visits,
@@ -438,7 +451,7 @@ def plan_day(city, trip, tctx, day_index, day_date, used, log, trace=None):
                   meals=schedule.meals, timeline=schedule.timeline, day_start=trip.day_start,
                   day_end=trip.day_end,
                   focus=focus if city.multi_city else "",
-                  filled=record["filled"])
+                  filled=record["filled"], start_place=city.places[ctx.start_id], end_place=city.places[ctx.end])
     day.free_time_notes = explain_free_time(city, trip, ctx, day, candidates, order, log, day_index)
     return day
 
@@ -458,6 +471,10 @@ def plan_trip(city, trip, trace=None, validate=True):
     tctx = trip_context(city, trip)
     log = defaultdict(list)                  # attraction id -> [(day, code, detail)]
     dates = trip.dates()
+
+    from services import journey                               # imported here: journey builds on this module
+    if journey.needs_journey(city, trip):
+        return _plan_journey_trip(city, trip, tctx, log, started, validate)
     contexts = {i: day_context(city, trip, d, tctx) for i, d in enumerate(dates)}
 
     # 1. What to visit: the traveller's own list, or the strategy's day-by-day plan.
@@ -493,13 +510,13 @@ def plan_trip(city, trip, trace=None, validate=True):
                                   dist, len(selected), pipeline[i] if pipeline else None))
     used = {v.attraction.id for d in days for v in d.visits}
     for aid in dist.unplaced:
-        log[aid].append((0, "unscheduled", dist.reasons.get(aid, "could not be scheduled")))
+        log[aid].append((0, "unscheduled", dist.reasons.get(aid, _("could not be scheduled"))))
 
     if picked is not None:
         chosen = set(picked)
         for aid in city.attractions:
             if aid not in chosen:
-                blocked.setdefault(aid, ("not_picked", "Not one of the places you picked."))
+                blocked.setdefault(aid, ("not_picked", _("Not one of the places you picked.")))
 
     itinerary = Itinerary(trip=trip, city_name=city.name, start_place=city.place(trip.start), days=days,
                           skipped=explain_skipped(city, used, blocked, log, days),
@@ -517,37 +534,74 @@ def plan_trip(city, trip, trace=None, validate=True):
     return itinerary
 
 
+def _plan_journey_trip(city, trip, tctx, log, started, validate):
+    """A multi-city trip whose overnight stay moves with the traveller (services/journey.py)."""
+    from services import journey
+    days, selected, unplaced, summary, _stops = journey.plan_journey(
+        city, trip, tctx, log, tctx.scores, best_route, day_context, plan_day, build_day)
+    used = {v.attraction.id for d in days for v in d.visits}
+    blocked = dict(tctx.blocked)
+    if trip.places:
+        picked = {city.attraction_by_slug(s).id for s in trip.places}
+        blocked = {a: r for a, r in tctx.blocked.items() if r[0] == "access_unknown" and a in picked}
+        for aid in city.attractions:
+            if aid not in picked:
+                blocked.setdefault(aid, ("not_picked", _("Not one of the places you picked.")))
+        selected = sorted(picked)
+    for aid, reason in unplaced.items():
+        log[aid].append((0, "unscheduled", reason))
+    itinerary = journey.build_itinerary(city, trip, days, explain_skipped(city, used, blocked, log, days), summary,
+                                        journey.journey_notes(trip, summary, days, selected, unplaced))
+    itinerary.selected = selected
+    itinerary.interest_notes = interest_notes(city, trip, tctx)
+    itinerary.runtime_ms = (time.perf_counter() - started) * 1000
+    if validate:
+        from services.validator import check_itinerary
+        itinerary.violations = check_itinerary(itinerary, city)
+    itinerary.versions = versioning.versions(city, itinerary)
+    return itinerary
+
+
 def build_day(city, trip, tctx, ctx, index, day_date, order, branch, dist, selected_count, pipeline_day=None):
     """A DayPlan for a day whose stops the itinerary mode chose."""
     active = sum(1 for d in dist.days if d)
+    stays = {"start_place": city.places[ctx.start_id], "end_place": city.places[ctx.end]}
+    if not order and ctx.moves:                                        # a transfer with nothing to see on the way
+        schedule = simulate([], ctx, tctx.scores, detailed=True)
+        return DayPlan(index=index, date=day_date, depart=schedule.depart, visits=[], return_leg=schedule.return_leg,
+                       meals=schedule.meals, timeline=schedule.timeline, day_start=trip.day_start,
+                       day_end=trip.day_end, **stays)
     if not order:
         if pipeline_day is not None and not pipeline_day.visits:      # nothing was plannable here before either
             return pipeline_day
         if dist.unplaced:
-            reason = "None of your remaining selected places can be scheduled on this day."
+            reason = _("None of your remaining selected places can be scheduled on this day.")
         elif dist.mode == "optimized":
-            reason = (f"Free day: Most Optimized completes your {selected_count} places in {active} "
-                      f"day{'s' if active != 1 else ''}.")
+            reason = ngettext("Free day: Most Optimized completes your {places} places in {n} day.",
+                              "Free day: Most Optimized completes your {places} places in {n} days.",
+                              active, places=selected_count)
         elif dist.mode == "evenly":
-            reason = (f"Free day: {selected_count} places over {trip.days} days means one place on "
-                      f"{selected_count} of the days.") if selected_count < trip.days else \
-                     "Free day: no place could be scheduled here without breaking a constraint."
+            reason = _("Free day: {places} places over {days} days means one place on {places} of the days.",
+                       places=selected_count, days=trip.days) if selected_count < trip.days else \
+                _("Free day: no place could be scheduled here without breaking a constraint.")
         else:
-            reason = (f"Free day: the suggested plan uses {active} day{'s' if active != 1 else ''} "
-                      f"so that each one stays comfortable.")
+            reason = ngettext("Free day: the suggested plan uses {n} day so that each one stays comfortable.",
+                              "Free day: the suggested plan uses {n} days so that each one stays comfortable.",
+                              active)
         return DayPlan(index=index, date=day_date, depart=trip.day_start, visits=[], return_leg=None,
-                       empty_reason=reason, day_start=trip.day_start, day_end=trip.day_end)
+                       empty_reason=reason, day_start=trip.day_start, day_end=trip.day_end, is_free=not dist.unplaced,
+                       **stays)
     schedule = simulate(list(order), ctx, tctx.scores, detailed=True)
     day = DayPlan(index=index, date=day_date, depart=schedule.depart, visits=schedule.visits,
                   return_leg=schedule.return_leg, branch=branch, meals=schedule.meals, timeline=schedule.timeline,
                   day_start=trip.day_start, day_end=trip.day_end,
-                  focus=route_focus(city, order) if city.multi_city else "")
+                  focus=route_focus(city, order) if city.multi_city else "", **stays)
     free = day.free_after_min
     if free >= config.EXPLAIN_FREE_MIN:
-        notes = [f"{fmt_duration(free)} free after {fmt_hhmm(day.end_time)}."]
-        notes.append({"evenly": "Evenly Distributed keeps each day to its share of the places, so this one is not filled up.",
-                      "suggested": "The suggested plan keeps days comfortable rather than filling every hour.",
-                      "optimized": "Your other places are on other days; none of them fits here as well."}[dist.mode])
+        notes = [_("{time} free after {end}.", time=fmt_duration(free), end=fmt_hhmm(day.end_time))]
+        notes.append(_({"evenly": "Evenly Distributed keeps each day to its share of the places, so this one is not filled up.",
+                        "suggested": "The suggested plan keeps days comfortable rather than filling every hour.",
+                        "optimized": "Your other places are on other days; none of them fits here as well."}[dist.mode]))
         day.free_time_notes = notes
     return day
 
@@ -578,30 +632,31 @@ def explain_skipped(city, used, blocked, log, days=()):
             details = []
             if code == "access_unknown" and room is not None:
                 free = room.free_after_min if room.visits else room.window_min
-                when = f"after {fmt_hhmm(room.end_time)}" if room.visits else "(no stops planned)"
-                details.append(f"Day {room.index} has {fmt_duration(free)} free {when} if you arrange it yourself")
+                when = _("after {time}", time=fmt_hhmm(room.end_time)) if room.visits else _("(no stops planned)")
+                details.append(_("Day {n} has {time} free {when} if you arrange it yourself", n=room.index,
+                                 time=fmt_duration(free), when=when))
             skipped.append(Skipped(attraction, code, reason, details))
             continue
         entries = log.get(aid, [])
-        codes = {code for _, code, _ in entries}
-        details = [f"Day {day}: {detail}" for day, _, detail in entries]
+        codes = {code for _d, code, _detail in entries}
+        details = [_("Day {n}: {detail}", n=day, detail=detail) for day, _c, detail in entries]
         code = next((c for c in SKIP_PRIORITY if c in codes), "not_selected")
         if code == "closed":
-            days = sorted({detail.removeprefix("Closed on ") for _, c, detail in entries if c == "closed"},
-                          key=WEEKDAY_LONG.index)
-            reason = f"Closed on {', '.join(days)} — every day of your trip."
+            closed_on = {_("Closed on {day}", day=_(w)): w for w in WEEKDAY_LONG}
+            days = sorted({closed_on[detail] for _d, c, detail in entries if c == "closed"}, key=WEEKDAY_LONG.index)
+            reason = _("Closed on {days} — every day of your trip.", days=", ".join(_(d) for d in days))
         elif code == "unreachable":
-            reason = "No route to it from your stay area in our travel graph."
+            reason = _("No route to it from your stay area in our travel graph.")
         elif code == "does_not_fit":
-            reason = "Its opening hours don't fit inside your daily time window."
+            reason = _("Its opening hours don't fit inside your daily time window.")
         elif code == "unscheduled":
-            reason = "You selected it, but it could not be scheduled: " + next(
-                d for _, c, d in entries if c == "unscheduled") + "."
-            details = [x for x in details if not x.startswith("Day 0")]
+            reason = _("You selected it, but it could not be scheduled: {why}.",
+                       why=next(d for _d, c, d in entries if c == "unscheduled"))
+            details = [_("Day {n}: {detail}", n=day, detail=detail) for day, _c, detail in entries if day != 0]
         elif code == "dropped":
-            reason = "Selected, but removed so the day's timeline could work."
+            reason = _("Selected, but removed so the day's timeline could work.")
         else:
-            reason = "Other attractions gave more value for the time you had."
+            reason = _("Other attractions gave more value for the time you had.")
         skipped.append(Skipped(attraction, code, reason, details))
     return skipped
 
@@ -611,7 +666,7 @@ def explain_free_time(city, trip, ctx, day, candidates, order, log, day_index):
     free_end = day.free_after_min
     if free_end < config.EXPLAIN_FREE_MIN:
         return []
-    notes = [f"{fmt_duration(free_end)} free after {fmt_hhmm(day.end_time)}."]
+    notes = [_("{time} free after {end}.", time=fmt_duration(free_end), end=fmt_hhmm(day.end_time))]
     reasons = defaultdict(list)
     for aid in candidates:
         if aid in order:
@@ -621,72 +676,78 @@ def explain_free_time(city, trip, ctx, day, candidates, order, log, day_index):
         text = " ".join(attempt.violations)
         if "too late to fit" in text or "closed" in text:
             closes = city.attractions[aid].closing_time_on(ctx.weekday)
-            reasons["closes"].append(f"{name} (closes {fmt_hhmm(closes)})")
+            reasons["closes"].append(_("{name} (closes {time})", name=name, time=fmt_hhmm(closes)))
         elif "cannot start by" in text:
             reasons["meal"].append(name)
         else:
             reasons["time"].append(name)
     for aid, entries in log.items():
-        for d, code, _ in entries:
+        for d, code, _detail in entries:
             if d == day_index and code in ("closed", "does_not_fit"):
                 reasons[code].append(city.attractions[aid].name)
 
     def listed(names, limit=3):
-        return ", ".join(names[:limit]) + (f" and {len(names) - limit} more" if len(names) > limit else "")
+        return ", ".join(names[:limit]) + (_(" and {n} more", n=len(names) - limit) if len(names) > limit else "")
 
     if reasons["closes"]:
-        notes.append(f"Too late for {listed(reasons['closes'])} after your other stops.")
+        notes.append(_("Too late for {names} after your other stops.", names=listed(reasons["closes"])))
     if reasons["time"]:
-        notes.append(f"Adding {listed(reasons['time'])} would bring you back after {fmt_hhmm(trip.day_end)}.")
+        notes.append(_("Adding {names} would bring you back after {time}.", names=listed(reasons["time"]),
+                       time=fmt_hhmm(trip.day_end)))
     if reasons["meal"]:
-        notes.append(f"{listed(reasons['meal'])} would clash with your meal breaks.")
+        notes.append(_("{names} would clash with your meal breaks.", names=listed(reasons["meal"])))
     if reasons["closed"]:
-        notes.append(f"Closed on {WEEKDAY_LONG[ctx.weekday]}: {listed(reasons['closed'])}.")
+        notes.append(_("Closed on {day}: {names}.", day=_(WEEKDAY_LONG[ctx.weekday]), names=listed(reasons["closed"])))
     if reasons["does_not_fit"]:
-        notes.append(f"Opening hours don't fit your day: {listed(reasons['does_not_fit'])}.")
+        notes.append(_("Opening hours don't fit your day: {names}.", names=listed(reasons["does_not_fit"])))
     if len(notes) == 1:
         remaining = [a for a in city.attractions if a not in order and a not in candidates]
-        notes.append("Nothing else that fits your settings is left to plan"
-                     + (" — the rest is planned on other days, excluded or filtered out." if remaining else "."))
+        notes.append(_("Nothing else that fits your settings is left to plan — the rest is planned on other days, "
+                       "excluded or filtered out.") if remaining else _("Nothing else that fits your settings is left to plan."))
     return notes
 
 
 def explain_empty_day(city, trip, ctx, day_index, unavailable, blocked, log, had_candidates):
     """Specific reason + one-click suggestions for a day with no stops."""
-    weekday = WEEKDAY_LONG[ctx.weekday]
+    weekday = _(WEEKDAY_LONG[ctx.weekday])
     remaining = [aid for aid in city.attractions if aid not in unavailable]
-    today = {aid: [code for d, code, _ in log.get(aid, []) if d == day_index] for aid in remaining}
+    today = {aid: [code for d, code, _detail in log.get(aid, []) if d == day_index] for aid in remaining}
     # Places with no road route can never be planned, so they don't count as "remaining".
     unreachable = [aid for aid, codes in today.items() if codes and codes[0] == "unreachable"]
     remaining = [aid for aid in remaining if aid not in unreachable]
     suggestions = []
     if not remaining:
-        reason = f"Every reachable attraction in {city.name} is already in your plan" + \
-                 (" or left out by your settings." if blocked else ".")
+        reason = (_("Every reachable attraction in {city} is already in your plan or left out by your settings.",
+                    city=city.name) if blocked else
+                  _("Every reachable attraction in {city} is already in your plan.", city=city.name))
         if day_index > 1:
-            suggestions.append({"label": f"Make it a {day_index - 1}-day trip",
+            suggestions.append({"label": _("Make it a {n}-day trip", n=day_index - 1),
                                 "query": trip.to_query(days=day_index - 1)})
         return reason, suggestions
 
     codes = [today[aid][0] for aid in remaining if today[aid]]
     if had_candidates:
-        reason = "The selected stops could not be scheduled around their opening hours and meals."
+        reason = _("The selected stops could not be scheduled around their opening hours and meals.")
     elif codes and all(c == "closed" for c in codes):
-        reason = f"All {len(remaining)} remaining attractions are closed on {weekday}."
+        reason = _("All {n} remaining attractions are closed on {day}.", n=len(remaining), day=weekday)
     elif codes and all(c == "does_not_fit" for c in codes):
-        reason = (f"None of the remaining attractions fit inside {fmt_hhmm(trip.day_start)}–"
-                  f"{fmt_hhmm(trip.day_end)} on {weekday}.")
+        reason = _("None of the remaining attractions fit inside {start}–{end} on {day}.",
+                   start=fmt_hhmm(trip.day_start), end=fmt_hhmm(trip.day_end), day=weekday)
     else:
-        labels = {"closed": "closed on " + weekday,
-                  "does_not_fit": f"can't fit in {fmt_hhmm(trip.day_start)}–{fmt_hhmm(trip.day_end)}"}
-        parts = [f"{codes.count(c)} {labels[c]}" for c in ("closed", "does_not_fit") if c in codes]
-        reason = f"Of the {len(remaining)} remaining attractions: " + "; ".join(parts) + "."
+        parts = []
+        if "closed" in codes:
+            parts.append(_("{n} closed on {day}", n=codes.count("closed"), day=weekday))
+        if "does_not_fit" in codes:
+            parts.append(_("{n} can't fit in {start}–{end}", n=codes.count("does_not_fit"),
+                           start=fmt_hhmm(trip.day_start), end=fmt_hhmm(trip.day_end)))
+        reason = _("Of the {n} remaining attractions: {parts}.", n=len(remaining), parts="; ".join(parts))
 
     if "does_not_fit" in codes or had_candidates:
         later = min(trip.day_end + 120, 23 * 60 + 59)
         if later > trip.day_end:
-            suggestions.append({"label": f"End the day at {fmt_hhmm(later)}", "query": trip.to_query(day_end=later)})
+            suggestions.append({"label": _("End the day at {time}", time=fmt_hhmm(later)),
+                                "query": trip.to_query(day_end=later)})
     if "closed" in codes:
-        suggestions.append({"label": "Start one day later",
+        suggestions.append({"label": _("Start one day later"),
                             "query": trip.to_query(start_date=trip.start_date + timedelta(days=1))})
     return reason, suggestions

@@ -1,6 +1,7 @@
 """Content pages: home, cities, attractions, about."""
 
 from collections import Counter
+from datetime import date, timedelta
 
 from flask import Blueprint, abort, redirect, render_template, request, url_for
 
@@ -24,6 +25,7 @@ SORTS = {
     "name": ("Name (A–Z)", lambda a: (a.name.lower(), a.id)),
 }
 
+ESTIMATED = {"estimate", "illustrative"}             # values that are typical for the kind of place, not checked
 SOURCE_LABELS = {
     "wikipedia": "Wikipedia", "wikidata": "Wikidata", "openstreetmap": "OpenStreetMap", "osm": "OpenStreetMap",
     "wikipedia_pageviews": "Wikipedia page views", "estimate": "estimate (typical for this kind of place)",
@@ -44,7 +46,9 @@ def index():
     cities = queries.list_cities(conn)
     ready = readiness_by_city()
     featured = [c for c in cities if ready[c["slug"]]["status"] == "ready"][:8]
-    return render_template("index.html", cities=cities, featured=featured, readiness=ready,
+    today = date.today()
+    quick_dates = {"start_date": today.isoformat(), "end_date": (today + timedelta(days=1)).isoformat(), "days": 2}
+    return render_template("index.html", cities=cities, featured=featured, readiness=ready, quick_dates=quick_dates,
                            counts=queries.summary_counts(conn), algorithms=ALGORITHMS, categories=categories(),
                            ready_count=sum(1 for r in ready.values() if r["status"] == "ready"),
                            regions=regions(cities))
@@ -136,21 +140,15 @@ def attraction_details(a, category_names):
     return {
         "name": a.name, "city": a.city_name, "description": a.description,
         "image": url_for("static", filename=a.image) if a.image else None,
-        "credit": a.image_credit, "credit_url": a.image_source_url, "info_url": a.info_url,
-        "rating": a.rating, "popularity": round(a.popularity * 100), "visit": fmt_duration(a.visit_min),
-        "fee": "Free" if a.fee == 0 else f"₹{a.fee}", "categories": [category_names[c] for c in a.categories],
-        "hours": hours, "status": a.data_status, "catalog": a.in_team_catalog,
+        "visit": fmt_duration(a.visit_min), "categories": [category_names[c] for c in a.categories],
+        "fee": "Free" if a.fee == 0 else f"₹{a.fee}",
+        # Visitor-facing only. An hours / fee / duration value that is a typical estimate (not checked for this
+        # place) is said to be one, so it is never shown as a verified fact; where values come from is on /about.
+        "hours": hours, "hours_estimated": a.hours_source in ESTIMATED,
+        "fee_estimated": a.fee_source in ESTIMATED, "visit_estimated": a.duration_source in ESTIMATED,
         "access": access_info(a, city_data(a.city_slug)),
-        "sources": [["Location", SOURCE_LABELS.get(a.coord_source or "approximate", a.coord_source)],
-                    ["Opening hours", SOURCE_LABELS.get(a.hours_source, a.hours_source)],
-                    ["Entry fee", SOURCE_LABELS.get(a.fee_source, a.fee_source)],
-                    ["Visit length", SOURCE_LABELS.get(a.duration_source, a.duration_source)],
-                    ["Rating", SOURCE_LABELS.get(a.rating_source, a.rating_source)],
-                    ["Popularity", SOURCE_LABELS.get(a.popularity_source, a.popularity_source)
-                     + (f" ({a.pageviews:,} views in 12 months)" if a.pageviews else "")],
-                    ["Description", "Wikipedia (CC BY-SA)" if a.description_source == "wikipedia"
-                     else ("team catalog" if a.description_source == "catalog" else "written for this project")]],
-        "plan_url": url_for("planner.plan", city=a.city_slug),
+        "credit": a.image_credit, "credit_url": a.image_source_url,
+        "info_url": a.info_url, "plan_url": url_for("planner.plan", city=a.city_slug),
     }
 
 
