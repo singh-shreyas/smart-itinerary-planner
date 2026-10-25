@@ -30,7 +30,10 @@ class Config:
 
 
 # --- Trip input limits (used by server-side validation) -------------------
-MAX_DAYS = 5
+# The trip length comes from the start and end dates (both included). There is
+# no fixed five-day limit; this cap exists only because the itinerary-mode search
+# and the result page grow with the number of days. Raise it if you need longer trips.
+MAX_DAYS = 30
 MIN_DAY_LENGTH_MIN = 120          # day end must be at least 2 hours after start
 DEFAULT_DAY_START = "09:00"
 DEFAULT_DAY_END = "19:00"
@@ -160,7 +163,7 @@ MODES = {
                   "text": "Complete your selected attractions in the fewest feasible days."},
 }
 DEFAULT_MODE = "suggested"
-MAX_PICKED_PLACES = 25            # a hand-picked list longer than this is refused (keeps the search fast)
+MAX_PICKED_PLACES = 150           # enough for "Select all" across a city and its nearby cities
 # Suggested mode. A day is comfortable when you are out for at most 70% of your
 # window and never more than 8 hours. Cost of a plan, in minutes:
 #   2 x minutes beyond comfortable + travel + 0.25 x deviation from the average day
@@ -172,6 +175,8 @@ COMFORT_MAX_MIN = 8 * 60
 SUGGESTED_OVERLOAD_WEIGHT = 2
 SUGGESTED_IMBALANCE_WEIGHT = 0.25
 SUGGESTED_DAY_COST = 60
+SUGGESTED_TIE_MIN = 15             # Suggested plans this close in cost are treated as equally good
+MODE_SEARCH_BUDGET = 6000          # distinct days routed per mode search before it settles (keeps long trips fast)
 
 # --- Fill step --------------------------------------------------------------
 # After a day's route is fixed, any leftover candidate that still fits (cheapest
@@ -190,6 +195,6 @@ def fingerprint_settings():
         "rounding": TRAVEL_ROUNDING_MIN, "multi": [MULTI_CITY_MAX_KM, ESTIMATE_DETOUR_FACTOR, ESTIMATE_SPEED_KMH], "walk": WALK_SPEED_KMH,
         "venue_detour": MEAL_VENUE_MAX_DETOUR_MIN, "fill": FILL_STEP,
         "suggested": [COMFORT_SHARE, COMFORT_MAX_MIN, SUGGESTED_OVERLOAD_WEIGHT, SUGGESTED_IMBALANCE_WEIGHT,
-                      SUGGESTED_DAY_COST],
+                      SUGGESTED_DAY_COST, SUGGESTED_TIE_MIN, MODE_SEARCH_BUDGET],
         "traffic": Config.TRAFFIC_FACTOR,
     }

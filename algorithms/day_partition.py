@@ -11,8 +11,9 @@ we use a standard construct-and-improve heuristic:
                   ("best fit"); a second start packs each into the first day it
                   fits ("first fit decreasing", the classic bin-packing rule).
     2. IMPROVE    local search: move one place to another day (relocate) or
-                  exchange two places between days (swap); keep any change that
-                  lowers the mode's cost; stop when no move helps.
+                  exchange two places between days (swap); take the first change
+                  (in a fixed order) that lowers the mode's cost and look again;
+                  stop when no move helps.
 
 Nothing here knows about maps or clocks. The caller passes
     feasible(day, stops) -> bool          is this set of stops a valid day?
@@ -57,9 +58,31 @@ def deviation(counts, target):
     return sum(abs(x - y) for x, y in zip(a, b))
 
 
+MAX_DAY_SUBSETS = 40
+
+
 def day_subsets(days, k):
-    """All choices of k days out of `days`, earliest days first (lexicographic)."""
-    return list(combinations(days, k))
+    """Choices of k days out of `days`, earliest first.
+
+    For short trips this is every combination (5 days, k = 2: 10 choices). For long trips
+    the number of combinations explodes (14 days, k = 7: 3432), so only a fixed, small family
+    is tried: every block of k consecutive days, plus k days spread evenly over the trip.
+    Days differ only by weekday (opening hours), so these cover the useful patterns.
+    """
+    days = list(days)
+    n = len(days)
+    if k <= 0 or k > n:
+        return []
+    total = 1
+    for i in range(k):
+        total = total * (n - i) // (i + 1)
+    if total <= MAX_DAY_SUBSETS:
+        return list(combinations(days, k))
+    picks = [tuple(days[s:s + k]) for s in range(n - k + 1)]
+    spread = tuple(days[round(i * (n - 1) / (k - 1))] for i in range(k)) if k > 1 else (days[0],)
+    if len(set(spread)) == k:
+        picks.append(spread)
+    return list(dict.fromkeys(picks))
 
 
 class Assignment:
@@ -109,45 +132,44 @@ def construct(places, days, feasible, cost, first_fit=False, order_key=None):
     return current
 
 
-def improve(start, feasible, cost, max_passes=40):
-    """Relocate and swap moves until no move lowers the cost (best improvement per pass)."""
+def _moves(current, places):
+    """Every neighbour of the current assignment, in a fixed order: relocations, then swaps."""
+    for p in places:                                          # relocate one place to another day
+        for d in current.days:
+            if d != current.mapping[p]:
+                yield {p: d}
+    for i, p in enumerate(places):                            # swap two places on different days
+        for q in places[i + 1:]:
+            dp, dq = current.mapping[p], current.mapping[q]
+            if dp != dq and dp is not None and dq is not None:
+                yield {p: dq, q: dp}
+
+
+def improve(start, feasible, cost, max_moves=400, stop=None):
+    """Local search with first improvement: scan the neighbours in a fixed order and take the first
+    one that lowers the cost, then scan again; stop when none does (a local optimum), after
+    max_moves accepted moves, or when stop() says the effort budget is used up."""
     current, current_cost = start, cost(start)
     places = sorted(current.mapping)
-    for _ in range(max_passes):
-        best = None
-        # relocate: one place to another day (an unplaced place may be placed)
-        for p in places:
-            here = current.mapping[p]
-            for d in current.days:
-                if d == here or not feasible(d, current.stops(d) + (p,)):
-                    continue
-                if here is not None and not feasible(here, tuple(q for q in current.stops(here) if q != p)):
-                    continue
-                option = current.moved({p: d})
-                c = cost(option)
-                if c < current_cost and (best is None or c < best[0]):
-                    best = (c, option)
-        # swap: exchange two places on different days
-        for i, p in enumerate(places):
-            for q in places[i + 1:]:
-                dp, dq = current.mapping[p], current.mapping[q]
-                if dp == dq or dp is None or dq is None:
-                    continue
-                stops_p = tuple(x for x in current.stops(dp) if x != p) + (q,)
-                stops_q = tuple(x for x in current.stops(dq) if x != q) + (p,)
-                if not (feasible(dp, stops_p) and feasible(dq, stops_q)):
-                    continue
-                option = current.moved({p: dq, q: dp})
-                c = cost(option)
-                if c < current_cost and (best is None or c < best[0]):
-                    best = (c, option)
-        if best is None:
+    for _ in range(max_moves):
+        improved = False
+        for change in _moves(current, places):
+            if stop is not None and stop():
+                return current, current_cost
+            touched = {current.mapping[p] for p in change} | set(change.values())
+            option = current.moved(change)
+            if not all(feasible(d, option.stops(d)) for d in touched if d is not None and option.stops(d)):
+                continue
+            c = cost(option)
+            if c < current_cost:
+                current, current_cost, improved = option, c, True
+                break
+        if not improved:
             break
-        current_cost, current = best
     return current, current_cost
 
 
-def search(places, days, feasible, cost, seeds=(), order_key=None):
+def search(places, days, feasible, cost, seeds=(), order_key=None, stop=None):
     """Best assignment of `places` to `days` found from several starts. Returns (assignment, cost).
 
     seeds: extra starting assignments ({place: day}), e.g. the plan the day-by-day
@@ -165,7 +187,7 @@ def search(places, days, feasible, cost, seeds=(), order_key=None):
         if start.key() in seen:
             continue
         seen.add(start.key())
-        result, c = improve(start, feasible, cost)
+        result, c = improve(start, feasible, cost, stop=stop)
         if best is None or c < best[1]:
             best = (result, c)
     return best

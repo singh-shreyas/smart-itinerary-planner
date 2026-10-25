@@ -10,6 +10,7 @@ import config
 from database import queries
 from database.db import get_db
 from services.city_data import get_city_data
+from services.i18n import gettext as _
 from services.models import MealBreak
 from services.multicity import nearby_cities
 from services.timeutil import fmt_hhmm
@@ -72,11 +73,11 @@ def access_info(a, city=None):
     return {
         "type": a.access_type, "label": a.access_label, "road_access": a.road_access,
         "modes": [m for m in (a.access_modes or "").split(";") if m],
-        "timing": a.access_timing, "timing_label": TIMING_LABELS.get(a.access_timing, a.access_timing),
+        "timing": a.access_timing, "timing_label": _(TIMING_LABELS.get(a.access_timing, a.access_timing)),
         "timed": a.timed, "note": a.access_note, "source_url": a.access_source_url,
         "access_point": point.name if point else None, "last_mile_m": a.last_mile_m,
         "alternatives": [{"label": x["label"], "modes": x["modes"], "from": x["starts_from"],
-                          "minutes": x["minutes"], "status": ALTERNATIVE_STATUS[x["status"]],
+                          "minutes": x["minutes"], "status": _(ALTERNATIVE_STATUS[x["status"]]),
                           "note": x["note"], "source_url": x["source_url"]} for x in a.alternatives],
     }
 
@@ -91,7 +92,10 @@ def catalog_only():
         for r in csv.DictReader(f):
             if r["city"].startswith("#") or r["status"] != "skip":
                 continue
-            out.setdefault(r["city"], []).append({"name": r["catalog_name"], "reason": r["access_note"]})
+            reason = r["access_note"]
+            if reason.startswith("No reliable location"):        # a data-curation note, not visitor information
+                reason = "Not in the planner yet: its exact location still has to be confirmed."
+            out.setdefault(r["city"], []).append({"name": r["catalog_name"], "reason": reason})
     return out
 
 
@@ -155,7 +159,11 @@ def map_data(city, itinerary):
             a = entry.attraction
             points.append({"kind": "stop", "n": number, "name": a.name, "lat": a.lat, "lng": a.lng,
                            "city": a.city_name, "time": f"{fmt_hhmm(entry.start)}–{fmt_hhmm(entry.end)}"})
-        days.append({"index": day.index, "stops": points})
+        begin = day.start_place or start
+        finish = day.end_place or start
+        days.append({"index": day.index, "stops": points,
+                     "from": {"name": begin.name, "lat": begin.lat, "lng": begin.lng},
+                     "to": {"name": finish.name, "lat": finish.lat, "lng": finish.lng}})
     return {"start": {"name": start.name, "lat": start.lat, "lng": start.lng},
             "center": [city.info["center_lat"], city.info["center_lng"]], "days": days,
             "cities": [{"name": c["name"], "lat": c["center_lat"], "lng": c["center_lng"]} for c in city.cities]
@@ -186,6 +194,8 @@ def itinerary_to_dict(itinerary):
         days.append({
             "day": day.index, "date": day.date.isoformat(), "weekday": day.date.strftime("%a"),
             "depart": fmt_hhmm(day.depart), "branch": day.branch, "focus": day.focus,
+            "starts_at": day.start_place.slug if day.start_place else trip.start,
+            "night_at": day.end_place.slug if day.end_place else trip.start, "moves": day.moves,
             "visits": [{"slug": v.attraction.slug, "name": v.attraction.name, "city": v.attraction.city_slug,
                         "arrive": fmt_hhmm(v.arrive), "start": fmt_hhmm(v.start), "end": fmt_hhmm(v.end),
                         "leave": fmt_hhmm(v.leave), "wait_min": v.wait, "travel_min": v.leg.minutes,
@@ -200,7 +210,7 @@ def itinerary_to_dict(itinerary):
             "timeline": timeline,
             "return": ({"time": fmt_hhmm(day.return_time), "travel_min": day.return_leg.minutes,
                         "travel_min_raw": day.return_leg.raw_minutes, "travel_km": day.return_leg.km,
-                        "intercity": day.return_leg.intercity} if day.visits else None),
+                        "intercity": day.return_leg.intercity} if day.return_leg else None),
             "totals": {"score": day.score, "travel_min": day.travel_min, "intercity_min": day.intercity_min,
                        "km": day.km, "sight_min": day.sight_min, "meal_min": day.meal_min,
                        "wait_min": day.wait_min, "buffer_min": day.buffer_min, "free_min": day.free_min,
@@ -210,6 +220,9 @@ def itinerary_to_dict(itinerary):
         })
     return {
         "city": trip.city, "also": list(trip.extra_cities), "strategy": trip.strategy, "start": trip.start,
+        "end": trip.end_stay, "overnight": trip.overnight,
+        "journey": [{"city": s["city"], "stay": s["stay"].slug, "first_day": s["first_day"], "last_day": s["last_day"],
+                     "nights": s["nights"]} for s in itinerary.journey],
         "mode": trip.mode, "places_picked": list(trip.places),
         "summary": {"selected": len(itinerary.selected), "scheduled": itinerary.stops,
                     "active_days": len(itinerary.active_days), "trip_days": trip.days,

@@ -46,9 +46,11 @@ def test_valid_itinerary(client):
 
 
 @pytest.mark.parametrize("query, field_message", [
-    ("city=delhi&days=0", "Plan between 1 and 5 days"),
-    ("city=delhi&days=6", "Plan between 1 and 5 days"),
-    ("city=delhi&days=abc", "whole number"),
+    ("city=delhi&days=0", "end date on or after the start date"),
+    ("city=delhi&days=abc", "end date on or after the start date"),
+    ("city=delhi&start_date=2026-11-05&end_date=2026-11-01", "cannot be before the start date"),
+    ("city=delhi&start_date=2026-11-01&end_date=2026-12-15", "up to 30 days"),
+    ("city=delhi&start_date=2026-11-01&end_date=2026-99-01", "end date as YYYY-MM-DD"),
     ("city=delhi&day_start=18:00&day_end=17:00", "at least 2 hours"),
     ("city=delhi&day_start=25:00", "HH:MM"),
     ("city=delhi&interests=shopping-malls", "Unknown interest"),
@@ -77,7 +79,7 @@ def test_invalid_input_is_a_400_with_a_message(client, query, field_message):
 
 
 def test_invalid_form_keeps_the_users_values(client):
-    response = client.get("/itinerary?city=jaipur&days=9&day_start=07:30&pace=relaxed")
+    response = client.get("/itinerary?city=jaipur&start_date=2026-11-09&end_date=2026-11-02&day_start=07:30&pace=relaxed")
     html = response.get_data(as_text=True)
     assert response.status_code == 400
     assert 'value="07:30"' in html
@@ -117,7 +119,7 @@ def test_api_itinerary_shape(client):
 
 def test_api_errors_are_json(client):
     response = client.get("/api/itinerary?city=delhi&days=0")
-    assert response.status_code == 400 and "days" in response.get_json()["errors"]
+    assert response.status_code == 400 and "end_date" in response.get_json()["errors"]
     missing = client.get("/api/cities/atlantis/attractions")
     assert missing.status_code == 404 and missing.get_json() == {"error": "not found"}
 

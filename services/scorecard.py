@@ -29,6 +29,7 @@ the page says so instead of inventing a winner.
 """
 
 import config
+from services.i18n import gettext as _, ngettext
 
 METRIC_DIRECTIONS = {        # subscore name -> (raw metric, "max" or "min")
     "value": ("value", "max"),
@@ -106,46 +107,53 @@ def recommend(rows, signatures):
     feasible = [r for r in rows if r["feasible"] and r["metrics"]["stops"] > 0]
     if not feasible:
         return {"status": "none", "keys": [], "identical": identical,
-                "text": "No strategy produced a feasible plan with at least one stop, so nothing is recommended."}
+                "text": _("No strategy produced a feasible plan with at least one stop, so nothing is recommended.")}
     top = max(r["overall"] for r in feasible)
     leaders = [r for r in feasible if abs(r["overall"] - top) < 0.05]
-    names = [config.STRATEGY_SHORT[r["key"]] for r in leaders]
+    names = [_(config.STRATEGY_SHORT[r["key"]]) for r in leaders]
     if len(leaders) > 1:
         same = all([a["key"], b["key"]] in identical or [b["key"], a["key"]] in identical
                    for i, a in enumerate(leaders) for b in leaders[i + 1:])
-        text = (f"{' and '.join(names)} produced {'the same itinerary' if same else 'equally good plans'} "
-                f"(overall {top:.1f}). There is no single winner on this trip.")
+        joined = _(" and ").join(names)
+        text = (_("{names} produced the same itinerary (overall {score}). There is no single winner on this trip.",
+                  names=joined, score=f"{top:.1f}") if same else
+                _("{names} produced equally good plans (overall {score}). There is no single winner on this trip.",
+                  names=joined, score=f"{top:.1f}"))
         return {"status": "tie", "keys": [r["key"] for r in leaders], "identical": identical, "text": text}
     winner = leaders[0]
     runner = max((r for r in feasible if r is not winner), key=lambda r: r["overall"], default=None)
-    margin = f", {top - runner['overall']:.1f} points ahead of {config.STRATEGY_SHORT[runner['key']]}" if runner else ""
-    return {"status": "winner", "keys": [winner["key"]], "identical": identical,
-            "text": f"{names[0]} has the best overall score on this trip ({top:.1f}{margin})."}
+    if runner:
+        text = _("{name} has the best overall score on this trip ({score}, {margin} points ahead of {runner}).",
+                 name=names[0], score=f"{top:.1f}", margin=f"{top - runner['overall']:.1f}",
+                 runner=_(config.STRATEGY_SHORT[runner["key"]]))
+    else:
+        text = _("{name} has the best overall score on this trip ({score}).", name=names[0], score=f"{top:.1f}")
+    return {"status": "winner", "keys": [winner["key"]], "identical": identical, "text": text}
 
 
 def tradeoffs(rows):
     """Plain-language comparisons of the raw metrics (only differences that exist are mentioned)."""
     notes = []
     by_key = {r["key"]: r["metrics"] for r in rows}
-    short = config.STRATEGY_SHORT
+    short = {k: _(v) for k, v in config.STRATEGY_SHORT.items()}
 
     def compare(a, b):
         ma, mb = by_key[a], by_key[b]
         parts = []
         if ma["stops"] != mb["stops"]:
             more, fewer = (a, b) if ma["stops"] > mb["stops"] else (b, a)
-            parts.append(f"{short[more]} fits {abs(ma['stops'] - mb['stops'])} more stop"
-                         f"{'s' if abs(ma['stops'] - mb['stops']) > 1 else ''} than {short[fewer]}")
+            parts.append(ngettext("{a} fits {n} more stop than {b}", "{a} fits {n} more stops than {b}",
+                                  abs(ma["stops"] - mb["stops"]), a=short[more], b=short[fewer]))
         if ma["value"] != mb["value"]:
             hi, lo = (a, b) if ma["value"] > mb["value"] else (b, a)
-            parts.append(f"{short[hi]} collects {abs(ma['value'] - mb['value'])} more value points")
+            parts.append(_("{a} collects {n} more value points", a=short[hi], n=abs(ma["value"] - mb["value"])))
         if ma["avg_value"] != mb["avg_value"] and ma["stops"] and mb["stops"]:
             hi = a if ma["avg_value"] > mb["avg_value"] else b
-            parts.append(f"{short[hi]}'s places are better on average "
-                         f"({max(ma['avg_value'], mb['avg_value'])} vs {min(ma['avg_value'], mb['avg_value'])})")
+            parts.append(_("{a}'s places are better on average ({high} vs {low})", a=short[hi],
+                           high=max(ma["avg_value"], mb["avg_value"]), low=min(ma["avg_value"], mb["avg_value"])))
         if ma["travel_min"] != mb["travel_min"]:
             less = a if ma["travel_min"] < mb["travel_min"] else b
-            parts.append(f"{short[less]} travels {abs(ma['travel_min'] - mb['travel_min'])} min less")
+            parts.append(_("{a} travels {n} min less", a=short[less], n=abs(ma["travel_min"] - mb["travel_min"])))
         return parts
 
     keys = [r["key"] for r in rows]
@@ -153,7 +161,7 @@ def tradeoffs(rows):
         for b in keys[i + 1:]:
             parts = compare(a, b)
             if parts:
-                notes.append(f"{short[a]} vs {short[b]}: " + "; ".join(parts) + ".")
+                notes.append(_("{a} vs {b}: {parts}.", a=short[a], b=short[b], parts="; ".join(parts)))
             else:
-                notes.append(f"{short[a]} and {short[b]} have identical metrics on this trip.")
+                notes.append(_("{a} and {b} have identical metrics on this trip.", a=short[a], b=short[b]))
     return notes

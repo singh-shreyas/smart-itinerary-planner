@@ -7,11 +7,28 @@
 
   // Strategy colours follow the strategy everywhere on the page (validated with the dataviz
   // palette checker: lightness, chroma, colour-blind separation; contrast relief = the tables).
-  var STRATEGY = { dp: "#2a7a52", greedy: "#e8894a", max_visits: "#3f6fb6" };
-  var SLOT = [STRATEGY.dp, STRATEGY.greedy, STRATEGY.max_visits];
-  // Time-use segments (a separate, also validated, 4-colour set + neutral grey for unused time).
-  var SEGMENT = { sight: "#2a7a52", travel: "#e8894a", meal: "#3f6fb6", wait: "#b8860b", free: "#d9d3c7" };
-  var INK = "#1B2A41", MUTED = "#6B6257", GRID = "#ECE5D8", SURFACE = "#FFFFFF";
+  // Dark mode uses lighter steps of the same three hues (each at least 3:1 against the dark chart
+  // surface); text, grid and surface colours come from the page's theme tokens.
+  var t = window.I18N ? window.I18N.t : function (x) { return x; };
+  var PALETTES = {
+    light: { strategy: { dp: "#2a7a52", greedy: "#e8894a", max_visits: "#3f6fb6" }, wait: "#b8860b", free: "#d9d3c7" },
+    dark: { strategy: { dp: "#5cb98a", greedy: "#f0a46f", max_visits: "#7aa2e0" }, wait: "#d9a640", free: "#3b4757" }
+  };
+  var STRATEGY, SLOT, SEGMENT, INK, MUTED, GRID, SURFACE;
+  function usePalette() {
+    var dark = document.documentElement.getAttribute("data-theme") === "dark";
+    var p = PALETTES[dark ? "dark" : "light"];
+    var css = getComputedStyle(document.documentElement);
+    STRATEGY = p.strategy;
+    SLOT = [STRATEGY.dp, STRATEGY.greedy, STRATEGY.max_visits];
+    SEGMENT = { sight: STRATEGY.dp, travel: STRATEGY.greedy, meal: STRATEGY.max_visits, wait: p.wait, free: p.free };
+    INK = css.getPropertyValue("--ink").trim() || "#1B2A41";
+    MUTED = css.getPropertyValue("--muted").trim() || "#6B6257";
+    GRID = css.getPropertyValue("--line").trim() || "#ECE5D8";
+    SURFACE = css.getPropertyValue("--surface").trim() || "#FFFFFF";
+    if (window.Chart) Chart.defaults.color = MUTED;
+  }
+  usePalette();
 
   if (window.Chart) {
     Chart.defaults.font.family = "Inter, -apple-system, 'Segoe UI', system-ui, sans-serif";
@@ -61,10 +78,11 @@
       pointHitRadius: 12, tension: 0, borderCapStyle: "round", borderJoinStyle: "round"
     };
   }
+  var charts = [];
   function chart(id, config) {
     var el = document.getElementById(id);
     if (!el || !window.Chart) return;
-    new Chart(el, config);
+    charts.push(new Chart(el, config));
   }
   function barChart(id, labels, datasets, unit, yTitle) {
     chart(id, {
@@ -99,6 +117,9 @@
   }
 
   var rows = data.strategies || [];
+  var routing = data.routing || [];
+
+  function drawCharts() {
 
   // 1a. Subscores (grouped horizontal bars: one group per measure, one bar per strategy)
   var MEASURES = [["value", "Value"], ["coverage", "Coverage"], ["travel", "Travel efficiency"],
@@ -156,7 +177,6 @@
   }
 
   // 4. Travel minutes per day, by routing method
-  var routing = data.routing || [];
   if (routing.length) {
     barChart("chart-routing", routing.map(function (r) { return "Day " + r.day; }), [
       bars("NN + 2-opt", routing.map(function (r) { return r.two_opt.travel; }), SLOT[0]),
@@ -182,6 +202,16 @@
       line("Nearest Neighbour", bm.routing.map(function (r) { return r.nn_gap_pct; }), SLOT[1])
     ], "%", "% above optimum", "stops k", false);
   }
+
+  }
+  drawCharts();
+  // The theme toggle re-draws every chart in the new colours (no page reload).
+  document.addEventListener("themechange", function () {
+    charts.forEach(function (c) { c.destroy(); });
+    charts = [];
+    usePalette();
+    drawCharts();
+  });
 
   // Route-shape map: NN order vs the 2-opt result for one day.
   var card = document.getElementById("compare-map-card");

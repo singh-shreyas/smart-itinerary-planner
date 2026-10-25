@@ -16,7 +16,10 @@ walks the timeline again and checks that:
     - every needed meal (lunch / dinner) is there exactly once, inside its
       window, with its full duration, at an open venue or where you already are
     - activities never overlap and time never goes backwards
-    - the ride back reaches the start point, and everything ends by the end of the day
+    - the ride back reaches tonight's stay, and everything ends by the end of the day
+    - the trip starts at the starting stay and ends at the ending stay, every day
+      starts exactly where the previous night was spent, and every night is a
+      stay area of one of the trip's cities (multi-city journeys move the stay)
     - every attraction not in the plan has a stated reason
 
 An empty list means the itinerary satisfies every constraint. A non-empty list
@@ -81,17 +84,39 @@ def check_itinerary(itinerary, city):
             return None
         return leg.depart + leg.minutes + leg.wait
 
+    # Nights: where each day starts and ends. Without per-day stays (older plans) every day uses the trip's stay.
+    trip_cities = set(city.city_slugs)
+    night = start_id
+    for day in itinerary.days:
+        begin = day.start_place.id if day.start_place else start_id
+        finish = day.end_place.id if day.end_place else start_id
+        if begin != night:
+            problems.append(f"Day {day.index}: starts at {city.places[begin].name}, but the night before was spent at "
+                            f"{city.places[night].name}")
+        for pid in (begin, finish):
+            place = city.places[pid]
+            if place.kind != "stay" or place.city_slug not in trip_cities:
+                problems.append(f"Day {day.index}: {place.name} is not a stay area of the trip's cities")
+        night = finish
+    if itinerary.days and night != city.place(trip.end_stay).id:
+        problems.append(f"The trip ends at {city.places[night].name}, not at the chosen final stay "
+                        f"{city.place(trip.end_stay).name}")
+
     for day in itinerary.days:
         label = f"Day {day.index}"
         weekday = day.date.weekday()
-        if not day.visits:
+        begin = day.start_place.id if day.start_place else start_id
+        finish = day.end_place.id if day.end_place else start_id
+        if not day.visits and day.return_leg is None:
             if day.meals:
                 problems.append(f"{label}: has meals but no stops")
+            if begin != finish:
+                problems.append(f"{label}: moves to {city.places[finish].name} without a travel leg")
             continue
         if day.depart < trip.day_start:
             problems.append(f"{label}: leaves at {fmt_hhmm(day.depart)}, before the day starts")
 
-        clock, here, previous_end, returned = trip.day_start, start_id, None, False
+        clock, here, previous_end, returned = trip.day_start, begin, None, False
         needed = {m.kind: m for m in trip.meals if m.needed(trip.day_start, trip.day_end)}
         meals_seen = []
         legs_km = 0.0
@@ -99,15 +124,15 @@ def check_itinerary(itinerary, city):
         def do_return():
             nonlocal clock, here, returned, legs_km
             leg = day.return_leg
-            if leg is not None and leg.to_id != start_id:
-                problems.append(f"{label}: return leg does not end at the start point")
+            if leg is not None and leg.to_id != finish:
+                problems.append(f"{label}: the last ride does not end at tonight's stay ({city.places[finish].name})")
             arrive = check_leg(f"{label} (return)", leg, here, clock)
             if arrive is None:
                 return
             if day.return_time != arrive:
                 problems.append(f"{label}: return time does not match the return leg")
-            legs_km += city.km[here][start_id]
-            clock, here, returned = arrive, start_id, True
+            legs_km += city.km[here][finish]
+            clock, here, returned = arrive, finish, True
 
         for entry in day.timeline:
             if isinstance(entry, Visit):

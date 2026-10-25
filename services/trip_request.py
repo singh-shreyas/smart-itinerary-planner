@@ -9,11 +9,12 @@ removed), so the same choices always give the same TripRequest -- and
 therefore the same plan -- whatever order the browser sent them in.
 """
 
-from datetime import date
+from datetime import date, timedelta
 
 import config
 from services.models import MealSetting, TripRequest
 from services.multicity import group_problems
+from services.i18n import gettext as _
 from services.timeutil import fmt_hhmm, parse_hhmm
 
 TRUE_VALUES = {"on", "1", "true", "yes"}
@@ -64,15 +65,15 @@ def _parse_meal(args, kind, default, errors, values):
     try:
         earliest, latest_end = parse_hhmm(start_raw), parse_hhmm(end_raw)
     except ValueError:
-        errors[kind] = f"Enter the {kind} window as HH:MM (24-hour)."
+        errors[kind] = _("Enter the {meal} window as HH:MM (24-hour).", meal=_(kind))
         return None
     if not minutes_raw.isdigit() or not 15 <= int(minutes_raw) <= 180:
-        errors[kind] = f"{kind.capitalize()} length must be 15 to 180 minutes."
+        errors[kind] = _("{meal} length must be 15 to 180 minutes.", meal=_(kind.capitalize()))
         return None
     minutes = int(minutes_raw)
     if latest_end - earliest < minutes:
-        errors[kind] = (f"A {minutes}-minute {kind} does not fit between {fmt_hhmm(earliest)} "
-                        f"and {fmt_hhmm(latest_end)}.")
+        errors[kind] = _("A {minutes}-minute {meal} does not fit between {start} and {end}.", minutes=minutes,
+                         meal=_(kind), start=fmt_hhmm(earliest), end=fmt_hhmm(latest_end))
         return None
     return MealSetting(kind, earliest, latest_end, minutes)
 
@@ -95,9 +96,9 @@ def parse_trip(args, load_area, category_slugs, today=None, all_cities=None):
     values["city"] = city_slug
     city = load_area((city_slug,)) if city_slug else None
     if not city_slug:
-        errors["city"] = "Choose a destination city."
+        errors["city"] = _("Choose a destination city.")
     elif city is None:
-        errors["city"] = "We don't have data for that city yet."
+        errors["city"] = _("We don't have data for that city yet.")
 
     # Nearby cities added to the trip ---------------------------------------
     extras = sorted(s for s in _split_list(args, "also") if s != city_slug)
@@ -106,9 +107,9 @@ def parse_trip(args, load_area, category_slugs, today=None, all_cities=None):
     if extras and city is not None:
         unknown = [s for s in extras if load_area((s,)) is None]
         if unknown:
-            errors["also"] = f"Unknown city: {', '.join(unknown)}."
+            errors["also"] = _("Unknown city: {names}.", names=", ".join(unknown))
         elif len(extras) > config.MAX_EXTRA_CITIES:
-            errors["also"] = f"Add at most {config.MAX_EXTRA_CITIES} nearby cities."
+            errors["also"] = _("Add at most {n} nearby cities.", n=config.MAX_EXTRA_CITIES)
         else:
             group = [city.info] + [load_area((s,)).info for s in extras]
             problems = group_problems(group)
@@ -117,25 +118,42 @@ def parse_trip(args, load_area, category_slugs, today=None, all_cities=None):
             else:
                 area = load_area((city_slug,) + tuple(extras))
 
-    # Start date -----------------------------------------------------------
+    # Dates ------------------------------------------------------------------
+    # The trip runs from start_date to end_date, both included: 1 Oct - 5 Oct is 5 days.
+    # Older links that give `days` instead of an end date still work.
     raw = _clean(args.get("start_date")) or today.isoformat()
     values["start_date"] = raw
     try:
         start_date = date.fromisoformat(raw)
     except ValueError:
         start_date = None
-        errors["start_date"] = "Enter a date as YYYY-MM-DD."
-
-    # Days -----------------------------------------------------------------
-    raw = _clean(args.get("days")) or "1"
-    values["days"] = raw
-    days = None
-    if not raw.isdigit():
-        errors["days"] = f"Number of days must be a whole number from 1 to {config.MAX_DAYS}."
-    else:
-        days = int(raw)
-        if not 1 <= days <= config.MAX_DAYS:
-            errors["days"] = f"Plan between 1 and {config.MAX_DAYS} days."
+        errors["start_date"] = _("Enter the start date as YYYY-MM-DD.")
+    raw_end = _clean(args.get("end_date"))
+    raw_days = _clean(args.get("days"))
+    end_date = days = None
+    if raw_end:
+        try:
+            end_date = date.fromisoformat(raw_end)
+        except ValueError:
+            errors["end_date"] = _("Enter the end date as YYYY-MM-DD.")
+    elif raw_days:
+        if not raw_days.isdigit() or int(raw_days) < 1:
+            errors["end_date"] = _("Choose an end date on or after the start date.")
+        elif start_date is not None:
+            end_date = start_date + timedelta(days=min(int(raw_days), config.MAX_DAYS + 1) - 1)
+    elif start_date is not None:
+        end_date = start_date                                  # a one-day trip
+    if start_date is not None and end_date is not None:
+        days = (end_date - start_date).days + 1
+        if days < 1:
+            errors["end_date"] = _("The end date cannot be before the start date.")
+            days = None
+        elif days > config.MAX_DAYS:
+            errors["end_date"] = _("Trips can be up to {max} days long; this one is {days} days. Choose an earlier end date.",
+                                   max=config.MAX_DAYS, days=days)
+            days = None
+    values["end_date"] = end_date.isoformat() if end_date else raw_end
+    values["days"] = str(days) if days else ""
 
     # Daily time window ------------------------------------------------------
     day_start = day_end = None
@@ -145,41 +163,41 @@ def parse_trip(args, load_area, category_slugs, today=None, all_cities=None):
         try:
             minutes = parse_hhmm(raw)
         except ValueError:
-            errors[key] = "Enter a time as HH:MM (24-hour)."
+            errors[key] = _("Enter a time as HH:MM (24-hour).")
             continue
         if key == "day_start":
             day_start = minutes
         else:
             day_end = minutes
     if day_start is not None and day_end is not None and day_end - day_start < config.MIN_DAY_LENGTH_MIN:
-        errors["day_end"] = (f"Your day must end at least {config.MIN_DAY_LENGTH_MIN // 60} hours after it starts "
-                             f"(after {fmt_hhmm(day_start + config.MIN_DAY_LENGTH_MIN)}).")
+        errors["day_end"] = _("Your day must end at least {hours} hours after it starts (after {time}).",
+                              hours=config.MIN_DAY_LENGTH_MIN // 60, time=fmt_hhmm(day_start + config.MIN_DAY_LENGTH_MIN))
 
     # Interests --------------------------------------------------------------
     interests = sorted(set(_split_list(args, "interests")))
     values["interests"] = interests
     unknown = [i for i in interests if i not in category_slugs]
     if unknown:
-        errors["interests"] = f"Unknown interest: {', '.join(unknown)}."
+        errors["interests"] = _("Unknown interest: {names}.", names=", ".join(unknown))
     interest_mode = _clean(args.get("interest_mode")) or "prefer"
     values["interest_mode"] = interest_mode
     if interest_mode not in config.INTEREST_MODES:
-        errors["interest_mode"] = "Choose 'prefer' or 'only' for interests."
+        errors["interest_mode"] = _("Choose 'prefer' or 'only' for interests.")
     elif interest_mode == "only" and not interests:
-        errors["interest_mode"] = "Pick at least one interest to plan only matching places."
+        errors["interest_mode"] = _("Pick at least one interest to plan only matching places.")
 
     # Meals ------------------------------------------------------------------
     lunch = _parse_meal(args, "lunch", config.DEFAULT_LUNCH, errors, values)
     dinner = _parse_meal(args, "dinner", config.DEFAULT_DINNER, errors, values)
     if lunch and dinner and lunch.latest_end > dinner.earliest:
-        errors["dinner"] = "The dinner window must start after the lunch window ends."
+        errors["dinner"] = _("The dinner window must start after the lunch window ends.")
     food_venues = _switch(args, "venues", True)
     values["venues"] = "on" if food_venues else "off"
     venue_styles = sorted(set(_split_list(args, "venue_style")))
     values["venue_style"] = venue_styles
     bad = [s for s in venue_styles if s not in config.VENUE_STYLES]
     if bad:
-        errors["venue_style"] = f"Unknown meal-venue style: {', '.join(bad)}."
+        errors["venue_style"] = _("Unknown meal-venue style: {names}.", names=", ".join(bad))
     veg_only = _switch(args, "veg", False)
     values["veg"] = "on" if veg_only else ""
 
@@ -189,7 +207,7 @@ def parse_trip(args, load_area, category_slugs, today=None, all_cities=None):
     shop_minutes = None
     if raw:
         if not raw.isdigit() or int(raw) not in config.SHOP_MINUTES:
-            errors["shop_min"] = "Choose one of the listed shopping times."
+            errors["shop_min"] = _("Choose one of the listed shopping times.")
         else:
             shop_minutes = int(raw)
 
@@ -197,15 +215,15 @@ def parse_trip(args, load_area, category_slugs, today=None, all_cities=None):
     pace = _clean(args.get("pace")) or config.DEFAULT_PACE
     values["pace"] = pace
     if pace not in config.PACES:
-        errors["pace"] = "Choose relaxed, balanced or packed."
+        errors["pace"] = _("Choose relaxed, balanced or packed.")
     strategy = _clean(args.get("strategy")) or config.DEFAULT_STRATEGY
     values["strategy"] = strategy
     if strategy not in config.STRATEGIES:
-        errors["strategy"] = "Unknown selection strategy."
+        errors["strategy"] = _("Unknown selection strategy.")
     mode = _clean(args.get("mode")) or config.DEFAULT_MODE
     values["mode"] = mode
     if mode not in config.MODES:
-        errors["mode"] = "Choose Evenly Distributed, Suggested or Most Optimized."
+        errors["mode"] = _("Choose Evenly Distributed, Suggested or Most Optimized.")
 
     # Places to visit: empty = the planner chooses (with the strategy above).
     choose = _clean(args.get("choose")) or ("pick" if _split_list(args, "places") else "auto")
@@ -213,13 +231,13 @@ def parse_trip(args, load_area, category_slugs, today=None, all_cities=None):
     places = sorted(set(_split_list(args, "places"))) if choose == "pick" else []
     values["places"] = places
     if choose == "pick" and not places:
-        errors["places"] = "Pick at least one place to visit, or let the planner choose."
+        errors["places"] = _("Pick at least one place to visit, or let the planner choose.")
     elif len(places) > config.MAX_PICKED_PLACES:
-        errors["places"] = f"Pick at most {config.MAX_PICKED_PLACES} places."
+        errors["places"] = _("Pick at most {n} places.", n=config.MAX_PICKED_PLACES)
 
     # Stay area and exclusions (need a valid city) ----------------------------
-    # Every day starts and ends at one of the base city's five stay areas --
-    # never at an attraction or a station. Empty = the central area.
+    # Every day starts and ends at one of the trip's stay areas -- never at an
+    # attraction or a station. Empty = the base city's central area.
     start = _clean(args.get("start"))
     exclude = sorted(set(_split_list(args, "exclude")))
     values["exclude"] = exclude
@@ -227,18 +245,46 @@ def parse_trip(args, load_area, category_slugs, today=None, all_cities=None):
         if not start:
             start = city.stays[0].slug if city.stays else ""
         if city.stay(start) is None:
-            errors["start"] = f"Choose one of the stay areas in {city.name}."
+            errors["start"] = _("Choose one of the stay areas in {city}.", city=city.name)
         if area is not None:
             bad = [s for s in exclude if area.attraction_by_slug(s) is None]
             if bad:
-                errors["exclude"] = f"Not an attraction in {area.name}: {', '.join(bad)}."
+                errors["exclude"] = _("Not an attraction in {city}: {names}.", city=area.name, names=", ".join(bad))
             elif exclude and len(exclude) >= len(area.attractions):
-                errors["exclude"] = "Keep at least one attraction in the plan."
+                errors["exclude"] = _("Keep at least one attraction in the plan.")
             bad = [s for s in places if area.attraction_by_slug(s) is None]
             if bad and "places" not in errors:
-                errors["places"] = f"Not an attraction in {area.name}: {', '.join(bad)}."
+                errors["places"] = _("Not an attraction in {city}: {names}.", city=area.name, names=", ".join(bad))
             elif set(places) & set(exclude):
-                errors["places"] = "A place cannot be both picked and excluded."
+                errors["places"] = _("A place cannot be both picked and excluded.")
+
+    # Where the trip ends, and whether the stay moves with you ---------------------
+    # "move": sleep in each city in turn (one-way, or a round trip back to the start);
+    # "base": one stay, day trips. A link that does not say falls back to "base" when
+    # the trip is too short to move between its cities.
+    asked = _clean(args.get("overnight"))
+    overnight = asked or "move"
+    if overnight not in ("move", "base"):
+        errors["overnight"] = _("Choose whether your stay moves with you or stays in one base.")
+    end = _clean(args.get("end"))
+    if end == start or overnight == "base":
+        end = ""
+    if end and area is not None and "start" not in errors:
+        place = area.place(end)
+        if place is None or place.kind != "stay" or place.city_slug not in area.city_slugs:
+            errors["end"] = _("Choose the stay area of your last night in one of the trip's cities.")
+    if overnight == "move" and area is not None and days is not None and not ({"start", "end"} & set(errors)):
+        end_city = area.place(end).city_slug if end else city_slug
+        others = [s for s in area.city_slugs if s not in (city_slug, end_city)]
+        stops = 1 + len(others) + (1 if (end or others) else 0)
+        if stops > 1 and days < stops - 1:
+            if asked:
+                errors["end"] = _("A trip through {stops} stays needs at least {days} days (one for each move): choose a later "
+                                  "end date, or one base with day trips.", stops=stops, days=stops - 1)
+            else:
+                overnight, end = "base", ""
+    values["overnight"] = overnight
+    values["end"] = end
     values["start"] = start
 
     if errors:
@@ -248,5 +294,5 @@ def parse_trip(args, load_area, category_slugs, today=None, all_cities=None):
                        pace=pace, start=start, strategy=strategy, exclude=tuple(exclude),
                        extra_cities=tuple(extras), interest_mode=interest_mode, lunch=lunch, dinner=dinner,
                        food_venues=food_venues, venue_styles=tuple(venue_styles), veg_only=veg_only,
-                       shop_minutes=shop_minutes, mode=mode, places=tuple(places))
+                       shop_minutes=shop_minutes, mode=mode, places=tuple(places), end=end, overnight=overnight)
     return trip, {}, values

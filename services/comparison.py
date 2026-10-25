@@ -33,6 +33,7 @@ from algorithms.nearest_neighbor import nearest_neighbor_route
 from algorithms.tour import tour_cost
 from algorithms.two_opt import two_opt
 from services import scorecard, versioning
+from services.i18n import gettext as _
 from services.crosscheck import crosscheck_city
 from services.itinerary_generator import day_context, plan_trip, route_branches, trip_context
 from services.scheduler import simulate
@@ -174,7 +175,7 @@ def dijkstra_example(city):
     return {"from": city.places[u].name, "to": city.places[v].name,
             "minutes": city.dist[u][v], "km": round(city.km[u][v], 1),
             "path": [city.places[p].name for p in best],
-            "direct_link": any(n == v for n, _ in city.graph[u])}
+            "direct_link": any(n == v for n, _w in city.graph[u])}
 
 
 def _demo(items, capacity_units, note):
@@ -188,15 +189,15 @@ def _demo(items, capacity_units, note):
 def greedy_trap():
     """The textbook counter-example, solved live by every selector (times in 10-minute units)."""
     items = [Item("X", 90, 18), Item("Y", 60, 15), Item("Z", 60, 15)]
-    return _demo(items, 30, "Greedy takes X (best value per minute) and then nothing else fits; "
-                            "DP considers every combination and finds Y + Z.")
+    return _demo(items, 30, _("Greedy takes X (best value per minute) and then nothing else fits; "
+                              "DP considers every combination and finds Y + Z."))
 
 
 def value_vs_count():
     """Why DP and Max visits differ: one valuable long visit against several short ordinary ones."""
     items = [Item("A", 90, 12), Item("B", 30, 6), Item("C", 30, 6), Item("D", 30, 6)]
-    return _demo(items, 18, "DP keeps the valuable 2-hour place A and adds B (score 120, 2 stops); "
-                            "Max visits prefers three short places B, C and D (score 90, 3 stops).")
+    return _demo(items, 18, _("DP keeps the valuable 2-hour place A and adds B (score 120, 2 stops); "
+                              "Max visits prefers three short places B, C and D (score 90, 3 stops)."))
 
 
 def load_benchmarks(results_dir):

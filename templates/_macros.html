@@ -1,27 +1,58 @@
 {# Reusable UI pieces. Import with: {% import "_macros.html" as ui %} #}
 
+{# Start and end date with a live "N days" readout (both days included). site.js keeps it in sync. #}
+{% macro date_range(values, errors, prefix="", compact=False) -%}
+  <div class="date-range row g-2" data-date-range data-max-days="{{ MAX_DAYS }}">
+    <div class="{{ 'col-6' if compact else 'col-sm-6' }}">
+      <label class="form-label {{ 'small' if compact }}" for="{{ prefix }}start_date">{{ _('Start date') }}</label>
+      <input class="form-control {{ invalid(errors, 'start_date') }}" type="date" id="{{ prefix }}start_date" name="start_date"
+             value="{{ values.start_date }}" required data-range-start aria-describedby="{{ prefix }}duration">
+    </div>
+    <div class="{{ 'col-6' if compact else 'col-sm-6' }}">
+      <label class="form-label {{ 'small' if compact }}" for="{{ prefix }}end_date">{{ _('End date') }}</label>
+      <input class="form-control {{ invalid(errors, 'end_date') }}" type="date" id="{{ prefix }}end_date" name="end_date"
+             value="{{ values.end_date }}" min="{{ values.start_date }}" required data-range-end aria-describedby="{{ prefix }}duration">
+    </div>
+    <div class="col-12">
+      <p class="date-duration mb-0" id="{{ prefix }}duration" aria-live="polite" data-range-output>
+        {%- if values.days %}<i class="bi bi-calendar-range me-1" aria-hidden="true"></i>{{ _('1 day (start and end dates included)') if values.days|string == '1' else _('{n} days (start and end dates included)', n=values.days) }}{% endif -%}
+      </p>
+      {{ field_error(errors, 'start_date') }}{{ field_error(errors, 'end_date') }}
+    </div>
+  </div>
+{%- endmacro %}
+
+{# A photo, or -- when there is none or it fails to load -- a neutral, themed placeholder (never another
+   place's photo). The swap on a load error happens in base.html, so images added later (Load more) are covered. #}
 {% macro image(path, alt, cls="", eager=False, width=800, height=600) -%}
-  {%- set placeholder = url_for('static', filename='images/placeholder.svg') -%}
-  <img src="{{ url_for('static', filename=path) if path else placeholder }}" alt="{{ alt }}" class="{{ cls }}"
-       width="{{ width }}" height="{{ height }}" {% if not eager %}loading="lazy"{% endif %} decoding="async"
-       onerror="this.onerror=null;this.src='{{ placeholder }}'">
+  {%- if path -%}
+  <img src="{{ url_for('static', filename=path) }}" alt="{{ alt }}" class="{{ cls }}" data-fallback
+       width="{{ width }}" height="{{ height }}" {% if not eager %}loading="lazy"{% endif %} decoding="async">
+  {%- else -%}
+  {{ image_fallback(alt, cls) }}
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro image_fallback(alt="", cls="") -%}
+  <div class="img-fallback {{ cls }}" {% if alt %}role="img" aria-label="{{ alt }}"{% else %}aria-hidden="true"{% endif %}>
+    <i class="bi bi-image" aria-hidden="true"></i><span>{{ _('Photo not available') }}</span>
+  </div>
 {%- endmacro %}
 
 {% macro rating(value) -%}
   {%- if value is none -%}
-    <span class="rating is-unrated" title="No open source of visitor ratings exists for this place">Not rated</span>
   {%- else -%}
-    <span class="rating" title="Illustrative rating"><i class="bi bi-star-fill" aria-hidden="true"></i>{{ '%.1f'|format(value) }}<span class="visually-hidden"> out of 5</span></span>
+    <span class="rating" title="{{ _('Illustrative rating') }}"><i class="bi bi-star-fill" aria-hidden="true"></i>{{ '%.1f'|format(value) }}<span class="visually-hidden"> {{ _('out of 5') }}</span></span>
   {%- endif -%}
 {%- endmacro %}
 
 {% macro readiness_badge(r, compact=False) -%}
   {%- if r.status == 'ready' -%}
-    <span class="chip chip-success" title="{{ r.reachable }} of {{ r.total }} attractions reachable by road"><i class="bi bi-check2-circle"></i>{{ 'Ready' if compact else 'Ready to plan' }}</span>
+    <span class="chip chip-success" title="{{ _('{n} of {total} attractions can be planned', n=r.reachable, total=r.total) }}"><i class="bi bi-check2-circle"></i>{{ _('Ready') if compact else _('Ready to plan') }}</span>
   {%- elif r.status == 'limited' -%}
-    <span class="chip chip-warning" title="Only {{ r.reachable }} of {{ r.total }} attractions can be planned by road"><i class="bi bi-exclamation-circle"></i>{{ 'Limited' if compact else 'Limited: ' ~ r.reachable ~ ' plannable' }}</span>
+    <span class="chip chip-warning" title="{{ _('Only {n} of {total} attractions can be planned', n=r.reachable, total=r.total) }}"><i class="bi bi-exclamation-circle"></i>{{ _('Limited') if compact else _('Limited: {n} plannable', n=r.reachable) }}</span>
   {%- else -%}
-    <span class="chip chip-danger" title="No attraction is reachable by road in our data"><i class="bi bi-slash-circle"></i>{{ 'Not plannable' if compact else 'Not plannable by road' }}</span>
+    <span class="chip chip-danger" title="{{ _('No attraction can be planned from its stay areas') }}"><i class="bi bi-slash-circle"></i>{{ _('Not plannable') }}</span>
   {%- endif -%}
 {%- endmacro %}
 
@@ -33,17 +64,17 @@
 
 {% macro open_days(a) -%}
   {%- set days = a.open_weekdays() -%}
-  {%- if days|length == 7 -%}Open daily
-  {%- else -%}Closed {% for d in range(7) if d not in days %}{{ d|weekday_short }}{% if not loop.last %}, {% endif %}{% endfor %}
+  {%- if days|length == 7 -%}{{ _('Open daily') }}
+  {%- else -%}{{ _('Closed') }} {% for d in range(7) if d not in days %}{{ d|weekday_short }}{% if not loop.last %}, {% endif %}{% endfor %}
   {%- endif -%}
 {%- endmacro %}
 
 {% macro category_chips(a, category_names, limit=2) -%}
-  {% for c in a.categories[:limit] %}<span class="chip chip-light">{{ category_names.get(c, c) }}</span>{% endfor %}
+  {% for c in a.categories[:limit] %}<span class="chip chip-light">{{ _(category_names.get(c, c)) }}</span>{% endfor %}
 {%- endmacro %}
 
 {% macro estimate_mark(source, what) -%}
-  {%- if source == 'estimate' -%}<sup class="est" title="{{ what }} not known: a typical value for this kind of place is assumed">est.</sup>
-  {%- elif source == 'osm' -%}<sup class="est est-osm" title="{{ what }} from OpenStreetMap">OSM</sup>
+  {%- if source == 'estimate' -%}<sup class="est" title="{{ _('Not confirmed for this place: a typical value for this kind of place') }}">{{ _('est.') }}</sup>
+  {%- elif source == 'osm' -%}<sup class="est est-osm" title="{{ _('From OpenStreetMap') }}">{{ _('OSM') }}</sup>
   {%- endif -%}
 {%- endmacro %}

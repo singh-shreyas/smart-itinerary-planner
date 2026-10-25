@@ -12,8 +12,8 @@ This is the "truth" check every candidate route goes through:
         end    = start + visit duration
         leave  = end + pace buffer
     (take any meal still due before heading back)
-    ride back to the start point
-    (a meal whose window has not opened yet is taken near the start point)
+    ride to tonight's stay (the same stay, or the next city's on a transfer day)
+    (a meal whose window has not opened yet is taken near that stay)
     everything must be finished by day_end
 
 Meals (lunch / dinner) are separate timeline entries, never sightseeing stops.
@@ -43,17 +43,56 @@ from services.models import MealBreak, Visit
 from services.timeutil import WEEKDAY_LONG, fmt_hhmm
 
 
+class EndView:
+    """A travel table whose "back to the start" means "on to tonight's stay".
+
+    The routing algorithms (Nearest Neighbour, 2-opt, insertion) all cost a closed
+    tour start -> stops -> start. On a day that ends somewhere else (a transfer to
+    the next city's stay), dist[x][start] is answered with dist[x][end], so the
+    same algorithms optimise the open route start -> stops -> end unchanged.
+    """
+
+    def __init__(self, table, start, end):
+        self.table, self.start, self.end = table, start, end
+
+    def __getitem__(self, u):
+        return _EndRow(self.table[u], self.start, self.end)
+
+
+class _EndRow:
+    def __init__(self, row, start, end):
+        self.row, self.start, self.end = row, start, end
+
+    def __getitem__(self, v):
+        return self.row[self.end] if v == self.start else self.row[v]
+
+
 @dataclass
 class DayContext:
     city: object               # CityData
     weekday: int
     day_start: int
     day_end: int
-    start_id: int
+    start_id: int              # where the day starts (last night's stay)
     buffer: int
     meals: tuple = ()          # MealSetting objects needed today, earliest first
     venues: tuple = ()         # (preference rank, place id) of food places usable for meals
     durations: dict = field(default_factory=dict)   # attraction id -> visit minutes (shopping-time override)
+    end_id: int | None = None  # where the day ends (tonight's stay); None = back where it started
+
+    @property
+    def end(self):
+        return self.start_id if self.end_id is None else self.end_id
+
+    @property
+    def moves(self):
+        return self.end != self.start_id
+
+    @property
+    def route_dist(self):
+        """Raw travel table for route optimisation, closing the route at tonight's stay."""
+        dist = self.city.dist
+        return EndView(dist, self.start_id, self.end) if self.moves else dist
 
     def duration(self, aid):
         return self.durations.get(aid) or self.city.attractions[aid].visit_min
@@ -208,32 +247,35 @@ def simulate(order, ctx, scores=None, detailed=False):
             timeline.append(visit)
         here, clock = stop, leave
 
-    if not order:
+    if not order and not ctx.moves:
         return Schedule([], True, ctx.day_start, ctx.day_start, 0, [], return_time=ctx.day_start)
+    if depart is None:                                       # a transfer day with no stops: just the ride
+        depart = ctx.day_start
 
     # Meals still due before heading back.
-    back = plan[here][ctx.start_id]
+    home = ctx.end
+    back = plan[here][home]
     while pending and back < math.inf:
         meal = pending[0]
         if clock >= meal.earliest or clock + back > meal.latest_start:
             take_meal(pending.pop(0))
-            back = plan[here][ctx.start_id]
+            back = plan[here][home]
         else:
             break
     if back == math.inf:
-        violations.append(f"No road route back to {city.places[ctx.start_id].name}")
+        violations.append(f"No route on to {city.places[home].name}")
         return Schedule(list(order), False, depart, math.inf, math.inf, violations, visits,
                         meals=meals, timeline=timeline)
-    back_wait, problem = city.window_wait(here, ctx.start_id, clock)
+    back_wait, problem = city.window_wait(here, home, clock)
     if problem:
         violations.append(f"On the way back: {problem}")
-    return_leg = city.leg(here, ctx.start_id, depart=clock, wait=back_wait) if detailed else None
+    return_leg = city.leg(here, home, depart=clock, wait=back_wait) if detailed else None
     travel_total += back
-    travel_km += city.km[here][ctx.start_id]
+    travel_km += city.km[here][home]
     return_time = clock + back + back_wait
-    here, clock = ctx.start_id, return_time
+    here, clock = home, return_time
     if return_time > ctx.day_end:
-        violations.append(f"Back at {city.places[ctx.start_id].name} at {fmt_hhmm(return_time)}, "
+        violations.append(f"Back at {city.places[home].name} at {fmt_hhmm(return_time)}, "
                           f"after your day ends at {fmt_hhmm(ctx.day_end)}")
 
     # A meal whose window opens after you are back is taken near the start point.
@@ -241,7 +283,7 @@ def simulate(order, ctx, scores=None, detailed=False):
         take_meal(meal, at_base=True)
     if clock > ctx.day_end and clock > return_time:
         violations.append(f"{meals[-1].label if detailed and meals else 'A meal'} near "
-                          f"{city.places[ctx.start_id].name} ends at {fmt_hhmm(clock)}, "
+                          f"{city.places[home].name} ends at {fmt_hhmm(clock)}, "
                           f"after your day ends at {fmt_hhmm(ctx.day_end)}")
 
     return Schedule(list(order), not violations, depart, clock, travel_total, violations, visits, return_leg,

@@ -41,6 +41,7 @@
     cols.sort(sorters[form.sort.value] || sorters.popular).forEach(function (col) { grid.appendChild(col); });
     count.textContent = shown;
     empty.classList.toggle("d-none", shown > 0);
+    if (pager) pager.reset();
 
     // Keep the URL shareable: it reproduces the same filtered view.
     var params = new URLSearchParams(new FormData(form));
@@ -50,6 +51,7 @@
     history.replaceState(null, "", location.pathname + (qs ? "?" + qs : ""));
   }
 
+  var pager = window.Pager ? window.Pager(grid, ".attraction-col", document.querySelector('[data-pager="attraction-grid"]'), 12) : null;
   form.addEventListener("input", apply);
   form.addEventListener("change", apply);
   form.addEventListener("submit", function (e) { e.preventDefault(); apply(); });
@@ -71,40 +73,21 @@
     list.appendChild(li);
   }
 
-  // Details dialog
+  // Details dialog: visitor information only, in reading order. Empty sections are hidden and values
+  // that are typical estimates (not checked for this place) say so.
+  var t = window.I18N ? window.I18N.t : function (x) { return x; };
   var modal = document.getElementById("attr-modal");
   modal.addEventListener("show.bs.modal", function (event) {
     var item = data[event.relatedTarget.dataset.id];
     if (!item) return;
     var img = document.getElementById("attr-modal-img");
-    img.src = item.image || img.getAttribute("src");
-    img.alt = item.name;
+    var fallback = document.querySelector(".attr-modal-fallback");
+    function noPhoto() { img.hidden = true; img.removeAttribute("src"); fallback.hidden = false; }
+    img.onerror = noPhoto;
+    if (item.image) { fallback.hidden = true; img.hidden = false; img.src = item.image; img.alt = item.name; } else { noPhoto(); }
     document.getElementById("attr-modal-title").textContent = item.name;
     document.getElementById("attr-modal-city").textContent = item.city;
-    var rating = document.getElementById("attr-modal-rating");
-    if (item.rating === null) {
-      rating.className = "rating is-unrated fs-6";
-      rating.textContent = "Not rated";
-    } else {
-      rating.className = "rating fs-6";
-      rating.innerHTML = '<i class="bi bi-star-fill" aria-hidden="true"></i>' + item.rating.toFixed(1);
-    }
-    document.getElementById("attr-modal-desc").textContent = item.description;
-
-    // How it is reached: shown for every place that is not simply "by road".
-    var access = document.getElementById("attr-modal-access");
-    var info = item.access || {};
-    access.classList.toggle("d-none", !info.type || info.type === "road");
-    access.querySelector("p").textContent = info.type && info.type !== "road"
-      ? info.label + ". " + (info.note || "") + (info.timed ? " Times: " + info.timing_label + "." : " The access time is not known, so the planner does not schedule it.")
-      : "";
-    var alts = access.querySelector("ul");
-    alts.innerHTML = "";
-    (info.alternatives || []).forEach(function (x) {
-      var li = document.createElement("li");
-      li.textContent = x.label + (x.from ? " from " + x.from : "") + (x.minutes ? ", about " + x.minutes + " min" : "") + " — " + x.status + ".";
-      alts.appendChild(li);
-    });
+    document.getElementById("attr-modal-desc").textContent = item.description || "";
 
     var chips = document.getElementById("attr-modal-chips");
     chips.innerHTML = "";
@@ -114,50 +97,59 @@
       span.textContent = c;
       chips.appendChild(span);
     });
-    if (item.catalog) {
-      var tag = document.createElement("span");
-      tag.className = "chip";
-      tag.textContent = "From our Top-50 catalog";
-      chips.appendChild(tag);
-    }
+    document.getElementById("attr-modal-highlights-box").hidden = item.categories.length === 0;
+
+    var facts = document.getElementById("attr-modal-facts");
+    facts.innerHTML = "";
+    row(facts, t("Recommended visit"), item.visit + (item.visit_estimated ? " (" + t("estimate") + ")" : ""));
+    row(facts, t("Entry (Indian adult)"), item.fee + (item.fee_estimated ? " (" + t("estimate, please confirm") + ")" : ""));
 
     var hours = document.getElementById("attr-modal-hours");
     hours.innerHTML = "";
     item.hours.forEach(function (h) {
       var tr = document.createElement("tr");
-      var th = document.createElement("td");
-      th.className = "fw-semibold";
-      th.textContent = h[0];
-      var td = document.createElement("td");
-      td.textContent = h[1];
-      if (h[1] === "Closed") td.className = "text-accent fw-semibold";
-      tr.appendChild(th);
-      tr.appendChild(td);
+      var day = document.createElement("td");
+      day.className = "fw-semibold";
+      day.textContent = h[0];
+      var when = document.createElement("td");
+      when.textContent = h[1];
+      if (h[1] === "Closed") when.className = "text-accent fw-semibold";
+      tr.appendChild(day);
+      tr.appendChild(when);
       hours.appendChild(tr);
     });
+    document.getElementById("attr-modal-hours-box").hidden = item.hours.length === 0;
+    document.getElementById("attr-modal-hours-note").hidden = !item.hours_estimated;
 
-    var facts = document.getElementById("attr-modal-facts");
-    facts.innerHTML = "";
-    row(facts, "Visit duration", item.visit);
-    row(facts, "Entry fee (Indian adult)", item.fee);
-    row(facts, "Popularity", item.popularity + " / 100");
-    var sources = document.getElementById("attr-modal-sources");
-    sources.innerHTML = "";
-    item.sources.forEach(function (s) { row(sources, s[0], s[1]); });
+    // Getting there: shown for every place that is not simply "by road".
+    var access = document.getElementById("attr-modal-access");
+    var info = item.access || {};
+    var special = info.type && info.type !== "road";
+    access.classList.toggle("d-none", !special);
+    access.querySelector("p").textContent = special
+      ? info.label + ". " + (info.note || "") + (info.timed ? "" : " " + t("How long this takes is not known, so the planner does not schedule it; check locally."))
+      : "";
+    var alts = access.querySelector("ul");
+    alts.innerHTML = "";
+    (info.alternatives || []).forEach(function (x) {
+      var li = document.createElement("li");
+      li.textContent = x.label + (x.from ? " " + t("from") + " " + x.from : "") + (x.minutes ? ", " + t("about {n} min").replace("{n}", x.minutes) : "") + " — " + x.status + ".";
+      alts.appendChild(li);
+    });
 
     var credit = document.getElementById("attr-modal-credit");
     credit.textContent = "";
-    if (item.credit) {
+    if (item.credit && item.image) {
       var a = document.createElement("a");
       a.href = item.credit_url;
       a.target = "_blank";
       a.rel = "noopener";
-      a.textContent = "Photo: " + item.credit;
+      a.textContent = t("Photo") + ": " + item.credit;
       credit.appendChild(a);
     }
-    var info = document.getElementById("attr-modal-info");
-    info.hidden = !item.info_url;
-    if (item.info_url) info.href = item.info_url;
+    var link = document.getElementById("attr-modal-info");
+    link.hidden = !item.info_url;
+    if (item.info_url) link.href = item.info_url;
     document.getElementById("attr-modal-plan").href = item.plan_url;
   });
 })();

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% import "_macros.html" as ui %}
-{% block title %}Plan smarter days in India{% endblock %}
+{% block title %}{{ _('Plan smarter days in India') }}{% endblock %}
 {% block nav_class %}is-transparent{% endblock %}
 
 {% block content %}
@@ -12,60 +12,47 @@
   <div class="container">
     <div class="row align-items-center gy-5">
       <div class="col-lg-7 fade-up">
-        <span class="eyebrow on-dark">Smart Itinerary Planner</span>
-        <h1>Plan smarter days across <em>{{ counts.cities }} Indian destinations</em>.</h1>
-        <p class="lead mb-4">Tell us where, when and how you like to travel. We pick the places worth your time,
-          add lunch and dinner, order the stops to cut travel and check every opening hour, so each day actually works.</p>
+        <span class="eyebrow on-dark">{{ _('Smart Itinerary Planner') }}</span>
+        <h1>{{ _('Plan smarter days across') }} <em>{{ _('{n} Indian destinations', n=counts.cities) }}</em>.</h1>
+        <p class="lead mb-4">{{ _('Tell us where, when and how you like to travel. We pick the places worth your time, add lunch and dinner, order the stops to cut travel and check every opening hour, so each day actually works.') }}</p>
         <div class="d-flex flex-wrap gap-2">
-          <a class="btn btn-brand btn-lg" href="{{ url_for('planner.plan') }}"><i class="bi bi-compass me-1"></i>Plan my trip</a>
-          <a class="btn btn-ghost-light btn-lg" href="{{ url_for('main.cities') }}">Explore destinations</a>
+          <a class="btn btn-brand btn-lg" href="{{ url_for('planner.plan') }}"><i class="bi bi-compass me-1"></i>{{ _('Plan my trip') }}</a>
+          <a class="btn btn-ghost-light btn-lg" href="{{ url_for('main.cities') }}">{{ _('Explore destinations') }}</a>
         </div>
       </div>
       <div class="col-lg-5 col-xl-4 offset-xl-1">
-        <form class="quick-plan fade-up" action="{{ url_for('planner.itinerary') }}" method="get" data-loading="Planning your trip…">
-          <h2>Quick plan</h2>
-          <p class="text-muted small mb-3">Defaults: 09:00–19:00, lunch break, balanced pace, suggested itinerary.</p>
+        <form class="quick-plan fade-up" action="{{ url_for('planner.itinerary') }}" method="get" data-loading="{{ _('Planning your trip…') }}">
+          <h2>{{ _('Quick plan') }}</h2>
+          <p class="text-muted small mb-3">{{ _('Defaults: 09:00–19:00, lunch break, balanced pace, suggested itinerary.') }}</p>
           <div class="mb-3">
-            <label class="form-label" for="qp-city">Destination</label>
+            <label class="form-label" for="qp-city">{{ _('Destination') }}</label>
             <select class="form-select" id="qp-city" name="city" required>
               {% for region, items in regions %}
-                <optgroup label="{{ region }}">
+                <optgroup label="{{ _(region) }}">
                   {% for c in items if readiness[c.slug].status != 'not_ready' %}<option value="{{ c.slug }}" {% if c.slug == 'delhi' %}selected{% endif %}>{{ c.name }}, {{ c.state }}</option>{% endfor %}
                 </optgroup>
               {% endfor %}
             </select>
           </div>
-          <div class="mb-3">
-            <label class="form-label" for="qp-date">Start date</label>
-            <input class="form-control" type="date" id="qp-date" name="start_date" value="{{ today.isoformat() }}" required>
-          </div>
-          <div class="mb-4">
-            <span class="form-label d-block" id="qp-days-label">Days</span>
-            <div class="segmented" role="radiogroup" aria-labelledby="qp-days-label">
-              {% for d in range(1, MAX_DAYS + 1) %}
-                <input type="radio" name="days" id="qp-days-{{ d }}" value="{{ d }}" {% if d == 2 %}checked{% endif %}>
-                <label for="qp-days-{{ d }}">{{ d }}</label>
-              {% endfor %}
-            </div>
-          </div>
-          <button class="btn btn-brand w-100" type="submit">Generate itinerary <i class="bi bi-arrow-right ms-1"></i></button>
-          <a class="d-block text-center small mt-3" href="{{ url_for('planner.plan') }}">More options: nearby cities, itinerary mode, interests, meals</a>
+          <div class="mb-4">{{ ui.date_range(quick_dates, {}, prefix="qp-", compact=True) }}</div>
+          <button class="btn btn-brand w-100" type="submit">{{ _('Generate itinerary') }} <i class="bi bi-arrow-right ms-1"></i></button>
+          <a class="d-block text-center small mt-3" href="{{ url_for('planner.plan') }}">{{ _('More options: nearby cities, itinerary mode, interests, meals') }}</a>
         </form>
       </div>
     </div>
   </div>
   {% if hero and hero.hero_credit %}
-    <div class="hero-credit">Photo: {{ hero.name }} · <a href="{{ hero.hero_source_url }}" rel="noopener">{{ hero.hero_credit }}</a></div>
+    <div class="hero-credit">{{ _('Photo') }}: {{ hero.name }} · <a href="{{ hero.hero_source_url }}" rel="noopener">{{ hero.hero_credit }}</a></div>
   {% endif %}
 </section>
 
 <div class="container">
   <div class="stat-strip">
     <div class="row g-0">
-      <div class="col-6 col-md-3 stat"><div class="stat-value tabular">{{ counts.cities }}</div><div class="stat-label">destinations ({{ ready_count }} fully plannable)</div></div>
-      <div class="col-6 col-md-3 stat"><div class="stat-value tabular">{{ counts.attractions }}</div><div class="stat-label">attractions, every source labelled</div></div>
-      <div class="col-6 col-md-3 stat"><div class="stat-value tabular">{{ counts.edges }}</div><div class="stat-label">road links in the graph</div></div>
-      <div class="col-6 col-md-3 stat"><div class="stat-value tabular">{{ algorithms|length }}</div><div class="stat-label">algorithms we implemented</div></div>
+      <div class="col-6 col-md-3 stat"><div class="stat-value tabular">{{ counts.cities }}</div><div class="stat-label">{{ _('destinations ({n} fully plannable)', n=ready_count) }}</div></div>
+      <div class="col-6 col-md-3 stat"><div class="stat-value tabular">{{ counts.attractions }}</div><div class="stat-label">{{ _('attractions, every source labelled') }}</div></div>
+      <div class="col-6 col-md-3 stat"><div class="stat-value tabular">{{ counts.edges }}</div><div class="stat-label">{{ _('road links in the graph') }}</div></div>
+      <div class="col-6 col-md-3 stat"><div class="stat-value tabular">{{ algorithms|length }}</div><div class="stat-label">{{ _('algorithms we implemented') }}</div></div>
     </div>
   </div>
 </div>
@@ -74,12 +61,11 @@
   <div class="container">
     <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 section-head" style="max-width:none">
       <div style="max-width: 640px">
-        <span class="eyebrow">Destinations</span>
-        <h2>Popular places to start</h2>
-        <p>The top of our team's list of India's most visited destinations. Each one is a road graph of its attractions with opening hours,
-          entry fees and visit lengths — from open data where it exists, labelled estimates where it doesn't.</p>
+        <span class="eyebrow">{{ _('Destinations') }}</span>
+        <h2>{{ _('Popular places to start') }}</h2>
+        <p>{{ _("The top of our team's list of India's most visited destinations. Each one is a road graph of its attractions with opening hours, entry fees and visit lengths — from open data where it exists, labelled estimates where it doesn't.") }}</p>
       </div>
-      <a class="link-arrow" href="{{ url_for('main.cities') }}">All {{ counts.cities }} destinations <i class="bi bi-arrow-right"></i></a>
+      <a class="link-arrow" href="{{ url_for('main.cities') }}">{{ _('All {n} destinations', n=counts.cities) }} <i class="bi bi-arrow-right"></i></a>
     </div>
     <div class="row g-4">
       {% for c in featured %}
@@ -91,8 +77,8 @@
               <h3>{{ c.name }}</h3>
               <p>{{ c.tagline }}</p>
               <div class="dest-meta">
-                <span class="glass-chip"><i class="bi bi-geo-alt"></i>{{ c.attraction_count }} attractions</span>
-                {% if c.top_rank %}<span class="glass-chip">#{{ c.top_rank }} in our list</span>{% endif %}
+                <span class="glass-chip"><i class="bi bi-geo-alt"></i>{{ _('{n} attractions', n=c.attraction_count) }}</span>
+                {% if c.top_rank %}<span class="glass-chip">{{ _('#{n} in our list', n=c.top_rank) }}</span>{% endif %}
               </div>
             </div>
           </a>
@@ -102,7 +88,7 @@
     <div class="region-strip mt-4">
       {% for region, items in regions %}
         <div class="region-block">
-          <h3>{{ region }}</h3>
+          <h3>{{ _(region) }}</h3>
           <p>{% for c in items %}<a href="{{ url_for('main.attractions', city=c.slug) }}">{{ c.name }}</a>{{ ' · ' if not loop.last }}{% endfor %}</p>
         </div>
       {% endfor %}
@@ -113,16 +99,16 @@
 <section class="section section-alt">
   <div class="container">
     <div class="section-head">
-      <span class="eyebrow">How it works</span>
-      <h2>From a few preferences to a plan that fits</h2>
-      <p>Every itinerary goes through the same steps, and the result is re-checked by an independent validator.</p>
+      <span class="eyebrow">{{ _('How it works') }}</span>
+      <h2>{{ _('From a few preferences to a plan that fits') }}</h2>
+      <p>{{ _('Every itinerary goes through the same steps, and the result is re-checked by an independent validator.') }}</p>
     </div>
     <div class="row g-4">
       {% set steps = [
-        ('Tell us your trip', 'A base city (plus nearby cities if you like), dates, daily hours, interests, meals, pace and itinerary mode.', 'Server-side validation'),
-        ('We pick the best stops', 'Each day, a 0/1 knapsack chooses the most valuable places — or the most places — that fit your time and meals.', 'DP · Greedy · Max visits'),
-        ('We order them smartly', 'Dijkstra gives road times; Nearest Neighbour, 2-opt and a deadline-first insertion respect opening hours and meal windows.', 'Dijkstra · NN · 2-opt · Activity selection'),
-        ('You get a day-by-day plan', 'Times, travel legs, lunch and dinner, costs and a map — plus a reason for every place left out and for any unused hours.', 'Independent validator'),
+        (_('Tell us your trip'), _('Your cities and stays, dates, daily hours, interests, meals, pace and itinerary mode.'), _('Server-side validation')),
+        (_('We pick the best stops'), _('Each day, a 0/1 knapsack chooses the most valuable places — or the most places — that fit your time and meals.'), 'DP · Greedy · Max visits'),
+        (_('We order them smartly'), _('Dijkstra gives road times; Nearest Neighbour, 2-opt and a deadline-first insertion respect opening hours and meal windows.'), 'Dijkstra · NN · 2-opt · Activity selection'),
+        (_('You get a day-by-day plan'), _('Times, travel legs, lunch and dinner, where you sleep each night and a map — plus a reason for every place left out and for any unused hours.'), _('Independent validator')),
       ] %}
       {% for title, text, algo in steps %}
         <div class="col-md-6 col-xl-3">
@@ -142,19 +128,19 @@
   <div class="container">
     <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 section-head" style="max-width:none">
       <div style="max-width: 640px">
-        <span class="eyebrow">Under the hood</span>
-        <h2>Classic algorithms, doing real work</h2>
-        <p>Each one is our own readable Python implementation with unit tests. The comparison page runs them side by side on the same input, scores the plans and recommends one — only from measured results.</p>
+        <span class="eyebrow">{{ _('Under the hood') }}</span>
+        <h2>{{ _('Classic algorithms, doing real work') }}</h2>
+        <p>{{ _('Each one is our own readable Python implementation with unit tests. The comparison page runs them side by side on the same input, scores the plans and recommends one — only from measured results.') }}</p>
       </div>
-      <a class="btn btn-outline-brand" href="{{ url_for('planner.compare') }}"><i class="bi bi-bar-chart-line me-1"></i>See them compete</a>
+      <a class="btn btn-outline-brand" href="{{ url_for('planner.compare') }}"><i class="bi bi-bar-chart-line me-1"></i>{{ _('See them compete') }}</a>
     </div>
     <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 g-3">
       {% for a in algorithms %}
         <div class="col">
           <a class="card-soft algo-tile lift text-decoration-none" href="{{ url_for('main.about') }}#algo-{{ a.key }}">
             <span class="algo-icon"><i class="bi {{ a.icon }}"></i></span>
-            <h3>{{ a.name }}</h3>
-            <p>{{ a.summary|truncate(96) }}</p>
+            <h3>{{ _(a.name) }}</h3>
+            <p>{{ _(a.summary)|truncate(96) }}</p>
             <span class="complexity mt-auto">{{ a.time }}</span>
           </a>
         </div>
@@ -169,25 +155,25 @@
       <div class="col-md-6 col-lg-3">
         <div class="trust-item">
           <span class="trust-icon"><i class="bi bi-shield-check"></i></span>
-          <div><h3>Every plan is re-checked</h3><p>An independent validator recomputes each timeline: opening hours, meals, travel, access and the ride back.</p></div>
+          <div><h3>{{ _('Every plan is re-checked') }}</h3><p>{{ _('An independent validator recomputes each timeline: opening hours, meals, travel, access and every night\'s stay.') }}</p></div>
         </div>
       </div>
       <div class="col-md-6 col-lg-3">
         <div class="trust-item">
           <span class="trust-icon"><i class="bi bi-signpost-split"></i></span>
-          <div><h3>Real road network</h3><p>Travel times come from OpenStreetMap roads via OSRM, rounded up to 10 minutes and cross-checked with NetworkX.</p></div>
+          <div><h3>{{ _('Real road network') }}</h3><p>{{ _('Travel times come from OpenStreetMap roads via OSRM, rounded up to 10 minutes and cross-checked with NetworkX.') }}</p></div>
         </div>
       </div>
       <div class="col-md-6 col-lg-3">
         <div class="trust-item">
           <span class="trust-icon"><i class="bi bi-fingerprint"></i></span>
-          <div><h3>Reproducible</h3><p>Same inputs, same data and same settings always give the same plan — each plan shows its fingerprint.</p></div>
+          <div><h3>{{ _('Reproducible') }}</h3><p>{{ _('Same inputs, same data and same settings always give the same plan — each plan shows its fingerprint.') }}</p></div>
         </div>
       </div>
       <div class="col-md-6 col-lg-3">
         <div class="trust-item">
           <span class="trust-icon"><i class="bi bi-info-circle"></i></span>
-          <div><h3>Honest about the data</h3><p>Every value says where it came from. No invented ratings: places without data are shown as not rated.</p></div>
+          <div><h3>{{ _('Honest about the data') }}</h3><p>{{ _('Estimates are labelled as estimates, and nothing is invented: no ratings, timings or photos we cannot source.') }}</p></div>
         </div>
       </div>
     </div>

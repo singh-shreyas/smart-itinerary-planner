@@ -2,6 +2,8 @@
 
     python scripts/fetch_wikimedia.py --coords    # compare data/attractions.csv lat/lng with Wikipedia
     python scripts/fetch_wikimedia.py --images    # download free-licensed photos + write data/image_credits.csv
+    python scripts/fetch_wikimedia.py --wikidata-images   # fill gaps: the Wikidata image (P18) of each place
+                                                          # still without a photo, free licences only
 
 Only images Wikipedia marks as freely licensed are used (pilicense=free). Each
 photo's author and licence are recorded in data/image_credits.csv and shown in
@@ -147,11 +149,70 @@ def fetch_images(rows):
     print(f"wrote {len(credits)} credits to data/image_credits.csv")
 
 
+FREE_LICENCE = re.compile(r"^(CC[ -]?(BY|BY-SA|0|Zero)|Public domain|PD|CC0)", re.I)
+
+
+def wikidata_images():
+    """Photos for attractions that still have none: the image property (P18) of the place's own Wikidata
+    item. P18 is a Commons file chosen to depict exactly that item, so it is never a guess or a lookalike,
+    and only freely licensed (CC BY / BY-SA / CC0 / public domain) files are used. Credits are appended to
+    data/image_credits.csv; the app shows a neutral placeholder for anything still missing."""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from build_city_dataset import shrink
+    path = os.path.join(DATA, "image_credits.csv")
+    with open(path, newline="", encoding="utf-8") as f:
+        credits = list(csv.DictReader(f))
+    have = {(r["city"], r["slug"]) for r in credits if os.path.exists(os.path.join(STATIC, r["image_path"]))}
+    with open(os.path.join(DATA, "attractions.csv"), newline="", encoding="utf-8") as f:
+        todo = [r for r in csv.DictReader(f) if (r["city"], r["slug"]) not in have and r.get("wikidata")]
+    print(f"{len(todo)} places without a photo have a Wikidata item")
+    added = []
+    for r in todo:
+        try:
+            claims = get_json("https://www.wikidata.org/w/api.php", {"action": "wbgetclaims", "format": "json",
+                                                                      "entity": r["wikidata"], "property": "P18"})
+        except Exception as exc:
+            print(f"  {r['city']}/{r['slug']}: Wikidata unavailable ({exc})")
+            continue
+        values = [c["mainsnak"].get("datavalue", {}).get("value") for c in claims.get("claims", {}).get("P18", [])]
+        values = [v for v in values if v]
+        if not values:
+            print(f"  {r['city']}/{r['slug']}: no image on Wikidata")
+            continue
+        info = image_info(values[0], CARD_WIDTH)
+        if not info or not info["mime"].startswith("image/") or info["mime"] == "image/svg+xml":
+            print(f"  {r['city']}/{r['slug']}: no usable raster image")
+            continue
+        if not FREE_LICENCE.match(info["license"] or ""):
+            print(f"  {r['city']}/{r['slug']}: licence '{info['license']}' is not free, skipped")
+            continue
+        ext = os.path.splitext(urllib.parse.urlparse(info["url"]).path)[1].lower() or ".jpg"
+        rel = f"images/attractions/{r['city']}/{r['slug']}{ext}"
+        target = os.path.join(STATIC, rel)
+        os.makedirs(os.path.dirname(target), exist_ok=True)
+        download(info["url"], target)
+        shrink(target, 640)
+        added.append({"city": r["city"], "slug": r["slug"], "image_path": rel, "credit": info["artist"],
+                      "license": info["license"], "source_url": info["page"]})
+        print(f"  {rel}  ({info['license']})")
+        time.sleep(1.0)
+    if added:
+        with open(path, "a", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=["city", "slug", "image_path", "credit", "license", "source_url"],
+                                    lineterminator="\n")
+            writer.writerows(added)
+    print(f"{len(added)} photos added")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--coords", action="store_true")
     parser.add_argument("--images", action="store_true")
+    parser.add_argument("--wikidata-images", action="store_true")
     args = parser.parse_args()
+    if args.wikidata_images:
+        wikidata_images()
+        return 0
     rows = read_attractions()
     if args.coords:
         check_coordinates(rows)

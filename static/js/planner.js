@@ -7,6 +7,7 @@
   var form = document.getElementById("trip-form");
   if (!form) return;
   var options = JSON.parse(document.getElementById("city-options").textContent);
+  var t = window.I18N ? window.I18N.t : function (x) { return x; };
   var citySelect = form.elements.city;
   var startSelect = form.elements.start;
   var excludeList = document.getElementById("exclude-list");
@@ -14,8 +15,12 @@
   var pickBox = document.getElementById("pick-box");
   var pickCount = document.getElementById("pick-count");
   var stayNote = document.getElementById("stay-note");
-  var MAX_PICKED = 25;
-  var STAY_HINT = "Five neighbourhoods, one in each part of the city, from OpenStreetMap.";
+  var endSelect = document.getElementById("end");
+  var overnightBox = document.getElementById("overnight-box");
+  var MAX_PICKED = 150;
+  var pickAll = document.getElementById("pick-all");
+  var pickFilter = document.getElementById("pick-filter");
+  var STAY_HINT = t("Five neighbourhoods, one in each part of the city, from OpenStreetMap.");
   var nearbyList = document.getElementById("nearby-list");
   var nearbyNote = document.getElementById("nearby-note");
   var readinessNote = document.querySelector("[data-readiness]");
@@ -63,20 +68,45 @@
       input.disabled = !input.checked && (other !== null || full);
       var item = input.closest(".nearby-item");
       item.classList.toggle("is-disabled", input.disabled);
-      if (input.disabled && other) notes.push(options[input.value].name + " is more than 100 km from " + other + ".");
+      if (input.disabled && other) notes.push(t("{name} is more than 100 km from {other}.").replace("{name}", options[input.value].name).replace("{other}", other));
     });
-    if (chosen.length >= MAX_EXTRA) notes.push("You can add at most " + MAX_EXTRA + " nearby cities.");
+    if (chosen.length >= MAX_EXTRA) notes.push(t("You can add at most {n} nearby cities.").replace("{n}", MAX_EXTRA));
     var limited = chosen.filter(function (s) { return options[s].readiness.status !== "ready"; })
-      .map(function (s) { return options[s].name + " has limited data"; });
+      .map(function (s) { return t("{name} has limited data").replace("{name}", options[s].name); });
     nearbyNote.textContent = notes.concat(limited).join(" ");
-    if (base) { rebuildExclusions(); rebuildPicks(); }
+    if (base) { rebuildExclusions(); rebuildPicks(); rebuildEnds(); }
+  }
+
+  // The last night can be in any of the trip's cities. Options of a city that left the trip disappear,
+  // so a stay that is no longer part of the trip cannot stay selected.
+  function rebuildEnds() {
+    if (!endSelect) return;
+    var keep = endSelect.value || endSelect.dataset.selected || "";
+    var slugs = [citySelect.value].concat(selectedExtras());
+    endSelect.innerHTML = "";
+    endSelect.appendChild(option("", endSelect.dataset.same || "Same as the starting stay"));
+    slugs.forEach(function (slug) {
+      var city = options[slug];
+      if (!city) return;
+      var group = el("optgroup");
+      group.label = city.name;
+      city.stays.forEach(function (p) { group.appendChild(option(p.slug, p.label)); });
+      endSelect.appendChild(group);
+    });
+    endSelect.value = Array.prototype.some.call(endSelect.options, function (o) { return o.value === keep; }) ? keep : "";
+    endSelect.dataset.selected = endSelect.value;
+    var multi = slugs.length > 1;
+    overnightBox.classList.toggle("d-none", !multi);
+    var base = multi && (form.querySelector("input[name=overnight]:checked") || {}).value === "base";
+    endSelect.disabled = base;
+    if (base) endSelect.value = "";
   }
 
   function rebuildNearby() {
     var city = options[citySelect.value];
     nearbyList.innerHTML = "";
     if (!city || !city.nearby.length) {
-      nearbyList.appendChild(el("p", "small text-muted mb-0", "No other destination is within 100 km of " + (city ? city.name : "this city") + "."));
+      nearbyList.appendChild(el("p", "small text-muted mb-0", t("No other destination is within 100 km of {city}.").replace("{city}", city ? city.name : "")));
       nearbyNote.textContent = "";
       return;
     }
@@ -88,7 +118,7 @@
       input.value = n.slug;
       var text = el("span");
       text.appendChild(el("strong", "", n.name));
-      text.appendChild(el("small", "", Math.round(n.km) + " km straight line" + (n.road_km ? " · " + Math.round(n.road_km) + " km by road" : "")));
+      text.appendChild(el("small", "", Math.round(n.km) + " " + t("km straight line") + (n.road_km ? " · " + Math.round(n.road_km) + " " + t("km by road") : "")));
       label.appendChild(input);
       label.appendChild(text);
       nearbyList.appendChild(label);
@@ -129,9 +159,11 @@
   function rebuildPicks() {
     if (!pickList) return;
     var slugs = [citySelect.value].concat(selectedExtras());
+    // Keep the ticks of places that are still in the trip; places of a removed city are dropped.
     var checked = {};
     pickList.querySelectorAll("input[name=places]:checked").forEach(function (i) { checked[i.value] = true; });
     pickList.innerHTML = "";
+    if (pickFilter) pickFilter.value = "";
     slugs.forEach(function (slug) {
       var city = options[slug];
       if (!city) return;
@@ -159,6 +191,13 @@
     refreshPicks();
   }
 
+  // The places "Select all" acts on: every timed place of the trip's cities that matches the filter.
+  function eligible() {
+    return Array.prototype.filter.call(pickList.querySelectorAll("input[name=places]"), function (i) {
+      return options_timed(i.value) && !i.closest(".form-check").hidden;
+    });
+  }
+
   function refreshPicks() {
     if (!pickList) return;
     var picking = (form.querySelector("input[name=choose]:checked") || {}).value === "pick";
@@ -168,9 +207,45 @@
     pickList.querySelectorAll("input[name=places]").forEach(function (i) { i.disabled = !picking || !options_timed(i.value); });
     var n = pickList.querySelectorAll("input[name=places]:checked").length;
     pickCount.textContent = n;
+    document.getElementById("pick-count-label").textContent = n === 1 ? t("place selected") : t("places selected");
     pickList.querySelectorAll("input[name=places]:not(:checked)").forEach(function (i) {
       if (n >= MAX_PICKED) i.disabled = true;
     });
+    if (pickAll) {
+      var pool = eligible();
+      var all = pool.length > 0 && pool.every(function (i) { return i.checked; });
+      pickAll.dataset.state = all ? "clear" : "select";
+      pickAll.querySelector("span").textContent = all
+        ? t("Deselect all")
+        : t("Select all ({n})").replace("{n}", pool.length);
+      pickAll.disabled = !picking || pool.length === 0;
+      pickAll.setAttribute("aria-pressed", all ? "true" : "false");
+    }
+  }
+
+  if (pickAll) {
+    pickAll.addEventListener("click", function () {
+      var on = pickAll.dataset.state !== "clear";
+      eligible().forEach(function (i) { i.checked = on; });
+      refreshPicks();
+      updateSummary();
+    });
+  }
+  if (pickFilter) {
+    pickFilter.addEventListener("input", function () {
+      var q = pickFilter.value.trim().toLowerCase();
+      pickList.querySelectorAll(".form-check").forEach(function (row) {
+        row.hidden = q !== "" && row.textContent.toLowerCase().indexOf(q) === -1;
+      });
+      pickList.querySelectorAll(".exclude-heading").forEach(function (h) {
+        var next = h.nextElementSibling, visible = false;
+        while (next && !next.classList.contains("exclude-heading")) { if (!next.hidden) visible = true; next = next.nextElementSibling; }
+        h.hidden = !visible;
+      });
+      refreshPicks();
+    });
+    // Enter in the filter must not submit the trip form.
+    pickFilter.addEventListener("keydown", function (e) { if (e.key === "Enter") e.preventDefault(); });
   }
 
   function options_timed(slug) {
@@ -203,12 +278,14 @@
     if (!city) return;
     rebuildStays();
     if (readinessNote) {
-      readinessNote.textContent = city.readiness.reachable + " of " + city.readiness.total +
-        " attractions can be planned from here." + (city.readiness.status === "ready" ? "" : " Data for this city is limited.");
+      readinessNote.textContent = t("{n} of {total} attractions can be planned from here.").replace("{n}", city.readiness.reachable)
+        .replace("{total}", city.readiness.total) + (city.readiness.status === "ready" ? "" : " " + t("Data for this city is limited."));
     }
+    if (endSelect) endSelect.dataset.selected = "";
     rebuildNearby();
     rebuildExclusions();
     rebuildPicks();
+    rebuildEnds();
   }
 
   // Meal fields are only relevant when the meal is switched on.
@@ -222,7 +299,7 @@
     sync();
   });
 
-  function fmtDate(d) { return WEEKDAYS[d.getDay()] + " " + d.getDate() + " " + MONTHS[d.getMonth()]; }
+  function fmtDate(d) { return t(WEEKDAYS[d.getDay()]) + " " + d.getDate() + " " + t(MONTHS[d.getMonth()]); }
 
   function updateSummary() {
     var set = function (key, text) {
@@ -232,31 +309,32 @@
     var city = options[citySelect.value];
     var names = [city ? city.name : "—"].concat(selectedExtras().map(function (s) { return options[s].name; }));
     var start = startSelect.options[startSelect.selectedIndex];
-    set("city", names.join(" + ") + (start ? " · from " + start.textContent : ""));
+    var endOpt = endSelect && endSelect.value ? endSelect.options[endSelect.selectedIndex] : null;
+    set("city", names.join(" + ") + (start ? " · " + t("from") + " " + start.textContent : "") + (endOpt ? " · " + t("to") + " " + endOpt.textContent : ""));
 
-    var days = parseInt((form.querySelector("input[name=days]:checked") || {}).value || "1", 10);
     var first = form.elements.start_date.value ? new Date(form.elements.start_date.value + "T00:00:00") : null;
-    if (first && !isNaN(first)) {
-      var last = new Date(first);
-      last.setDate(first.getDate() + days - 1);
-      set("dates", days + (days > 1 ? " days · " + fmtDate(first) + " – " + fmtDate(last) : " day · " + fmtDate(first)));
+    var last = form.elements.end_date.value ? new Date(form.elements.end_date.value + "T00:00:00") : null;
+    if (first && last && !isNaN(first) && !isNaN(last) && last >= first) {
+      var days = Math.round((last - first) / 86400000) + 1;
+      set("dates", (days > 1 ? t("{n} days").replace("{n}", days) + " · " + fmtDate(first) + " – " + fmtDate(last)
+                             : t("{n} day").replace("{n}", days) + " · " + fmtDate(first)));
     }
     set("hours", (form.elements.day_start.value || "--:--") + " – " + (form.elements.day_end.value || "--:--"));
     var meals = ["lunch", "dinner"].filter(function (k) { return document.getElementById(k).checked; });
-    set("meals", meals.length ? meals.map(function (k) { return k.charAt(0).toUpperCase() + k.slice(1); }).join(" and ") +
-        " break" + (meals.length > 1 ? "s" : "") + (form.elements.veg.checked ? " · vegetarian places" : "") : "No meal breaks");
+    var mealText = meals.length === 2 ? t("Lunch and dinner breaks") : meals.length ? t(meals[0] === "lunch" ? "Lunch break" : "Dinner break") : t("No meal breaks");
+    set("meals", mealText + (meals.length && form.elements.veg.checked ? " · " + t("vegetarian places") : ""));
     var mode = form.querySelector("input[name=mode]:checked");
     var picking = (form.querySelector("input[name=choose]:checked") || {}).value === "pick";
     var picked = pickList ? pickList.querySelectorAll("input[name=places]:checked").length : 0;
     set("mode", (mode ? mode.nextElementSibling.querySelector("strong").textContent : "Suggested") +
-        (picking ? " · " + picked + " place" + (picked === 1 ? "" : "s") + " picked" : " · planner chooses places"));
+        " · " + (picking ? t(picked === 1 ? "{n} place picked" : "{n} places picked").replace("{n}", picked) : t("planner chooses places")));
     var pace = form.querySelector("input[name=pace]:checked");
     var interests = Array.prototype.map.call(form.querySelectorAll("input[name=interests]:checked"), function (i) {
       return i.nextElementSibling.textContent.trim();
     });
     var only = (form.querySelector("input[name=interest_mode]:checked") || {}).value === "only";
-    set("style", (pace ? pace.nextElementSibling.querySelector("strong").textContent : "Balanced") + " pace" +
-        (interests.length ? " · " + (only ? "only " : "") + interests.slice(0, 4).join(", ") +
+    set("style", (pace ? pace.nextElementSibling.querySelector("strong").textContent : "Balanced") + " " + t("pace") +
+        (interests.length ? " · " + (only ? t("only") + " " : "") + interests.slice(0, 4).join(", ") +
         (interests.length > 4 ? " +" + (interests.length - 4) : "") : ""));
   }
 
@@ -265,6 +343,11 @@
     if (e.target.name === "also") { refreshNearby(); updateSummary(); }
   });
   startSelect.addEventListener("change", showStayNote);
+  if (endSelect) {
+    endSelect.dataset.same = endSelect.options[0].textContent;
+    endSelect.addEventListener("change", function () { endSelect.dataset.selected = endSelect.value; });
+  }
+  form.addEventListener("change", function (e) { if (e.target.name === "overnight") rebuildEnds(); });
   form.addEventListener("change", function (e) {
     if (e.target.name === "choose" || e.target.name === "places") refreshPicks();
   });
