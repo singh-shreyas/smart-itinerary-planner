@@ -217,11 +217,11 @@
                 <th scope="row">{{ m.label }}<br><span class="small text-muted fw-normal">{{ m.text }}</span></th>
                 <td class="tabular">{{ m.per_day|join(' + ') }}</td>
                 <td class="text-end tabular">{{ m.active_days }} of {{ trip.days }}</td>
-                <td class="text-end tabular">{{ m.travel_min|duration }}</td>
-                <td class="text-end tabular">{{ m.longest_min|duration }}</td>
-                <td class="text-end tabular">{{ m.over_comfort_min|duration if m.over_comfort_min else '—' }}</td>
+                <td class="text-end tabular text-nowrap">{{ m.travel_min|duration }}</td>
+                <td class="text-end tabular text-nowrap">{{ m.longest_min|duration }}</td>
+                <td class="text-end tabular text-nowrap">{{ m.over_comfort_min|duration if m.over_comfort_min else '—' }}</td>
                 <td class="text-end">{% if m.violations == 0 %}<span class="chip chip-success"><i class="bi bi-check2"></i>yes</span>{% else %}<span class="chip chip-danger">{{ m.violations }}</span>{% endif %}</td>
-                <td><a class="small" href="{{ url_for('planner.itinerary', **trip.to_query(mode=m.key)) }}">View plan</a></td>
+                <td class="text-nowrap"><a class="small" href="{{ url_for('planner.itinerary', **trip.to_query(mode=m.key)) }}">View plan</a></td>
               </tr>
             {% endfor %}
           </tbody>
