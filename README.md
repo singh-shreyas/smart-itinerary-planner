@@ -62,7 +62,7 @@ python -m pytest -v         # one line per test
 python -m pytest -k meals
 ```
 
-Latest run: **223 passed** (about 8 seconds). Tests use temporary databases built from `tests/fixtures/tiny_city/` (four hand-made
+Latest run: **267 passed** (about 70 seconds). Tests use temporary databases built from `tests/fixtures/tiny_city/` (six hand-made
 cities whose answers can be worked out on paper) and from `data/`; they never touch `instance/itinerary.db`.
 
 | File | What it checks |

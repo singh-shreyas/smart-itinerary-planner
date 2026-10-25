@@ -738,3 +738,4 @@ details > summary { cursor: pointer; }
 /* Access time is part of travel: the travel colour with a diagonal hatch (texture, so it never relies on colour alone). */
 .seg-access { background: repeating-linear-gradient(45deg, var(--accent) 0 3px, var(--surface) 3px 6px); }
 .legend-dot.seg-access { border: 1px solid var(--accent); }
+.day-table tbody tr:last-child > * { border-bottom: 0; }
