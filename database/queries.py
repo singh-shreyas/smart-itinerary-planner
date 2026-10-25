@@ -24,12 +24,12 @@ def _in(ids):
 
 
 def list_cities(conn):
-    """Cities with their attraction and start-point counts, in Top-50 order."""
+    """Cities with their attraction and stay-area counts, in Top-50 order."""
     return conn.execute(
         """
         SELECT c.*,
                SUM(CASE WHEN p.kind = 'attraction' THEN 1 ELSE 0 END) AS attraction_count,
-               SUM(CASE WHEN p.kind = 'start' THEN 1 ELSE 0 END)      AS start_count
+               SUM(CASE WHEN p.kind = 'stay' THEN 1 ELSE 0 END)       AS stay_count
         FROM cities c
         LEFT JOIN places p ON p.city_id = c.id
         GROUP BY c.id
@@ -53,13 +53,15 @@ def list_attractions(conn, city_ids=None):
     category_slugs is a comma-separated string (GROUP_CONCAT), split by the caller.
     """
     sql = """
-        SELECT p.id, p.slug, p.name, p.lat, p.lng, p.city_id, p.coord_source, p.access, p.access_note,
+        SELECT p.id, p.slug, p.name, p.lat, p.lng, p.city_id, p.coord_source,
                c.slug AS city_slug, c.name AS city_name,
                a.rating, a.rating_source, a.popularity, a.popularity_source, a.pageviews_12m,
                a.visit_minutes, a.duration_source, a.fee_inr, a.fee_source, a.hours_source,
                a.description, a.description_source,
                a.image_path, a.image_credit, a.image_source_url, a.info_url, a.wikidata, a.place_type,
                a.cuisine, a.vegetarian, a.in_team_catalog, a.data_status,
+               a.access_type, a.road_access, a.access_point_id, a.access_modes, a.access_timing,
+               a.last_mile_m, a.access_note, a.access_source_url,
                (SELECT GROUP_CONCAT(cat.slug, ',')
                   FROM attraction_categories ac
                   JOIN categories cat ON cat.id = ac.category_id
@@ -103,12 +105,14 @@ def list_places(conn, city_id, kind=None):
 
 
 def list_places_in(conn, city_ids):
-    """Places of several cities, each with its city slug and name."""
+    """Places of several cities, each with its city slug and name (and direction, for stay areas)."""
     ids = _ids(city_ids)
     return conn.execute(
         f"""
-        SELECT p.*, c.slug AS city_slug, c.name AS city_name
+        SELECT p.*, c.slug AS city_slug, c.name AS city_name,
+               s.direction, s.direction_note, s.osm_place, s.hotels_nearby, s.distance_km, s.bearing
         FROM places p JOIN cities c ON c.id = p.city_id
+        LEFT JOIN stay_areas s ON s.place_id = p.id
         WHERE p.city_id IN {_in(ids)}
         ORDER BY p.id
         """,
@@ -130,6 +134,29 @@ def list_edges(conn, city_ids):
         """,
         ids + ids,
     ).fetchall()
+
+
+def list_access_segments(conn, city_ids):
+    """The parts of every non-road link in the given cities, in order."""
+    ids = _ids(city_ids)
+    return conn.execute(
+        f"""
+        SELECT g.* FROM access_segments g JOIN places p ON p.id = g.from_id
+        WHERE p.city_id IN {_in(ids)}
+        ORDER BY g.from_id, g.to_id, g.seq
+        """,
+        ids,
+    ).fetchall()
+
+
+def list_access_alternatives(conn, city_ids=None):
+    sql = "SELECT x.* FROM access_alternatives x JOIN places p ON p.id = x.place_id"
+    ids = _ids(city_ids)
+    params = ()
+    if ids is not None:
+        sql += f" WHERE p.city_id IN {_in(ids)}"
+        params = ids
+    return conn.execute(sql + " ORDER BY x.place_id, x.id", params).fetchall()
 
 
 def summary_counts(conn):

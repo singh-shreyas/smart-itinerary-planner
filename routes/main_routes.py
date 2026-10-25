@@ -7,7 +7,8 @@ from flask import Blueprint, abort, redirect, render_template, request, url_for
 import config
 from database import queries
 from database.db import get_db
-from routes.helpers import (catalog_only, categories, category_groups, nearby_options, read_catalog, read_data_csv,
+from routes.helpers import (access_info, catalog_only, categories, category_groups, city_data, nearby_options,
+                            read_catalog, read_data_csv,
                             readiness_by_city)
 from services.algorithm_info import ALGORITHMS
 from services.city_data import load_attractions
@@ -70,7 +71,7 @@ def cities():
                            "categories": [(category_names[c], n) for c, n in counts.most_common(3)],
                            "readiness": ready[city["slug"]], "nearby": near[city["slug"]],
                            "catalog_only": skipped.get(city["slug"], []),
-                           "no_road": [a for a in items if a.access == "no_road"]})
+                           "untimed": [a for a in items if not a.timed]})
     catalog = read_catalog()
     modelled = {str(c["city"]["catalog_id"]) for c in city_cards}
     return render_template("cities.html", city_cards=city_cards, catalog=catalog, regions=regions(city_rows),
@@ -139,7 +140,7 @@ def attraction_details(a, category_names):
         "rating": a.rating, "popularity": round(a.popularity * 100), "visit": fmt_duration(a.visit_min),
         "fee": "Free" if a.fee == 0 else f"₹{a.fee}", "categories": [category_names[c] for c in a.categories],
         "hours": hours, "status": a.data_status, "catalog": a.in_team_catalog,
-        "access": a.access, "access_note": a.access_note,
+        "access": access_info(a, city_data(a.city_slug)),
         "sources": [["Location", SOURCE_LABELS.get(a.coord_source or "approximate", a.coord_source)],
                     ["Opening hours", SOURCE_LABELS.get(a.hours_source, a.hours_source)],
                     ["Entry fee", SOURCE_LABELS.get(a.fee_source, a.fee_source)],
@@ -169,5 +170,8 @@ def about():
     return render_template("about.html", algorithms=ALGORITHMS, counts=queries.summary_counts(conn),
                            cities=queries.list_cities(conn), provenance=provenance, source_labels=SOURCE_LABELS,
                            credits=credits, catalog_size=len(read_catalog()), defaults=read_data_csv("estimate_defaults.csv"),
-                           meta=meta, cfg=config, no_road=sum(1 for a in attractions if a.access == "no_road"),
+                           meta=meta, cfg=config,
+                           access_counts=Counter(a.access_timing for a in attractions if a.special_access),
+                           access_rows=sorted((a for a in attractions if a.special_access),
+                                              key=lambda a: (a.city_name, a.name)),
                            readiness=readiness_by_city())

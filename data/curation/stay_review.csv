@@ -1,0 +1,396 @@
+city,status,direction,name,hotels_nearby,distance_km,note
+delhi,chosen,central,Paharganj,134,3.11,
+delhi,chosen,north,Karol Bagh,36,4.76,
+delhi,chosen,east,Nizamuddin West,6,4.51,
+delhi,chosen,south,Defence Colony,7,5.28,
+delhi,chosen,west,Satya Niketan,10,4.89,
+agra,chosen,central,Shahganj,2,1.86,
+agra,chosen,north,Civil Lines,7,2.54,
+agra,chosen,east,Taj Ganj,47,3.66,
+agra,chosen,south,Agra Cantonment,0,2.44,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+agra,chosen,west,Bodla,4,4.77,
+jaipur,chosen,central,Bani Park,37,2.30,
+jaipur,chosen,north,Ambabari,3,3.69,
+jaipur,chosen,east,Adarsh Nagar,5,3.26,
+jaipur,chosen,south,Bapu Nagar,5,3.33,
+jaipur,chosen,west,Sodala,6,1.78,
+varanasi,chosen,central,Cantonment,12,1.68,
+varanasi,chosen,north,Sarnath,,8.58,"Outside the area searched for places to stay, so they were not counted."
+varanasi,chosen,east,Sigra,9,1.34,
+varanasi,chosen,south,Lanka,57,4.77,
+varanasi,chosen,west,Daniyalpur,0,2.87,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+ayodhya,chosen,central,Faizabad,1,5.90,
+ayodhya,chosen,north,Nawabganj,0,9.74,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+ayodhya,chosen,east,Amorha,0,19.24,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+ayodhya,chosen,south,Ashapur,1,3.91,
+ayodhya,chosen,west,Cantonment,0,7.76,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+tirupati,chosen,central,Tataiah Gunta,18,1.20,
+tirupati,chosen,north,Jeevakona,2,2.36,
+tirupati,chosen,east,Daminedu,1,4.93,
+tirupati,chosen,south,Tiruchanur,1,4.25,
+tirupati,chosen,west,Padmavathi Nagar,1,2.59,
+mumbai,chosen,central,Bandra Kurla Complex,7,1.59,
+mumbai,chosen,north,Andheri East,9,5.05,
+mumbai,chosen,east,Tilak Nagar,10,2.27,
+mumbai,chosen,south,Colaba,,18.71,"Outside the area searched for places to stay, so they were not counted."
+mumbai,chosen,west,Juhu,15,6.28,
+calangute,chosen,central,Calangute,67,0.52,
+calangute,chosen,north,Anjuna,62,5.30,
+calangute,chosen,east,Alto Porvorim,15,7.34,
+calangute,chosen,south,Candolim,59,2.43,
+calangute,chosen,west,Baga,42,2.14,No named area lies west of the centre in OpenStreetMap; this is the closest by direction and is actually 2.1 km north-west of the centre.
+amritsar,chosen,central,Hussainpura,32,2.22,
+amritsar,chosen,north,Heir,3,7.32,
+amritsar,chosen,east,Sultanwind,1,6.16,
+amritsar,chosen,south,Guru Kirpa Avenue - 2,3,4.03,
+amritsar,chosen,west,Khairabad,0,4.92,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+udaipur,chosen,central,Udaipur Police Lines,20,2.36,
+udaipur,chosen,north,Liyo Ka Gurha,2,6.48,
+udaipur,chosen,east,Debari,1,11.19,
+udaipur,chosen,south,Dakan Kotra,0,10.02,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+udaipur,chosen,west,Galera,0,5.19,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+haridwar,chosen,central,Kankhal,0,2.72,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+haridwar,chosen,north,Shyampur,1,14.89,
+haridwar,chosen,east,Chila,1,5.83,
+haridwar,chosen,south,Missarpur,0,6.75,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+haridwar,chosen,west,BHEL Township,0,4.94,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+rishikesh,chosen,central,Swargashram,33,1.96,
+rishikesh,chosen,north,Ghughatyani Talli,55,3.60,
+rishikesh,chosen,east,Laxman Jhula,96,3.59,
+rishikesh,chosen,south,Kolghatti,2,1.76,
+rishikesh,chosen,west,Ashutosh Nagar,6,1.24,
+vrindavan,chosen,central,Vrindavan,4,0.80,
+vrindavan,chosen,north,Mant,0,6.16,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+vrindavan,chosen,east,Raya,0,9.37,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+vrindavan,chosen,south,Kaliyanpur,0,4.89,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+vrindavan,chosen,west,Chhatikara,0,7.72,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+mathura,chosen,central,Maholi,0,3.98,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+mathura,chosen,north,Kinarai,0,4.70,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+mathura,chosen,east,Lohaban,0,5.31,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+mathura,chosen,south,Baburi,1,13.41,
+mathura,chosen,west,Satoha,0,4.61,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+shirdi,chosen,central,Sainagar,17,0.59,
+shirdi,chosen,north,Kopargaon,2,12.79,
+shirdi,chosen,east,Pimpalwadi,0,4.58,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+shirdi,chosen,south,Rahata,0,5.89,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+shirdi,chosen,west,Pohegaon Khurd,0,7.04,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+katra,chosen,central,Katra,5,0.37,
+katra,chosen,north,Dingi Dhar,0,14.30,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+katra,chosen,east,Jangal Gali,0,9.76,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+katra,chosen,south,Domel,0,11.83,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+katra,chosen,west,Reasi,0,12.56,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+ujjain,chosen,central,Vidyapati Nagar,3,1.52,
+ujjain,chosen,north,Gonsa,0,5.30,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+ujjain,chosen,east,Dhatrawada,0,5.67,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+ujjain,chosen,south,Sai Vihar Colony,2,4.64,
+ujjain,chosen,west,Daudkhedi,0,3.97,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+manali,chosen,central,Model Town,74,0.18,
+manali,chosen,north,Vashisht,27,2.64,
+manali,chosen,east,Hamtah,0,2.91,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+manali,chosen,south,Simsa,3,2.45,
+manali,chosen,west,Majhach,5,5.76,No named area lies west of the centre in OpenStreetMap; this is the closest by direction and is actually 5.8 km north-west of the centre.
+shimla,chosen,central,The Retreat,23,1.47,
+shimla,chosen,north,Longwood,14,1.20,
+shimla,chosen,east,Navbhahar,3,1.75,
+shimla,chosen,south,New Shimla,0,2.10,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+shimla,chosen,west,Prospect Hill,3,3.06,
+prayagraj,chosen,central,Civil Lines,14,2.27,
+prayagraj,chosen,north,Tagore Town,5,2.92,
+prayagraj,chosen,east,Bairhana,4,1.33,
+prayagraj,chosen,south,Naini,,4.97,"Outside the area searched for places to stay, so they were not counted."
+prayagraj,chosen,west,Chowk,4,1.28,
+ajmer,chosen,central,Sedariya,0,6.14,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+ajmer,chosen,north,Ghooghra,0,8.13,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+ajmer,chosen,east,Rasoolpura,0,7.26,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+ajmer,chosen,south,Makhupura,0,6.52,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+ajmer,chosen,west,Ajaysar,0,8.06,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+hyderabad,chosen,central,Jambagh,10,2.45,
+hyderabad,chosen,north,Nampally,16,3.48,
+hyderabad,chosen,east,Dilsukh Nagar,16,5.46,
+hyderabad,chosen,south,Aliabad,3,1.80,
+hyderabad,chosen,west,Mehdipatnam,14,5.62,
+kochi,chosen,central,Thoppumpady,7,0.89,
+kochi,chosen,north,Chirattapalam,208,3.96,
+kochi,chosen,east,Thevara,22,3.44,
+kochi,chosen,south,Palluruthy,1,1.33,
+kochi,chosen,west,Mulamkuzhi,1,2.38,
+munnar,chosen,central,Munnar,43,0.25,
+munnar,chosen,north,Kadalar Estate,0,5.42,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+munnar,chosen,east,Devikulam,1,5.87,
+munnar,chosen,south,Anachal,12,7.69,
+munnar,chosen,west,Viripara,0,11.96,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+alleppey,chosen,central,Mullakkal,38,1.58,
+alleppey,chosen,north,Kommady,11,2.97,
+alleppey,chosen,east,Kainakary,0,6.36,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+alleppey,chosen,south,Vadackal,7,2.71,
+alleppey,chosen,west,Kunnumpuram,11,0.80,No named area lies west of the centre in OpenStreetMap; this is the closest by direction and is actually 0.8 km west of the centre.
+sabarimala,chosen,central,Pamba,0,2.77,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+sabarimala,chosen,north,Sathram,0,8.32,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+sabarimala,chosen,east,Gavi,1,8.66,
+sabarimala,chosen,south,Chalakkayam,0,5.57,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+sabarimala,chosen,west,Plappally,0,13.58,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+madurai,chosen,central,Poondhotam,14,0.44,
+madurai,chosen,north,BB Kulam,1,2.05,
+madurai,chosen,east,Anna Nagar,8,3.13,
+madurai,chosen,south,Anuppanadi,1,3.13,
+madurai,chosen,west,SS Colony,11,2.50,
+chennai,chosen,central,Triplicane,32,2.45,
+chennai,chosen,north,George Town,31,1.32,
+chennai,chosen,east,Royapuram,0,4.12,No named area lies east of the centre in OpenStreetMap; this is the closest by direction and is actually 4.1 km north-east of the centre. OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+chennai,chosen,south,Teynampet,24,5.04,
+chennai,chosen,west,Egmore,16,2.16,
+rameswaram,chosen,central,Rameswaram,6,0.40,
+rameswaram,chosen,north,Attankarai,0,35.68,No named area lies north of the centre in OpenStreetMap; this is the closest by direction and is actually 35.7 km west of the centre. OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+rameswaram,chosen,east,Mukundarayar Chathiram,0,12.08,No named area lies east of the centre in OpenStreetMap; this is the closest by direction and is actually 12.1 km south-east of the centre. OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+rameswaram,chosen,south,Natarajapuram,0,3.30,No named area lies south of the centre in OpenStreetMap; this is the closest by direction and is actually 3.3 km south of the centre. OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+rameswaram,chosen,west,Thangachimadam,0,6.95,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+kanyakumari,chosen,central,Kanyakumari,82,1.61,
+kanyakumari,chosen,north,Kottaram,,3.66,"Outside the area searched for places to stay, so they were not counted."
+kanyakumari,chosen,east,Ottayalvilai,13,1.78,
+kanyakumari,chosen,south,Kovalam,0,1.63,No named area lies south of the centre in OpenStreetMap; this is the closest by direction and is actually 1.6 km west of the centre. OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+kanyakumari,chosen,west,Santhaiyadi,0,3.78,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+ooty,chosen,central,Udhagamandalam,62,0.45,
+ooty,chosen,north,Vazhaithottam,1,13.30,
+ooty,chosen,east,Coonoor,6,12.71,
+ooty,chosen,south,Achanakal hatty,1,3.97,
+ooty,chosen,west,Indunagar,1,4.68,
+bengaluru,chosen,central,Gandhinagar,65,1.28,
+bengaluru,chosen,north,Vasanth Nagar,24,1.48,
+bengaluru,chosen,east,Shanthala Nagar,46,1.18,
+bengaluru,chosen,south,Wilson Garden,17,3.38,
+bengaluru,chosen,west,Seshadripuram,20,2.38,
+mysuru,chosen,central,Mandi Mohalla,30,0.92,
+mysuru,chosen,north,Yadavagiri,7,2.63,
+mysuru,chosen,east,Nazarbad,19,1.38,
+mysuru,chosen,south,Vani Vilas,12,1.09,
+mysuru,chosen,west,Sarasvatipuram,13,2.68,
+hampi,chosen,central,Hampi,36,0.20,
+hampi,chosen,north,Ramapura,0,5.69,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+hampi,chosen,east,Powerhouse Colony,0,4.57,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+hampi,chosen,south,Hosa Malapanagudi,1,5.63,
+hampi,chosen,west,Hosapete,4,11.04,
+puri,chosen,central,Swargadwara,15,2.29,
+puri,chosen,north,Batagaon,0,4.99,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+puri,chosen,east,Balighai,0,13.01,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+puri,chosen,south,Garharodhanga,0,23.52,No named area lies south of the centre in OpenStreetMap; this is the closest by direction and is actually 23.5 km west of the centre. OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+puri,chosen,west,Alipada,0,7.31,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+konark,chosen,central,Konark,10,0.31,
+konark,chosen,north,Begunia,0,10.37,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+konark,chosen,east,Kakatpur,0,14.56,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+konark,chosen,south,Ramachandi,0,11.27,No named area lies south of the centre in OpenStreetMap; this is the closest by direction and is actually 11.3 km west of the centre. OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+konark,chosen,west,Gop,0,11.62,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+kolkata,chosen,central,Esplanade,38,2.07,
+kolkata,chosen,north,Maniktala,10,2.78,
+kolkata,chosen,east,CA Block,9,3.86,
+kolkata,chosen,south,Ripon Street,33,2.17,
+kolkata,chosen,west,Maidan,1,3.48,
+darjeeling,chosen,central,Ghoom,1,3.27,
+darjeeling,chosen,north,Jorethang,1,10.63,
+darjeeling,chosen,east,Rangli Rangliot,0,8.42,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+darjeeling,chosen,south,Sonada,1,8.54,
+darjeeling,chosen,west,Sukhiapokhri,0,10.51,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+srinagar,chosen,central,Munawar Abad,30,2.70,
+srinagar,chosen,north,Nowshera,4,4.68,
+srinagar,chosen,east,Sonwar,16,4.89,
+srinagar,chosen,south,Jawahar Nagar,6,3.83,
+srinagar,chosen,west,Qamarwari,2,2.23,
+leh,chosen,central,Chubi,204,2.08,
+leh,chosen,north,Murabak,0,10.08,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+leh,chosen,east,Saboo Yoknos,2,5.26,
+leh,chosen,south,Choglamsar,1,5.01,
+leh,chosen,west,Spituk,0,5.90,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+jodhpur,chosen,central,Paota,8,2.69,
+jodhpur,chosen,north,Anganwa,0,10.59,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+jodhpur,chosen,east,Saran Nagar,1,7.13,
+jodhpur,chosen,south,Basni,2,6.84,
+jodhpur,chosen,west,Jwala Vihar,0,4.69,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+jaisalmer,chosen,central,Amar Sagar,0,4.66,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+jaisalmer,chosen,north,Bada Bag,0,6.08,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+jaisalmer,chosen,east,Darbangaon,0,8.98,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+jaisalmer,chosen,south,Soron Ki Dhani,0,8.59,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+jaisalmer,chosen,west,Moolsagar,0,7.16,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+pushkar,chosen,central,Pushkar,95,0.19,
+pushkar,chosen,north,Tilora,0,4.98,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+pushkar,chosen,east,Makarwali,0,10.30,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+pushkar,chosen,south,Kharekhari,0,7.04,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+pushkar,chosen,west,Motisar,0,5.00,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+nainital,chosen,central,Nainital,13,0.67,
+nainital,chosen,north,Kilbary,0,3.82,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+nainital,chosen,east,Bhowali,,6.34,"Outside the area searched for places to stay, so they were not counted."
+nainital,chosen,south,Durgapur,1,2.82,
+nainital,chosen,west,Sariya,1,2.67,
+mussoorie,chosen,central,Mussoorie,15,0.78,
+mussoorie,chosen,north,herneidel,5,3.54,
+mussoorie,chosen,east,Sisters' Bazaar,3,2.25,
+mussoorie,chosen,south,Barlowganj,1,1.35,
+mussoorie,chosen,west,dhobighat,1,1.53,
+kedarnath,chosen,central,Gaurikund,1,9.47,Nearest named area to the centre (9.5 km south-west).
+kedarnath,chosen,north,Trijugi Nārāyan,0,13.13,No named area lies north of the centre in OpenStreetMap; this is the closest by direction and is actually 13.1 km south-west of the centre. OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+kedarnath,chosen,east,Baunsar,0,16.94,No named area lies east of the centre in OpenStreetMap; this is the closest by direction and is actually 16.9 km south-east of the centre. OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+kedarnath,chosen,south,Sonprayag,0,12.88,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+kedarnath,chosen,west,Sitapur,0,14.28,No named area lies west of the centre in OpenStreetMap; this is the closest by direction and is actually 14.3 km south-west of the centre. OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+aurangabad,chosen,central,Osmanpura,7,1.55,
+aurangabad,chosen,north,Harsul,1,5.18,
+aurangabad,chosen,east,Cidco,9,4.51,
+aurangabad,chosen,south,Georai,0,10.79,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+aurangabad,chosen,west,Waluj,0,8.96,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+khajuraho,chosen,central,Khajuraho,21,0.20,
+khajuraho,chosen,north,Rajnagar,0,5.32,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+khajuraho,chosen,east,Dhoguwan,1,12.98,
+khajuraho,chosen,south,Bamitha,0,8.56,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+khajuraho,chosen,west,Gora,0,5.14,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+kevadia,chosen,central,Garudeshwar,0,4.06,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+kevadia,chosen,north,Tankhala,0,13.46,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+kevadia,chosen,east,Wadifali,0,22.17,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+kevadia,chosen,south,Fulsar,0,21.28,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+kevadia,chosen,west,Tilakvada,0,13.49,OpenStreetMap lists no hotel or guest house within 1 km of this point; check that you can stay here.
+pondicherry,chosen,central,Odiansalai,80,0.53,
+pondicherry,chosen,north,Rainbow Nagar,29,1.21,
+pondicherry,chosen,east,Solai Nagar,3,2.65,No named area lies east of the centre in OpenStreetMap; this is the closest by direction and is actually 2.7 km north of the centre.
+pondicherry,chosen,south,Harbour,1,2.21,
+pondicherry,chosen,west,Kosapalayam,18,1.88,
+agra,curated name not found as an OSM place,,Sadar Bazaar,,,
+agra,curated name not found as an OSM place,,Kamla Nagar,,,
+agra,curated name not found as an OSM place,,Dayal Bagh,,,
+agra,curated name not found as an OSM place,,Rakabganj,,,
+jaipur,curated name not found as an OSM place,,Malviya Nagar,,,
+jaipur,curated name not found as an OSM place,,Raja Park,,,
+varanasi,curated name not found as an OSM place,,Godowlia,,,
+varanasi,curated name not found as an OSM place,,Assi,,,
+varanasi,curated name not found as an OSM place,,Bhelupur,,,
+ayodhya,curated name not found as an OSM place,,Devkali,,,
+ayodhya,curated name not found as an OSM place,,Ranopali,,,
+ayodhya,curated name not found as an OSM place,,Darshan Nagar,,,
+ayodhya,curated name not found as an OSM place,,Tedhi Bazar,,,
+tirupati,curated name not found as an OSM place,,Tilak Road,,,
+mumbai,curated name not found as an OSM place,,Dadar,,,
+mumbai,curated name not found as an OSM place,,Santacruz East,,,
+amritsar,curated name not found as an OSM place,,Green Avenue,,,
+amritsar,curated name not found as an OSM place,,Putlighar,,,
+amritsar,curated name not found as an OSM place,,Chheharta,,,
+amritsar,curated name not found as an OSM place,,Katra Ahluwalia,,,
+udaipur,curated name not found as an OSM place,,Lal Ghat,,,
+udaipur,curated name not found as an OSM place,,Hanuman Ghat,,,
+udaipur,curated name not found as an OSM place,,Hiran Magri,,,
+udaipur,curated name not found as an OSM place,,Bhatiyani Chohatta,,,
+udaipur,curated name not found as an OSM place,,Madhuban,,,
+udaipur,curated name not found as an OSM place,,Chetak Circle,,,
+haridwar,curated name not found as an OSM place,,Jwalapur,,,
+haridwar,curated name not found as an OSM place,,Bhupatwala,,,
+haridwar,curated name not found as an OSM place,,Shivalik Nagar,,,
+haridwar,curated name not found as an OSM place,,Mayapur,,,
+haridwar,curated name not found as an OSM place,,Ranipur,,,
+haridwar,curated name not found as an OSM place,,Bhimgoda,,,
+haridwar,curated name not found as an OSM place,,Devpura,,,
+haridwar,curated name not found as an OSM place,,Khanna Nagar,,,
+rishikesh,curated name not found as an OSM place,,Pashulok,,,
+vrindavan,curated name not found as an OSM place,,Raman Reti,,,
+vrindavan,curated name not found as an OSM place,,Chaitanya Vihar,,,
+vrindavan,curated name not found as an OSM place,,Gyan Gudri,,,
+vrindavan,curated name not found as an OSM place,,Jaisinghpura,,,
+mathura,curated name not found as an OSM place,,Dampier Nagar,,,
+mathura,curated name not found as an OSM place,,Govind Nagar,,,
+mathura,curated name not found as an OSM place,,Masani,,,
+mathura,curated name not found as an OSM place,,Radhika Vihar,,,
+mathura,curated name not found as an OSM place,,Bhuteshwar,,,
+mathura,curated name not found as an OSM place,,Radha Nagar,,,
+shirdi,curated name not found as an OSM place,,Kankuri,,,
+katra,curated name not found as an OSM place,,Panthal,,,
+katra,curated name not found as an OSM place,,Domail,,,
+katra,curated name not found as an OSM place,,Arli Hinchi,,,
+ujjain,curated name not found as an OSM place,,Madhav Nagar,,,
+ujjain,curated name not found as an OSM place,,Nanakheda,,,
+ujjain,curated name not found as an OSM place,,Rishi Nagar,,,
+ujjain,curated name not found as an OSM place,,Mahananda Nagar,,,
+ujjain,curated name not found as an OSM place,,Kshirsagar,,,
+ujjain,curated name not found as an OSM place,,Vikram Nagar,,,
+ujjain,curated name not found as an OSM place,,Dussehra Maidan,,,
+manali,curated name not found as an OSM place,,Log Huts,,,
+shimla,curated name not found as an OSM place,,Lakkar Bazaar,,,
+shimla,curated name not found as an OSM place,,Chotta Shimla,,,
+shimla,curated name not found as an OSM place,,Boileauganj,,,
+shimla,curated name not found as an OSM place,,Kasumpti,,,
+shimla,curated name not found as an OSM place,,Lower Bazaar,,,
+prayagraj,curated name not found as an OSM place,,Kydganj,,,
+prayagraj,curated name not found as an OSM place,,Daraganj,,,
+prayagraj,curated name not found as an OSM place,,Dhoomanganj,,,
+ajmer,curated name not found as an OSM place,,Kesarganj,,,
+ajmer,curated name not found as an OSM place,,Naya Bazaar,,,
+ajmer,curated name not found as an OSM place,,Diggi Bazaar,,,
+hyderabad,curated name not found as an OSM place,,Dilsukhnagar,,,
+hyderabad,curated name not found as an OSM place,,Lakdikapul,,,
+kochi,curated name not found as an OSM place,,Willingdon Island,,,
+kochi,curated name not found as an OSM place,,Vypin,,,
+munnar,curated name not found as an OSM place,,Old Munnar,,,
+munnar,curated name not found as an OSM place,,Lakshmi,,,
+alleppey,curated name not found as an OSM place,,Sanathanapuram,,,
+alleppey,curated name not found as an OSM place,,Punnamada,,,
+sabarimala,curated name not found as an OSM place,,Nilakkal,,,
+sabarimala,curated name not found as an OSM place,,Vadasserikara,,,
+madurai,curated name not found as an OSM place,,Simmakkal,,,
+madurai,curated name not found as an OSM place,,Tallakulam,,,
+madurai,curated name not found as an OSM place,,Thiruparankundram,,,
+kanyakumari,curated name not found as an OSM place,,Chinnamuttom,,,
+ooty,curated name not found as an OSM place,,Charing Cross,,,
+ooty,curated name not found as an OSM place,,Fern Hill,,,
+ooty,curated name not found as an OSM place,,Elk Hill,,,
+ooty,curated name not found as an OSM place,,Finger Post,,,
+ooty,curated name not found as an OSM place,,Ketti,,,
+ooty,curated name not found as an OSM place,,Pudumund,,,
+ooty,curated name not found as an OSM place,,Westbrook,,,
+mysuru,curated name not found as an OSM place,,Vijayanagar,,,
+mysuru,curated name not found as an OSM place,,Kuvempunagar,,,
+mysuru,curated name not found as an OSM place,,Siddhartha Layout,,,
+mysuru,curated name not found as an OSM place,,Bannimantap,,,
+mysuru,curated name not found as an OSM place,,Devaraja Mohalla,,,
+hampi,curated name not found as an OSM place,,Kamalapur,,,
+hampi,curated name not found as an OSM place,,Virupapur Gaddi,,,
+hampi,curated name not found as an OSM place,,Kadirampura,,,
+puri,curated name not found as an OSM place,,Baliapanda,,,
+puri,curated name not found as an OSM place,,Penthakata,,,
+puri,curated name not found as an OSM place,,Sipasarubali,,,
+puri,curated name not found as an OSM place,,Matitota,,,
+puri,curated name not found as an OSM place,,Talabania,,,
+puri,curated name not found as an OSM place,,Bali Sahi,,,
+puri,curated name not found as an OSM place,,Chakra Tirtha,,,
+konark,curated name not found as an OSM place,,Chandrabhaga,,,
+kolkata,curated name not found as an OSM place,,Gariahat,,,
+darjeeling,curated name not found as an OSM place,,Lebong,,,
+darjeeling,curated name not found as an OSM place,,Jalapahar,,,
+darjeeling,curated name not found as an OSM place,,Singamari,,,
+darjeeling,curated name not found as an OSM place,,Lochnagar,,,
+darjeeling,curated name not found as an OSM place,,Alubari,,,
+darjeeling,curated name not found as an OSM place,,Chowk Bazaar,,,
+srinagar,curated name not found as an OSM place,,Shalimar,,,
+srinagar,curated name not found as an OSM place,,Shivpora,,,
+srinagar,curated name not found as an OSM place,,Dalgate,,,
+leh,curated name not found as an OSM place,,Changspa,,,
+leh,curated name not found as an OSM place,,Karzoo,,,
+leh,curated name not found as an OSM place,,Skara,,,
+leh,curated name not found as an OSM place,,Sankar,,,
+leh,curated name not found as an OSM place,,Housing Colony,,,
+jodhpur,curated name not found as an OSM place,,Ratanada,,,
+jodhpur,curated name not found as an OSM place,,Navchokiya,,,
+jodhpur,curated name not found as an OSM place,,Chopasni Housing Board,,,
+jodhpur,curated name not found as an OSM place,,Mandore,,,
+jodhpur,curated name not found as an OSM place,,Sojati Gate,,,
+jaisalmer,curated name not found as an OSM place,,Dedansar,,,
+jaisalmer,curated name not found as an OSM place,,Kishanghat,,,
+pushkar,curated name not found as an OSM place,,Badi Basti,,,
+nainital,curated name not found as an OSM place,,Tallital,,,
+nainital,curated name not found as an OSM place,,Sukhatal,,,
+nainital,curated name not found as an OSM place,,Ayarpata,,,
+nainital,curated name not found as an OSM place,,Sher-ka-Danda,,,
+nainital,curated name not found as an OSM place,,Snow View,,,
+mussoorie,curated name not found as an OSM place,,Landour,,,
+mussoorie,curated name not found as an OSM place,,Kulri,,,
+mussoorie,curated name not found as an OSM place,,Jharipani,,,
+mussoorie,curated name not found as an OSM place,,Library,,,
+kedarnath,curated name not found as an OSM place,,Trijuginarayan,,,
+aurangabad,curated name not found as an OSM place,,Aurangpura,,,
+aurangabad,curated name not found as an OSM place,,Begumpura,,,
+aurangabad,curated name not found as an OSM place,,Shahganj,,,
+kevadia,curated name not found as an OSM place,,Gora,,,
+pondicherry,curated name not found as an OSM place,,White Town,,,
+pondicherry,curated name not found as an OSM place,,Auroville,,,
+pondicherry,curated name not found as an OSM place,,Uppalam,,,

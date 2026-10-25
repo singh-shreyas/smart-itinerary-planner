@@ -1,0 +1,4 @@
+city,direction,osm_name,reason
+delhi,central,Paharganj,"Central Delhi's best-known area to stay (134 places to stay within 1 km in OSM); chosen over Connaught Place, a commercial district"
+mumbai,south,Colaba,"South Mumbai's main area to stay, next to the Gateway of India; the automatic pick (Chembur) is east of the city's sights"
+kedarnath,reject,Gangi,"OSRM puts the point 10.7 km from the nearest road (different valley); a stay area must be reachable by road"

@@ -7,22 +7,20 @@ Raw metrics (per strategy, whole trip):
     travel_min       planned travel minutes (local + intercity + meal detours)
     travel_per_stop  travel_min / stops                              (travel efficiency)
     utilisation      sightseeing minutes / available minutes         (time utilisation)
-    spend            entry fees + shopping + transport (if counted)
-    value_per_100    100 * value / (spend + Rs 100)                  (budget efficiency; the Rs 100
-                     baseline keeps free plans from dividing by zero)
     violations       problems found by the independent validator     (feasibility)
     runtime_ms       planning time -- reported, never scored
 
 Subscores: each metric is normalised against the best strategy ON THIS TRIP,
 so 100 means "best of the three" and quantities in different units (minutes,
-rupees, counts) are never added together directly:
+counts, shares) are never added together directly:
     higher is better:  sub = 100 * value / best value
     lower is better:   sub = 100 * best value / value
 A strategy with no stops scores 0 on every subscore.
 
-Overall = sum(weight * subscore) with config.SCORECARD_WEIGHTS (they sum to 1).
-If no strategy spends anything, the budget subscore is not informative and is
-left out (its weight is shared out proportionally among the others).
+Overall = sum(weight * subscore) with config.SCORECARD_WEIGHTS:
+    value 0.45 + coverage 0.20 + travel 0.20 + utilisation 0.15 = 1.00
+There is no money component: the planner does not optimise cost, so the score
+does not pretend to measure it.
 
 Feasibility is a GATE, not a subscore: a plan with any validator violation is
 marked infeasible and is never recommended, however many stops it has.
@@ -37,18 +35,16 @@ METRIC_DIRECTIONS = {        # subscore name -> (raw metric, "max" or "min")
     "coverage": ("stops", "max"),
     "travel": ("travel_per_stop", "min"),
     "utilisation": ("utilisation", "max"),
-    "budget": ("value_per_100", "max"),
 }
 
 LABELS = {"value": "Value", "coverage": "Coverage", "travel": "Travel efficiency",
-          "utilisation": "Time utilisation", "budget": "Budget efficiency"}
+          "utilisation": "Time utilisation"}
 
 
 def raw_metrics(itinerary):
     stops = itinerary.stops
     value = itinerary.score
     travel = itinerary.travel_min
-    spend = itinerary.spend
     available = itinerary.available_min
     return {
         "stops": stops,
@@ -65,9 +61,6 @@ def raw_metrics(itinerary):
         "available_min": available,
         "utilisation": round(itinerary.sight_min / available, 4) if available else 0.0,
         "km": itinerary.km,
-        "fees": itinerary.fees,
-        "spend": spend,
-        "value_per_100": round(100 * value / (spend + 100), 2),
         "violations": len(itinerary.violations),
         "empty_days": sum(1 for d in itinerary.days if not d.visits),
     }
@@ -84,10 +77,6 @@ def _subscore(value, best, direction):
 def subscores(rows):
     """rows: [{key, metrics}] -> adds 'subscores' and 'overall' to each row. Returns the weights used."""
     weights = dict(config.SCORECARD_WEIGHTS)
-    if all(row["metrics"]["spend"] == 0 for row in rows):
-        weights.pop("budget")                       # nobody spends anything: not informative
-    total = sum(weights.values())
-    weights = {k: w / total for k, w in weights.items()}
 
     for name, (metric, direction) in METRIC_DIRECTIONS.items():
         values = [row["metrics"][metric] if row["metrics"]["stops"] else None for row in rows]
@@ -157,9 +146,6 @@ def tradeoffs(rows):
         if ma["travel_min"] != mb["travel_min"]:
             less = a if ma["travel_min"] < mb["travel_min"] else b
             parts.append(f"{short[less]} travels {abs(ma['travel_min'] - mb['travel_min'])} min less")
-        if ma["spend"] != mb["spend"]:
-            cheaper = a if ma["spend"] < mb["spend"] else b
-            parts.append(f"{short[cheaper]} costs ₹{abs(ma['spend'] - mb['spend'])} less")
         return parts
 
     keys = [r["key"] for r in rows]

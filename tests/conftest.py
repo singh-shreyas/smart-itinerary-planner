@@ -24,7 +24,6 @@ from services.models import MealSetting, TripRequest        # noqa: E402
 FIXTURE_DIR = os.path.join(ROOT, "tests", "fixtures", "tiny_city")
 DATA_DIR = os.path.join(ROOT, "data")
 MONDAY = date(2026, 11, 2)            # a known Monday, so weekday rules are testable
-RATE = 12                             # rupees per km for the transport estimate
 
 
 @pytest.fixture(scope="session")
@@ -105,7 +104,7 @@ def client(app):
 def make_trip(**overrides):
     """A valid TripRequest for the fixture city; override any field."""
     values = dict(city="testville", start_date=MONDAY, days=1, day_start=9 * 60, day_end=19 * 60,
-                  budget=None, include_transport=False, interests=(), pace="balanced", start="hotel",
+                  interests=(), pace="balanced", start="hotel",
                   strategy="dp", exclude=())
     values.update(overrides)
     return TripRequest(**values)

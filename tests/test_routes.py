@@ -2,7 +2,7 @@
 
 import pytest
 
-VALID = "/itinerary?city=delhi&days=2&start_date=2026-11-02&start=cp-start"
+VALID = "/itinerary?city=delhi&days=2&start_date=2026-11-02&start=delhi-stay-central"
 
 
 @pytest.mark.parametrize("url", [
@@ -51,10 +51,11 @@ def test_valid_itinerary(client):
     ("city=delhi&days=abc", "whole number"),
     ("city=delhi&day_start=18:00&day_end=17:00", "at least 2 hours"),
     ("city=delhi&day_start=25:00", "HH:MM"),
-    ("city=delhi&budget=-50", "cannot be negative"),
-    ("city=delhi&budget=lots", "whole number of rupees"),
     ("city=delhi&interests=shopping-malls", "Unknown interest"),
-    ("city=delhi&start=godowlia-start", "starting point in your base city"),
+    ("city=delhi&start=varanasi-stay-central", "stay areas in Delhi"),
+    ("city=delhi&mode=fastest", "Choose Evenly Distributed, Suggested or Most Optimized"),
+    ("city=delhi&choose=pick", "Pick at least one place"),
+    ("city=delhi&choose=pick&places=taj-mahal", "Not an attraction in Delhi"),
     ("city=delhi&also=varanasi", "limit is 100 km"),
     ("city=agra&also=mathura,vrindavan,delhi,jaipur", "at most 3"),
     ("city=delhi&interest_mode=only", "Pick at least one interest"),
@@ -76,10 +77,10 @@ def test_invalid_input_is_a_400_with_a_message(client, query, field_message):
 
 
 def test_invalid_form_keeps_the_users_values(client):
-    response = client.get("/itinerary?city=jaipur&days=9&budget=750&pace=relaxed")
+    response = client.get("/itinerary?city=jaipur&days=9&day_start=07:30&pace=relaxed")
     html = response.get_data(as_text=True)
     assert response.status_code == 400
-    assert 'value="750"' in html
+    assert 'value="07:30"' in html
     assert 'id="pace-relaxed" value="relaxed" checked' in html
 
 
@@ -93,12 +94,12 @@ def test_excluding_everything_is_refused(client, app):
 
 def test_api_health_and_cities(client):
     health = client.get("/api/health").get_json()
-    assert health["status"] == "ok" and health["cities"] == 50 and health["schema"] == "2"
+    assert health["status"] == "ok" and health["cities"] == 50 and health["schema"] == "3"
     assert len(health["data_version"]) == 10
     cities = client.get("/api/cities").get_json()
     assert len(cities) == 50 and {"agra", "delhi", "jaipur", "varanasi", "mathura"} <= {c["slug"] for c in cities}
     by_slug = {c["slug"]: c for c in cities}
-    assert by_slug["kedarnath"]["readiness"]["status"] == "not_ready"
+    assert by_slug["kedarnath"]["readiness"]["status"] == "limited"               # the temple is reached by a timed trek
     assert {"mathura", "vrindavan"} <= {n["slug"] for n in by_slug["agra"]["nearby"]}
     attractions = client.get("/api/cities/agra/attractions").get_json()
     taj = next(a for a in attractions if a["slug"] == "taj-mahal")
@@ -138,7 +139,7 @@ def test_api_multi_city_itinerary(client):
 
 def test_not_plannable_city_explains_itself(client):
     html = client.get("/itinerary?city=kedarnath&days=1&start_date=2026-11-02").get_data(as_text=True)
-    assert "No road access" in html or "already in your plan or left out" in html
+    assert "trek" in html.lower()                                 # the shrine's 16-17 km trek is explained, not hidden
 
 
 def test_friday_plan_in_agra_skips_the_taj(client):

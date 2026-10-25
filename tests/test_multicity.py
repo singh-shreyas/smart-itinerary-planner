@@ -2,7 +2,7 @@
 
 from werkzeug.datastructures import MultiDict
 
-from conftest import MONDAY, RATE, make_trip
+from conftest import MONDAY, make_trip
 from database.db import connect
 from database import queries
 from services.itinerary_generator import plan_trip
@@ -56,7 +56,7 @@ def test_combined_pool_and_intercity_legs(tiny_area):
     assert {a.city_slug for a in area.attractions.values()} == {"testville", "riverton"}
     # With every Testville sight excluded, the day must be spent in Riverton.
     trip = make_trip(extra_cities=("riverton",), exclude=TESTVILLE_ONLY, days=1)
-    plan = plan_trip(area, trip, RATE)
+    plan = plan_trip(area, trip)
     assert plan.violations == []
     day = plan.days[0]
     assert day.visits and all(v.attraction.city_slug == "riverton" for v in day.visits)
@@ -74,7 +74,7 @@ def test_missing_connection_uses_a_labelled_estimate_never_zero(tiny_area):
     leg = area.leg(hotel, temple)
     assert leg.estimated and leg.intercity and leg.minutes > 60          # about 70 km: well over an hour
     trip = make_trip(extra_cities=("westford",), exclude=TESTVILLE_ONLY, day_end=21 * 60)
-    plan = plan_trip(area, trip, RATE)
+    plan = plan_trip(area, trip)
     assert plan.violations == []
     assert plan.estimated_links and any(v.leg.estimated for v in plan.visits)
 
@@ -85,7 +85,7 @@ def test_multi_city_trips_always_validate(tiny_area):
         for days in (1, 2, 3):
             trip = make_trip(extra_cities=("riverton",), strategy=strategy, days=days, day_end=20 * 60,
                              interests=("history", "markets"))
-            plan = plan_trip(area, trip, RATE)
+            plan = plan_trip(area, trip)
             assert plan.violations == [], (strategy, days, plan.violations)
             planned = {v.attraction.id for v in plan.visits}
             explained = {s.attraction.id for s in plan.skipped}
@@ -96,7 +96,7 @@ def test_days_are_grouped_by_city(tiny_area):
     """Each day keeps the best of 'all cities together' and 'one city at a time', so a day never zig-zags
     between cities more than once (out and back)."""
     area = tiny_area("testville", "riverton")
-    plan = plan_trip(area, make_trip(extra_cities=("riverton",), days=3, day_end=20 * 60), RATE)
+    plan = plan_trip(area, make_trip(extra_cities=("riverton",), days=3, day_end=20 * 60))
     for day in plan.days:
         cities = [v.attraction.city_slug for v in day.visits]
         changes = sum(1 for a, b in zip(cities, cities[1:]) if a != b)
@@ -107,14 +107,14 @@ def test_real_agra_mathura_vrindavan(real_area):
     area = real_area("agra", "mathura", "vrindavan")
     assert area.estimated_links == []                               # OSRM intercity links exist for every pair
     from datetime import date
-    trip = make_trip(city="agra", start="tajganj-start", extra_cities=("mathura", "vrindavan"), days=3,
+    trip = make_trip(city="agra", start="agra-stay-east", extra_cities=("mathura", "vrindavan"), days=3,
                      start_date=date(2026, 11, 2), interests=("spirituality",))
-    plan = plan_trip(area, trip, RATE)
+    plan = plan_trip(area, trip)
     assert plan.violations == []
     assert "mathura" in {v.attraction.city_slug for v in plan.visits}
     # Vrindavan is ~100 planned minutes from the Agra base each way, so on a 09:00-19:00 day it loses to
     # closer places -- and the plan says so. With only Vrindavan left it is planned like any other city.
     others = tuple(a.slug for a in area.attractions.values() if a.city_slug != "vrindavan")
-    only_vrindavan = plan_trip(area, trip.with_changes(exclude=others, days=1), RATE)
+    only_vrindavan = plan_trip(area, trip.with_changes(exclude=others, days=1))
     assert only_vrindavan.violations == [] and only_vrindavan.stops > 0
     assert {v.attraction.city_slug for v in only_vrindavan.visits} == {"vrindavan"}

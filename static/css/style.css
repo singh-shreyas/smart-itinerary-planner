@@ -481,8 +481,6 @@ code { color: var(--accent); background: var(--accent-50); padding: .1em .35em; 
 .breakdown { list-style: none; padding: 0; margin: 0; display: grid; gap: .45rem; font-size: .9rem; }
 .breakdown li { display: flex; justify-content: space-between; gap: 1rem; }
 .breakdown li span:last-child { font-weight: 600; font-variant-numeric: tabular-nums; }
-.budget-meter { height: 10px; border-radius: 999px; background: var(--bg-alt); overflow: hidden; }
-.budget-meter span { display: block; height: 100%; background: var(--primary); border-radius: 999px; }
 
 .map-shell { position: sticky; top: calc(var(--nav-h) + 16px); }
 .map-card { overflow: hidden; }
@@ -717,3 +715,26 @@ details > summary { cursor: pointer; }
 .attr-open { all: unset; cursor: pointer; }
 .attr-open:focus-visible { outline: none; }
 .attr-card:has(.attr-open:focus-visible) { outline: 3px solid rgba(31, 77, 58, .45); outline-offset: 3px; }
+
+/* --- Itinerary modes, stay areas and access -------------------------------------------------- */
+.pick-box { border: 1px solid var(--line); border-radius: var(--radius); padding: .75rem; background: var(--bg-alt); }
+.plan-summary .summary-stats { display: flex; flex-wrap: wrap; gap: 1.25rem; list-style: none; margin: 0; padding: 0; }
+.plan-summary .summary-stats li { display: flex; flex-direction: column; min-width: 5.5rem; }
+.plan-summary .summary-stats strong { font-size: 1.6rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.plan-summary .summary-stats strong small { font-size: .9rem; color: var(--muted); font-weight: 600; }
+.plan-summary .summary-stats span { font-size: .8rem; color: var(--muted); }
+.plan-summary .summary-stats .is-warn strong { color: var(--accent); }
+.mode-note { font-size: .95rem; }
+.day-table caption { caption-side: top; padding: 0 0 .4rem; }
+.day-table tr.is-free th, .day-table tr.is-free td { background: var(--bg-alt); }
+.plan-warnings { list-style: none; padding: 0; display: grid; gap: .35rem; font-size: .9rem; }
+.plan-warnings i { margin-right: .4rem; }
+.tl-leg .leg-parts { list-style: none; margin: .35rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: .35rem; font-size: .8rem; }
+.tl-leg .leg-parts li { border: 1px solid var(--line-strong); border-radius: 999px; padding: .1rem .55rem; background: var(--surface); }
+.tl-leg .leg-parts li i { margin-right: .3rem; }
+.tl-leg .leg-parts li:not(.is-road) { border-style: dashed; }
+.access-box { margin-top: .6rem; padding: .55rem .7rem; border-left: 3px solid var(--gold); background: var(--bg-alt); border-radius: 0 var(--radius) var(--radius) 0; }
+.access-box ul { padding-left: 1.1rem; }
+/* Access time is part of travel: the travel colour with a diagonal hatch (texture, so it never relies on colour alone). */
+.seg-access { background: repeating-linear-gradient(45deg, var(--accent) 0 3px, var(--surface) 3px 6px); }
+.legend-dot.seg-access { border: 1px solid var(--accent); }

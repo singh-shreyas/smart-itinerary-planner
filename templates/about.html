@@ -22,6 +22,9 @@
           <a href="#algorithms">The algorithms</a>
           <a href="#model">Scoring and the knapsack</a>
           <a href="#strategies">Three strategies</a>
+          <a href="#modes">Three itinerary modes</a>
+          <a href="#access">Access: treks and ferries</a>
+          <a href="#stays">Where you stay</a>
           <a href="#time">Using the whole day</a>
           <a href="#meals">Meals</a>
           <a href="#food-shopping">Food and shopping</a>
@@ -40,9 +43,9 @@
           <h2 class="h2">The problem</h2>
           <p>A traveller has a few days and far more attractions than time. Each attraction has a value (rating, popularity and
             whether it matches the traveller's interests), a visit duration, an entry fee and opening hours that differ by weekday. Moving
-            between places takes time and money, and lunch and dinner have to fit in too. We must choose which attractions to visit on which
-            day, and in what order, so the plan is worth as much as possible without breaking the daily time window, any opening hours,
-            the meal windows or the budget.</p>
+            between places takes time, and lunch and dinner have to fit in too. We must choose which attractions to visit on which
+            day, and in what order, so the plan is worth as much as possible without breaking the daily time window, any opening hours
+            or the meal windows. This is a travel-optimisation system: it optimises time and travel, not money.</p>
           <p>This is the multi-day <strong>Orienteering Problem with Time Windows</strong>, which is NP-hard. So we do not claim optimal
             itineraries. We <strong>decompose</strong> it into sub-problems that each have a well-understood algorithm: shortest paths,
             selection, route ordering and scheduling.</p>
@@ -56,9 +59,9 @@
               ('Build the travel tables (once per city group)', 'Load places and road links from SQLite into an adjacency list and run Dijkstra from every place. The raw shortest time is kept for route optimisation; the planning time is that value rounded UP to the next ' ~ cfg.TRAVEL_ROUNDING_MIN ~ ' minutes.'),
               ('Score every attraction (once per trip)', 'score = round(100 × (0.5·rating/5 + 0.3·popularity + 0.2·interest match)). Unrated places use a neutral ' ~ cfg.RATING_PRIOR ~ ' prior. Trip rules remove excluded places, places with no road access, food/shopping places you did not ask for, and (in “only” mode) non-matching places.'),
               ('Filter today\'s candidates', 'Keep places not yet planned, open on this weekday, reachable both ways, affordable alone, and able to fit in the day alone — meal breaks included. Every rejection is recorded with its reason.'),
-              ('Select', 'One 0/1 knapsack over (minutes, rupees), solved by the chosen strategy. Capacity = the day minus the shortest first ride, the unavoidable extra of the ride home and the meal breaks.'),
+              ('Select', 'One 0/1 knapsack over the minutes of the day, solved by the chosen strategy. Capacity = the day minus the shortest first ride, the unavoidable extra of the ride home and the meal breaks.'),
               ('Route: two branches', 'Travel-first: Nearest Neighbour then 2-opt. Window-first: closing-time order + cheapest feasible insertion, then 2-opt that only accepts feasible moves. Keep the feasible branch with less travel.'),
-              ('Check and repair', 'The scheduler simulates the day minute by minute, meals included. If no branch works or the day is over budget, the weakest stop (min-heap) leaves and selection runs again.'),
+              ('Check and repair', 'The scheduler simulates the day minute by minute, meals included. If no branch works, the weakest stop (min-heap) leaves and selection runs again.'),
               ('Fill', 'Leftover candidates are tried at their cheapest feasible position, so extra hours in a long day are used when something still fits.'),
               ('Validate independently', 'A separate validator re-checks every constraint from the raw data. A violation would be a bug, so the tests require zero.'),
             ] %}
@@ -92,7 +95,7 @@
               </div>
             {% endfor %}
           </div>
-          <p class="small text-muted mt-3">V = places, E = road links, n = candidate attractions, k = stops in a day, T and M = time and money units in the DP table.</p>
+          <p class="small text-muted mt-3">V = places, E = road links, n = candidate attractions, k = stops in a day, T = time units in the DP table.</p>
         </section>
 
         <section id="model" class="mb-5">
@@ -103,8 +106,8 @@
               the shortest first ride, the unavoidable extra of the ride home (beyond the last stop's cheapest exit) and the meal breaks.
               Every route leaves each stop exactly once, so these weights can only <em>under</em>-estimate the real day: the knapsack never
               throws away a set that truly fits. The scheduler then checks the real timeline, and repair fixes optimism.</p>
-            <p><strong>Discretisation.</strong> Weights are rounded <em>up</em> to {{ cfg.DP_TIME_UNIT_MIN }}-minute units and the capacity <em>down</em>;
-              fees are rounded up to money units of max(₹10, budget/100). Every strategy receives the identical integer instance.</p>
+            <p><strong>Discretisation.</strong> Weights are rounded <em>up</em> to {{ cfg.DP_TIME_UNIT_MIN }}-minute units and the capacity <em>down</em>.
+              Every strategy receives the identical integer instance.</p>
             <p class="mb-0"><strong>What "optimal" means here.</strong> DP (and Max visits) are exact for this rounded knapsack model on each day.
               2-opt reaches a local optimum. Held–Karp is exact for travel only, ignores opening hours, and is used on the comparison page as a
               lower bound. None of this makes the whole multi-day itinerary provably optimal.</p>
@@ -123,10 +126,70 @@
             always outweighs any difference in score, so the DP maximises the count first and the value second.</p>
         </section>
 
+        <section id="modes" class="mb-5">
+          <h2 class="h2">Three itinerary modes</h2>
+          <p>What to see and how to spread it are two separate questions. The places are either the ones you pick, or the ones the selection
+            strategy above chose for your days. The mode then assigns them to days, and each mode ranks the feasible assignments by its own
+            objective. All three use the same feasibility check: a day only counts if the planner's router finds an order that the
+            minute-by-minute scheduler accepts, with opening hours, meals, treks, ferries and the ride back included.</p>
+          <div class="row g-3">
+            {% for key, m in cfg.MODES.items() %}
+              <div class="col-md-4"><div class="card-soft card-pad-sm h-100"><h3 class="h6"><i class="bi {{ m.icon }} me-1 text-accent"></i>{{ m.label }}</h3>
+                <p class="small mb-2">{{ m.text }}</p>
+                <p class="small mb-0 text-muted">{{ {'evenly': 'Ranks plans by: every place scheduled, then the smallest deviation from the quotient-and-remainder target (4 places in 3 days: 2 + 1 + 1), then balanced busy time, then the least travel.',
+                  'suggested': 'Tries every feasible number of days k and scores each plan: 2 × minutes beyond a comfortable day + travel + ¼ × unevenness + 60 min per extra day. The cheapest wins; it may equal Most Optimized.',
+                  'optimized': 'Ranks plans by: every place scheduled, then the fewest active days, then the least travel. Tries k = 1, 2, … days (each choice of k trip days) and stops at the first k that fits everything.'}[key] }}</p></div></div>
+            {% endfor %}
+          </div>
+          <p class="mt-3">The search (<code>algorithms/day_partition.py</code>) is construct-and-improve: hardest places first into the cheapest
+            feasible day, plus a first-fit-decreasing start (the classic bin-packing rule), then local search that moves one place to another
+            day or swaps two. Every distinct day is routed once and remembered. A comfortable day is out and about for at most
+            {{ (100 * cfg.COMFORT_SHARE)|round|int }}% of your daily window and never more than {{ cfg.COMFORT_MAX_MIN // 60 }} hours, so one more
+            day is used only if it removes at least 30 minutes of over-long days. The tests check the minimum number of days against
+            exhaustive search on small cases.</p>
+        </section>
+
+        <section id="access" class="mb-5">
+          <h2 class="h2">Access: treks, ferries and walks</h2>
+          <p>Not every sight is at the end of a road. A trek, a ferry crossing or a walk is an edge of the same graph as the roads, so Dijkstra
+            finds mixed routes, such as the road to Gaurikund followed by the trek, and every leg lists its parts with their own times. The trek up
+            and the trek down are separate directed edges, so each is counted once: in the knapsack weight, in routing, in the timeline and in the
+            day's totals. The traffic factor applies to road parts only. A ferry with a known first and last departure makes you wait for the
+            first one, and rules the trip out after the last one.</p>
+          <p>Times come only from sources: a duration a source states (Kedarnath trek “6 to 8 hours”: we use 8), or Naismith's rule applied to a
+            sourced distance and climb (5 km/h plus 1 hour per 600 m ascent), labelled as an estimate. Helicopters, ropeways and battery cars are
+            listed as other ways in, but never used in a plan, because their schedules and availability are not verified. A place whose access time is
+            unknown is never given a guessed time. It is listed with its reason and a note to verify locally.</p>
+          <div class="card-soft overflow-auto">
+            <table class="table table-soft table-sm mb-0">
+              <caption class="px-3 small">Every attraction that is not simply reached by road.</caption>
+              <thead><tr><th scope="col">Attraction</th><th scope="col">Access</th><th scope="col">Times</th></tr></thead>
+              <tbody>
+                {% for a in access_rows %}
+                  <tr><td>{{ a.name }} <span class="text-muted small">{{ a.city_name }}</span></td><td class="small">{{ a.access_label }}{% if a.alternatives %} · {{ a.alternatives|length }} other way{{ 's' if a.alternatives|length > 1 }} in (not used){% endif %}</td>
+                    <td class="small">{{ {'sourced': 'from a cited source', 'estimated': 'estimated from cited figures', 'unknown': 'unknown, not scheduled'}[a.access_timing] }}</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="stays" class="mb-5">
+          <h2 class="h2">Where you stay</h2>
+          <p>Every city offers five stay areas: North, South, East, West and Central. Each one is a real neighbourhood, suburb or town from
+            OpenStreetMap, never a sight, a railway station or an airport, and preferably one with many places to stay nearby (counted from
+            OpenStreetMap's hotels and guest houses). The direction is the compass sector seen from the city centre. Where the geography makes a
+            direction meaningless, for example where the sea or a mountain valley lies that way, the closest area by direction is used and marked
+            with * and a note that says where it really is. Stations remain in the data as transport points, kept apart from places to stay.</p>
+          <p class="mb-0">The stay area is a node of the travel graph with its own road links (OSRM), so every first ride, ride home, route
+            order and travel score is computed from it. Changing the area changes the travel times; the cached tables are keyed to the
+            database file, so they are rebuilt when the data changes. A stay area is a neighbourhood's map point, not a specific hotel.</p>
+        </section>
+
         <section id="time" class="mb-5">
           <h2 class="h2">Using the whole day</h2>
           <p>A longer day raises the knapsack's capacity, so more places can be selected; the fill step then inserts any leftover candidate that
-            still fits. When hours stay unused the day summary says why — places closing before you could reach them, budget, meals, or simply
+            still fits. When hours stay unused the day summary says why — places closing before you could reach them, meals, or simply
             nothing left that matches your settings — instead of quietly leaving the evening empty. Each day shows sightseeing, local and intercity
             travel, meals, waiting, pace buffer and unused time separately.</p>
         </section>
@@ -145,8 +208,7 @@
           <h2 class="h2">Food and shopping</h2>
           <p>Food streets, markets and malls are attractions with food or shopping categories. They are <strong>optional</strong>: planned as stops
             only when you choose a matching food or shopping interest. Food places also serve as meal venues, filtered by your preferred style and
-            by “vegetarian only”, which uses only places a source explicitly describes as vegetarian. Shopping stops can take your chosen time and a
-            planned spend that counts towards the budget.</p>
+            by “vegetarian only”, which uses only places a source explicitly describes as vegetarian. Shopping stops can take your chosen time.</p>
           <p class="mb-0">Every listed place comes from a Wikipedia article (name, location, description); there are no invented restaurants, ratings or
             addresses. Coverage is uneven, so the planner says when an interest has little data in your cities. More listings could later be imported
             from OpenStreetMap (ODbL, free, fair-use limits) — see <code>scripts/discover_food_shopping.py</code>.</p>
@@ -166,6 +228,8 @@
           <h2 class="h2">How the comparison page scores strategies</h2>
           <p>Raw metrics come from the actual plans. Each is normalised against the best strategy on the same trip (100 = best of the three),
             then weighted: {% for k, w in cfg.SCORECARD_WEIGHTS.items() %}{{ (100 * w)|round|int }}% {{ k }}{{ ', ' if not loop.last else '.' }}{% endfor %}
+            There is no cost component: this is a travel-optimisation system, and an earlier “budget” option, which the planner could not
+            honestly optimise, has been removed. Its 10% went half to travel efficiency and half to value.
             Feasibility is a gate — a plan with any constraint violation is never recommended — and runtime is reported but not scored. Ties are
             reported as ties, and identical timelines as identical.</p>
         </section>
@@ -214,8 +278,8 @@
             <div class="col-md-6"><div class="card-soft card-pad-sm h-100">
               <h3 class="h6"><i class="bi bi-geo-alt me-1 text-accent"></i>Locations</h3>
               <p class="small mb-0">Wikipedia article coordinates, cross-checked against Wikidata and OpenStreetMap; disagreements over 2 km were reviewed by
-                hand. Places with no reliable location are left out and listed on the Destinations page. {{ no_road }} places reached only on foot or by
-                boat are kept but never routed by road.</p>
+                hand. Places with no reliable location are left out and listed on the Destinations page. {{ access_rows|length }} places reached on foot,
+                by boat or by ferry are kept, with their access modelled as described under <a href="#access">Access</a>.</p>
             </div></div>
             <div class="col-md-6"><div class="card-soft card-pad-sm h-100">
               <h3 class="h6"><i class="bi bi-signpost-split me-1 text-accent"></i>Travel times</h3>
@@ -232,7 +296,7 @@
             <div class="col-md-6"><div class="card-soft card-pad-sm h-100">
               <h3 class="h6"><i class="bi bi-exclamation-triangle me-1 text-accent"></i>Hours, fees, visit times</h3>
               <p class="small mb-0">From OpenStreetMap when tagged in a format we can read; otherwise the documented default for that kind of place
-                (below), marked <em>estimate</em> everywhere. Fees are for Indian adults. Local transport is estimated at ₹{{ TRANSPORT_RATE }}/km.</p>
+                (below), marked <em>estimate</em> everywhere. Fees are for Indian adults and shown for information only; the planner does not optimise cost.</p>
             </div></div>
           </div>
           <details class="mt-3">
@@ -250,11 +314,14 @@
           <h2 class="h2">Limitations</h2>
           <ul class="highlight-list">
             <li><i class="bi bi-dot"></i>The full problem is NP-hard; select-then-route is a decomposition heuristic and can miss a better combination (DP can lose to Greedy on a whole trip).</li>
-            <li><i class="bi bi-dot"></i>Days are planned in date order, so the plan is myopic: an early day may take a place a later, more restricted day needed.</li>
+            <li><i class="bi bi-dot"></i>When the planner chooses the places, it does so day by day in date order (myopic); the itinerary mode then re-assigns that set to days, but does not swap in places the selection left out.</li>
+            <li><i class="bi bi-dot"></i>Assigning places to days is NP-hard; the modes use a heuristic search, checked against exhaustive search only on small cases.</li>
             <li><i class="bi bi-dot"></i>Most hours, fees and visit times in the newer cities are category defaults; closing days are unknown.</li>
             <li><i class="bi bi-dot"></i>One base for the whole trip: overnight moves between cities are not modelled. Multi-city eligibility uses straight-line distance.</li>
-            <li><i class="bi bi-dot"></i>Treks, ferries, rope-ways, ceremonies with changing times and timetabled trains are not modelled.</li>
-            <li><i class="bi bi-dot"></i>Food and shopping coverage depends on Wikipedia and is thin in small towns; meal costs are not budgeted.</li>
+            <li><i class="bi bi-dot"></i>Trek and walking times are estimates from cited distances and climbs; ferry timetables and weather closures are not live. Places with unknown access times are not scheduled.</li>
+            <li><i class="bi bi-dot"></i>You return to the same stay area every night: overnight stops on a trek (for example at Kedarnath) are not modelled.</li>
+            <li><i class="bi bi-dot"></i>Stay areas are OpenStreetMap neighbourhood points; the “places to stay nearby” count depends on OSM coverage, which is thin in small towns.</li>
+            <li><i class="bi bi-dot"></i>Food and shopping coverage depends on Wikipedia and is thin in small towns.</li>
             <li><i class="bi bi-dot"></i>Map lines are straight segments in visit order, not road geometry.</li>
           </ul>
         </section>
@@ -262,8 +329,8 @@
         <section id="team">
           <h2 class="h2">Team and credits</h2>
           <div class="row g-3 mb-4">
-            <div class="col-md-6"><div class="card-soft card-pad-sm"><strong>Shreyas Singh</strong><div class="small text-muted">B.Tech CSE, Section B · Faculty of Technology, University of Delhi</div></div></div>
             <div class="col-md-6"><div class="card-soft card-pad-sm"><strong>Priyanshi Gupta</strong><div class="small text-muted">B.Tech CSE, Section B · Faculty of Technology, University of Delhi</div></div></div>
+            <div class="col-md-6"><div class="card-soft card-pad-sm"><strong>Shreyas Singh</strong><div class="small text-muted">B.Tech CSE, Section B · Faculty of Technology, University of Delhi</div></div></div>
           </div>
           <p class="small">Built with Python, Flask, SQLite, Jinja2, Bootstrap 5, Bootstrap Icons, Leaflet, Chart.js and NetworkX (cross-check only).
             Map tiles &copy; OpenStreetMap contributors. Routing data &copy; OpenStreetMap contributors (ODbL), computed with OSRM. Descriptions

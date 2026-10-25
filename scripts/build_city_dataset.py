@@ -9,7 +9,11 @@ Inputs (both reviewed by a person):
     data/catalog/top50.csv               the team's Top-50 destination list (city + famous attractions)
     data/curation/attraction_titles.csv  each catalog name -> Wikipedia article / OSM search / skip, with
                                          its kind of place, interests and any access restriction
-    data/curation/cities.csv             city taglines, descriptions and start points (railway station etc.)
+    data/curation/cities.csv             city taglines, descriptions and railway stations (-> transport_points.csv)
+
+Stay areas (data/stay_areas.csv) come from scripts/build_stay_areas.py, and the
+access of off-road attractions (data/access*.csv) is curated by hand from cited
+sources; this script writes neither.
 
 Sources, and what each one is trusted for:
     Wikipedia (CC BY-SA)       coordinates, a two-sentence description, the free-licence lead photo
@@ -376,7 +380,7 @@ def fmt(minutes):
 ATTRACTION_FIELDS = ["city", "slug", "name", "lat", "lng", "coord_source", "categories", "rating", "rating_source",
                      "popularity", "popularity_source", "pageviews_12m", "visit_minutes", "duration_source",
                      "fee_inr", "fee_source", "hours_source", "in_team_catalog", "data_status", "wiki_title",
-                     "wikidata", "place_type", "access", "access_note", "cuisine", "vegetarian", "description_source",
+                     "wikidata", "place_type", "cuisine", "vegetarian", "description_source",
                      "description"]
 
 
@@ -423,6 +427,8 @@ def build():
             if not s or s.get("lat") is None:
                 problems.append(f"{slug}: start point {label} has no coordinates")
                 continue
+            if not re.search(r"station|junction|airport", label, re.I):
+                continue                  # city-centre points were start points before; stays replace them
             new_starts.append({"city": slug, "slug": unique_slug(slugify(label) + "-start", slug), "name": label,
                                "lat": f"{s['lat']:.5f}", "lng": f"{s['lng']:.5f}", "coord_source": s["source"]})
 
@@ -480,7 +486,7 @@ def build():
             "fee_inr": fee, "fee_source": fee_source, "hours_source": hours_source,
             "in_team_catalog": "yes" if r["status"] != "extra" else "no", "data_status": "estimate",
             "wiki_title": (entry.get("title") or "").replace(" ", "_"), "wikidata": entry.get("qid") or "",
-            "place_type": r["place_type"], "access": r["access"] or "road", "access_note": r["access_note"],
+            "place_type": r["place_type"],
             "cuisine": r.get("cuisine", ""), "vegetarian": r.get("vegetarian") or "unknown",
             "description_source": description_source,
             "description": description})
@@ -490,12 +496,12 @@ def build():
                                   "open": fmt(o), "close": fmt(c), "last_entry": ""})
 
     write_merged("cities.csv", new_cities, key="slug")
-    write_merged("start_points.csv", new_starts)
+    write_merged("transport_points.csv", new_starts)
     write_merged("attractions.csv", new_attractions, fields=ATTRACTION_FIELDS)
     write_merged("opening_hours.csv", compress_hours(new_hours))
     for p in problems:
         print("problem:", p)
-    print(f"{len(new_cities)} cities, {len(new_starts)} start points, {len(new_attractions)} attractions written")
+    print(f"{len(new_cities)} cities, {len(new_starts)} transport points, {len(new_attractions)} attractions written")
 
 
 def compress_hours(rows):
@@ -519,7 +525,7 @@ def is_original(row):
 def original_slugs():
     """Slugs of the original cities' hand-made attractions and start points."""
     slugs = {r["slug"] for r in read_rows(os.path.join(DATA, "attractions.csv")) if is_original(r)}
-    slugs |= {r["slug"] for r in read_rows(os.path.join(DATA, "start_points.csv")) if r["city"] in ORIGINAL_CITIES}
+    slugs |= {r["slug"] for r in read_rows(os.path.join(DATA, "transport_points.csv")) if r["city"] in ORIGINAL_CITIES}
     return slugs
 
 
@@ -553,7 +559,6 @@ def write_merged(name, new_rows, key=None, fields=None):
         for r in kept:
             for column in ("rating_source", "popularity_source", "duration_source", "fee_source", "hours_source"):
                 r[column] = r.get(column) or "illustrative"
-            r["access"] = r.get("access") or "road"
             r["vegetarian"] = r.get("vegetarian") or "unknown"
             r["description_source"] = r.get("description_source") or "project"
     fields = fields or list(dict.fromkeys(old_fields + [k for r in new_rows for k in r]))

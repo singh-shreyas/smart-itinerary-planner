@@ -1,0 +1,8 @@
+city,slug,name,direction,lat,lng,coord_source,direction_note
+testville,hotel,Old Town,central,10.0000,10.0000,approximate,
+testville,north-quarter,North Quarter,north,10.0300,10.0000,approximate,
+riverton,riverton-hub,Riverside,central,10.0000,10.3650,approximate,
+westford,westford-hub,Westford Bazaar,central,10.0000,9.3600,approximate,
+farville,farville-hub,Farville Square,central,11.5000,10.0000,approximate,
+hillview,hill-stay,Hillside,central,14.0000,10.0000,approximate,
+gridville,grid-stay,Grid Square,central,16.0000,10.0000,approximate,

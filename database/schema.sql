@@ -1,7 +1,11 @@
--- Smart Itinerary Planner: SQLite schema (schema version 2).
+-- Smart Itinerary Planner: SQLite schema (schema version 3).
 --
--- Every node of the travel graph (attraction or start point) is a row in
--- `places`; attraction-only fields live in the 1:1 `attractions` table.
+-- Every node of the travel graph is a row in `places`. Its kind keeps three
+-- different ideas apart:
+--     attraction  a sightseeing, food or shopping stop   (details in `attractions`)
+--     stay        an area to stay in, one per direction  (details in `stay_areas`)
+--     transport   a railway station or other interchange -- never offered as a stay
+--     access      where the road ends and a trek / ferry begins (e.g. Gaurikund)
 -- Times are stored as minutes after midnight (09:30 -> 570) so comparisons
 -- are plain integer maths. A weekday with no opening_hours row = closed.
 --
@@ -19,6 +23,9 @@
 PRAGMA foreign_keys = ON;
 
 DROP TABLE IF EXISTS meta;
+DROP TABLE IF EXISTS access_alternatives;
+DROP TABLE IF EXISTS access_segments;
+DROP TABLE IF EXISTS stay_areas;
 DROP TABLE IF EXISTS travel_edges;
 DROP TABLE IF EXISTS opening_hours;
 DROP TABLE IF EXISTS attraction_categories;
@@ -55,12 +62,22 @@ CREATE TABLE places (                        -- every node of the travel graph
     city_id      INTEGER NOT NULL REFERENCES cities(id) ON DELETE CASCADE,
     slug         TEXT    NOT NULL UNIQUE,    -- unique across ALL cities (multi-city trips mix them)
     name         TEXT    NOT NULL,
-    kind         TEXT    NOT NULL CHECK (kind IN ('attraction', 'start')),
+    kind         TEXT    NOT NULL CHECK (kind IN ('attraction', 'stay', 'transport', 'access')),
     lat          REAL    NOT NULL CHECK (lat BETWEEN -90 AND 90),
     lng          REAL    NOT NULL CHECK (lng BETWEEN -180 AND 180),
     coord_source TEXT,
-    access       TEXT    NOT NULL DEFAULT 'road' CHECK (access IN ('road', 'no_road')),
-    access_note  TEXT                        -- why a place has no road access in our graph
+    note         TEXT,                       -- access points: what the point stands for
+    source_url   TEXT
+);
+
+CREATE TABLE stay_areas (                    -- one row per place with kind = 'stay'
+    place_id       INTEGER PRIMARY KEY REFERENCES places(id) ON DELETE CASCADE,
+    direction      TEXT    NOT NULL CHECK (direction IN ('north', 'south', 'east', 'west', 'central')),
+    direction_note TEXT,                     -- set when the area is not really in that direction
+    osm_place      TEXT,                     -- OpenStreetMap place type (suburb, town, ...)
+    hotels_nearby  INTEGER,                  -- OSM places to stay within 1 km when it was chosen
+    distance_km    REAL,                     -- straight line from the city centre
+    bearing        REAL                      -- degrees from north, seen from the city centre
 );
 
 CREATE TABLE categories (
@@ -96,7 +113,20 @@ CREATE TABLE attractions (                   -- one row per place with kind = 'a
     cuisine           TEXT,                  -- food places only: venue styles separated by ';'
     vegetarian        TEXT    NOT NULL DEFAULT 'unknown' CHECK (vegetarian IN ('yes', 'unknown')),
     in_team_catalog   INTEGER NOT NULL CHECK (in_team_catalog IN (0, 1)),
-    data_status       TEXT    NOT NULL CHECK (data_status IN ('verified', 'estimate', 'illustrative'))
+    data_status       TEXT    NOT NULL CHECK (data_status IN ('verified', 'estimate', 'illustrative')),
+    -- How you get there. 'road' = a road reaches it (OSRM); anything else is
+    -- described by access_segments (the default route) and access_alternatives.
+    access_type       TEXT    NOT NULL DEFAULT 'road'
+                      CHECK (access_type IN ('road', 'road_walk', 'trek', 'ferry', 'boat', 'ropeway',
+                                             'helicopter', 'public_transport_walk', 'restricted', 'unknown')),
+    road_access       TEXT    NOT NULL DEFAULT 'yes' CHECK (road_access IN ('yes', 'no', 'unknown')),
+    access_point_id   INTEGER REFERENCES places(id),   -- where the road ends (NULL = unknown or not needed)
+    access_modes      TEXT,                  -- e.g. 'trek' or 'ferry;walk'
+    access_timing     TEXT    NOT NULL DEFAULT 'road_data'
+                      CHECK (access_timing IN ('road_data', 'sourced', 'estimated', 'unknown')),
+    last_mile_m       INTEGER,               -- road_walk: straight-line metres from the nearest road
+    access_note       TEXT,
+    access_source_url TEXT
 );
 
 CREATE TABLE attraction_categories (
@@ -121,10 +151,42 @@ CREATE TABLE travel_edges (                  -- directed: A->B and B->A are sepa
     to_id    INTEGER NOT NULL REFERENCES places(id) ON DELETE CASCADE,
     minutes  REAL    NOT NULL CHECK (minutes > 0),   -- free-flow minutes (traffic factor applied in code)
     km       REAL    NOT NULL CHECK (km > 0),
-    source   TEXT    NOT NULL CHECK (source IN ('osrm', 'manual', 'haversine_estimate')),
-    scope    TEXT    NOT NULL DEFAULT 'local' CHECK (scope IN ('local', 'intercity')),
+    source   TEXT    NOT NULL CHECK (source IN ('osrm', 'manual', 'haversine_estimate', 'access')),
+    scope    TEXT    NOT NULL DEFAULT 'local' CHECK (scope IN ('local', 'intercity', 'access')),
     PRIMARY KEY (from_id, to_id),
     CHECK (from_id <> to_id)
+);
+
+-- The parts of a non-road link (source = 'access'), in order. A link from
+-- Gateway of India to Elephanta Caves is: 1 ferry 60 min, 2 walk 15 min.
+-- Its travel_edges row holds the totals, so Dijkstra sees one edge.
+CREATE TABLE access_segments (
+    from_id      INTEGER NOT NULL REFERENCES places(id) ON DELETE CASCADE,
+    to_id        INTEGER NOT NULL REFERENCES places(id) ON DELETE CASCADE,
+    seq          INTEGER NOT NULL CHECK (seq >= 1),
+    mode         TEXT    NOT NULL CHECK (mode IN ('walk', 'trek', 'ferry', 'boat', 'ropeway')),
+    minutes      INTEGER NOT NULL CHECK (minutes > 0),
+    km           REAL    NOT NULL CHECK (km > 0),
+    depart_open  INTEGER,                    -- this part can only start inside [open, close]
+    depart_close INTEGER,                    --   (e.g. first and last ferry); NULL = no limit known
+    basis        TEXT    NOT NULL CHECK (basis IN ('source', 'estimate')),
+    note         TEXT    NOT NULL,
+    source_url   TEXT,
+    PRIMARY KEY (from_id, to_id, seq)
+);
+
+-- Other ways in (helicopter, ropeway, battery car, ...). Shown to the traveller,
+-- never used in a plan: their schedules and availability are not verified.
+CREATE TABLE access_alternatives (
+    id           INTEGER PRIMARY KEY,
+    place_id     INTEGER NOT NULL REFERENCES attractions(place_id) ON DELETE CASCADE,
+    label        TEXT    NOT NULL,
+    modes        TEXT    NOT NULL,
+    starts_from  TEXT,
+    minutes      INTEGER,                    -- as stated by the source, if it states one
+    status       TEXT    NOT NULL CHECK (status IN ('operating_unverified', 'planned')),
+    note         TEXT    NOT NULL,
+    source_url   TEXT
 );
 
 CREATE INDEX idx_places_city ON places(city_id);

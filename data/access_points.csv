@@ -1,0 +1,3 @@
+city,slug,name,lat,lng,coord_source,note,source_url
+katra,katra-trek-start,Katra (start of the Vaishno Devi trek),32.98944,74.93333,wikipedia,"Placed at Katra's listed town point: Wikipedia gives the shrine as 12 km from Katra. The actual gate (Banganga / Darshani Darwaza) a short walk away is not modelled separately.",https://en.wikipedia.org/wiki/Vaishno_Devi_Temple
+kedarnath,gaurikund-trek-start,Gaurikund (road head for the Kedarnath trek),30.653402,79.026820,openstreetmap,"The last point reachable by road; the trek to Kedarnath starts here.",https://www.openstreetmap.org/node/342108397

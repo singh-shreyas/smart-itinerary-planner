@@ -102,7 +102,7 @@
 
   // 1a. Subscores (grouped horizontal bars: one group per measure, one bar per strategy)
   var MEASURES = [["value", "Value"], ["coverage", "Coverage"], ["travel", "Travel efficiency"],
-                  ["utilisation", "Time utilisation"], ["budget", "Budget efficiency"]];
+                  ["utilisation", "Time utilisation"]];
   var shown = MEASURES.filter(function (m) { return data.weights && m[0] in data.weights; });
   if (rows.length) {
     chart("chart-scorecard", {

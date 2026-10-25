@@ -10,7 +10,7 @@ lets each algorithm be unit-tested (and explained) on its own.
     scoring.py             the attraction value score
     knapsack_types.py      Item / SelectionResult shared by the two selectors
     greedy.py              greedy knapsack-style selection
-    dynamic_programming.py 0/1 knapsack over (time, money) with traceback
+    dynamic_programming.py 0/1 knapsack over the day's time, with traceback
     nearest_neighbor.py    nearest-neighbour route construction
     two_opt.py             2-opt local search (directed costs, optional feasibility check)
     activity_selection.py  classic activity selection + earliest-deadline ordering

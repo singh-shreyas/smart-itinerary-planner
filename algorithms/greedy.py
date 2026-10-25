@@ -1,10 +1,9 @@
 """Greedy attraction selection (fast baseline).
 
-Idea: sort attractions by "value per unit of resource" and take each one that
-still fits. With only a time limit the density is score / weight. With a budget
-too, each item uses a fraction of both limits, so
+Idea: sort attractions by "value per unit of time" and take each one that
+still fits:
 
-    density = score / (weight / time_cap + cost / money_cap)
+    density = score / weight
 
 Greedy is fast, O(n log n), but NOT optimal for the 0/1 knapsack. The classic
 counter-example ("greedy trap"), capacity 300 minutes:
@@ -19,34 +18,26 @@ from algorithms.knapsack_types import summarise
 from algorithms.sorting import merge_sort
 
 
-def greedy_select(items, time_cap, money_cap=None):
+def greedy_select(items, time_cap):
     """Choose items greedily by density.
 
-    items:     list of Item(id, score, weight, cost) with integer weight / cost
-    time_cap:  integer capacity in time units
-    money_cap: integer capacity in money units, or None for "no budget"
+    items:    list of Item(id, score, weight) with integer weight
+    time_cap: integer capacity in time units
 
     Returns a SelectionResult. Time: O(n log n) for the sort + O(n) scan.
     """
     if time_cap <= 0 or not items:
         return summarise(items, [])
-    use_money = money_cap is not None and money_cap > 0
 
     def density(item):
-        resource = item.weight / time_cap
-        if use_money:
-            resource += item.cost / money_cap
-        return item.score / resource if resource > 0 else float("inf")
+        return item.score / item.weight if item.weight > 0 else float("inf")
 
     # Highest density first; ties broken by smaller id so the result is deterministic.
     ordered = merge_sort(items, key=lambda it: (-density(it), it.id))
 
-    chosen, used_time, used_money = [], 0, 0
+    chosen, used_time = [], 0
     for item in ordered:
-        fits_time = used_time + item.weight <= time_cap
-        fits_money = money_cap is None or used_money + item.cost <= money_cap
-        if fits_time and fits_money:
+        if used_time + item.weight <= time_cap:
             chosen.append(item.id)
             used_time += item.weight
-            used_money += item.cost
     return summarise(items, chosen)

@@ -73,11 +73,11 @@
                 <p class="small mb-2"><i class="bi bi-signpost-2 me-1 text-accent"></i>Combine with:
                   {% for n in card.nearby %}<a href="{{ url_for('planner.plan', city=c.slug, also=n.slug) }}">{{ n.name }}</a> <span class="text-muted">({{ n.km|round|int }} km)</span>{{ ', ' if not loop.last }}{% endfor %}</p>
               {% endif %}
-              {% if card.catalog_only or card.no_road %}
+              {% if card.catalog_only or card.untimed %}
                 <details class="small mb-3">
-                  <summary class="text-muted">{{ card.catalog_only|length + card.no_road|length }} listed sight{{ 's' if (card.catalog_only|length + card.no_road|length) != 1 }} not planned by road</summary>
+                  <summary class="text-muted">{{ card.catalog_only|length + card.untimed|length }} listed sight{{ 's' if (card.catalog_only|length + card.untimed|length) != 1 }} not planned</summary>
                   <ul class="mt-2 mb-0 ps-3">
-                    {% for a in card.no_road %}<li><strong>{{ a.name }}</strong> — {{ a.access_note }}</li>{% endfor %}
+                    {% for a in card.untimed %}<li><strong>{{ a.name }}</strong> — {{ a.access_note }} <em>Access time unknown, so it is not timed.</em></li>{% endfor %}
                     {% for s in card.catalog_only %}<li><strong>{{ s.name }}</strong> — {{ s.reason }}</li>{% endfor %}
                   </ul>
                 </details>

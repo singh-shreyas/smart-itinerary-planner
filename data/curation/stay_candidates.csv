@@ -1,0 +1,458 @@
+city,name
+delhi,Paharganj
+delhi,Karol Bagh
+delhi,Civil Lines
+delhi,Hauz Khas
+delhi,Mayur Vihar
+delhi,Lajpat Nagar
+delhi,Greater Kailash
+delhi,Kamla Nagar
+delhi,Rajouri Garden
+delhi,Laxmi Nagar
+delhi,Defence Colony
+delhi,Daryaganj
+agra,Taj Ganj
+agra,Sadar Bazaar
+agra,Civil Lines
+agra,Kamla Nagar
+agra,Sikandra
+agra,Dayal Bagh
+agra,Shahganj
+agra,Trans Yamuna Colony
+agra,Rakabganj
+jaipur,C-Scheme
+jaipur,Bani Park
+jaipur,Malviya Nagar
+jaipur,Raja Park
+jaipur,Vaishali Nagar
+jaipur,Civil Lines
+jaipur,Jawahar Nagar
+jaipur,Bapu Nagar
+jaipur,Adarsh Nagar
+jaipur,Amer
+jaipur,Shastri Nagar
+jaipur,Mansarovar
+varanasi,Godowlia
+varanasi,Assi
+varanasi,Lanka
+varanasi,Cantonment
+varanasi,Sigra
+varanasi,Lahurabir
+varanasi,Sarnath
+varanasi,Bhelupur
+varanasi,Shivpur
+varanasi,Pandeypur
+varanasi,Maldahiya
+ayodhya,Faizabad
+ayodhya,Saket Puri
+ayodhya,Devkali
+ayodhya,Ranopali
+ayodhya,Darshan Nagar
+ayodhya,Civil Lines
+ayodhya,Tedhi Bazar
+ayodhya,Rikabganj
+tirupati,Tirumala
+tirupati,Tiruchanur
+tirupati,Korlagunta
+tirupati,Balaji Colony
+tirupati,Bairagi Patteda
+tirupati,Renigunta
+tirupati,Mangalam
+tirupati,Tilak Road
+mumbai,Bandra Kurla Complex
+mumbai,Colaba
+mumbai,Fort
+mumbai,Bandra West
+mumbai,Juhu
+mumbai,Andheri East
+mumbai,Powai
+mumbai,Chembur
+mumbai,Dadar
+mumbai,Santacruz East
+mumbai,Goregaon
+mumbai,Ghatkopar
+mumbai,Vashi
+calangute,Calangute
+calangute,Baga
+calangute,Candolim
+calangute,Saligao
+calangute,Arpora
+calangute,Anjuna
+calangute,Sinquerim
+calangute,Porvorim
+amritsar,Ranjit Avenue
+amritsar,Green Avenue
+amritsar,Model Town
+amritsar,Putlighar
+amritsar,Chheharta
+amritsar,Katra Ahluwalia
+amritsar,Joshi Nagar
+amritsar,Sultanwind
+amritsar,Basant Avenue
+amritsar,Majitha
+udaipur,Lal Ghat
+udaipur,Hanuman Ghat
+udaipur,Fatehpura
+udaipur,Hiran Magri
+udaipur,Shobhagpura
+udaipur,Bhatiyani Chohatta
+udaipur,Madhuban
+udaipur,Bhuwana
+udaipur,Sector 11
+udaipur,Ambamata
+udaipur,Chetak Circle
+haridwar,Jwalapur
+haridwar,Kankhal
+haridwar,Bhupatwala
+haridwar,Shivalik Nagar
+haridwar,Mayapur
+haridwar,Ranipur
+haridwar,Bhimgoda
+haridwar,Devpura
+haridwar,Khanna Nagar
+rishikesh,Tapovan
+rishikesh,Muni Ki Reti
+rishikesh,Swargashram
+rishikesh,Shyampur
+rishikesh,Raiwala
+rishikesh,Virbhadra
+rishikesh,Pashulok
+rishikesh,Dhalwala
+vrindavan,Raman Reti
+vrindavan,Chaitanya Vihar
+vrindavan,Gyan Gudri
+vrindavan,Chhatikara
+vrindavan,Sunrakh
+vrindavan,Jaisinghpura
+mathura,Krishna Nagar
+mathura,Dampier Nagar
+mathura,Govind Nagar
+mathura,Masani
+mathura,Radhika Vihar
+mathura,Maholi
+mathura,Bhuteshwar
+mathura,Radha Nagar
+shirdi,Nimgaon
+shirdi,Sakuri
+shirdi,Rui
+shirdi,Kankuri
+shirdi,Rahata
+shirdi,Pimpalwadi
+katra,Katra
+katra,Panthal
+katra,Domail
+katra,Reasi
+katra,Arli Hinchi
+katra,Kot
+ujjain,Freeganj
+ujjain,Madhav Nagar
+ujjain,Nanakheda
+ujjain,Rishi Nagar
+ujjain,Mahananda Nagar
+ujjain,Kshirsagar
+ujjain,Vikram Nagar
+ujjain,Dussehra Maidan
+manali,Old Manali
+manali,Vashisht
+manali,Aleo
+manali,Prini
+manali,Model Town
+manali,Siyal
+manali,Simsa
+manali,Nasogi
+manali,Log Huts
+shimla,Lakkar Bazaar
+shimla,Chotta Shimla
+shimla,Sanjauli
+shimla,Boileauganj
+shimla,Summer Hill
+shimla,Kasumpti
+shimla,Dhalli
+shimla,New Shimla
+shimla,Totu
+shimla,Lower Bazaar
+prayagraj,Civil Lines
+prayagraj,George Town
+prayagraj,Katra
+prayagraj,Kydganj
+prayagraj,Naini
+prayagraj,Jhusi
+prayagraj,Phaphamau
+prayagraj,Tagore Town
+prayagraj,Allahpur
+prayagraj,Daraganj
+prayagraj,Dhoomanganj
+prayagraj,Rajapur
+ajmer,Vaishali Nagar
+ajmer,Civil Lines
+ajmer,Kesarganj
+ajmer,Naya Bazaar
+ajmer,Adarsh Nagar
+ajmer,Panchsheel Nagar
+ajmer,Shastri Nagar
+ajmer,Diggi Bazaar
+ajmer,Madar
+hyderabad,Abids
+hyderabad,Banjara Hills
+hyderabad,Secunderabad
+hyderabad,Begumpet
+hyderabad,Somajiguda
+hyderabad,Nampally
+hyderabad,Dilsukhnagar
+hyderabad,LB Nagar
+hyderabad,Kachiguda
+hyderabad,Mehdipatnam
+hyderabad,Uppal
+hyderabad,Falaknuma
+hyderabad,Gachibowli
+hyderabad,Lakdikapul
+kochi,Fort Kochi
+kochi,Mattancherry
+kochi,Ernakulam
+kochi,Kadavanthra
+kochi,Edappally
+kochi,Kakkanad
+kochi,Thevara
+kochi,Willingdon Island
+kochi,Vypin
+kochi,Kaloor
+kochi,Palarivattom
+kochi,Panampilly Nagar
+kochi,Thoppumpady
+munnar,Old Munnar
+munnar,Pallivasal
+munnar,Chithirapuram
+munnar,Devikulam
+munnar,Pothamedu
+munnar,Anachal
+munnar,Chinnakanal
+munnar,Lakshmi
+alleppey,Mullakkal
+alleppey,Thathampally
+alleppey,Kalarcode
+alleppey,Pathirappally
+alleppey,Kainakary
+alleppey,Thumpoly
+alleppey,Kommady
+alleppey,Sanathanapuram
+alleppey,Punnamada
+sabarimala,Pamba
+sabarimala,Nilakkal
+sabarimala,Vadasserikara
+sabarimala,Laha
+sabarimala,Plappally
+sabarimala,Erumely
+sabarimala,Ranni
+sabarimala,Chalakkayam
+madurai,Simmakkal
+madurai,Tallakulam
+madurai,KK Nagar
+madurai,Anna Nagar
+madurai,Goripalayam
+madurai,Thirunagar
+madurai,Pasumalai
+madurai,Narimedu
+madurai,Sellur
+madurai,Avaniyapuram
+madurai,Thiruparankundram
+madurai,Vilangudi
+chennai,Egmore
+chennai,T. Nagar
+chennai,Mylapore
+chennai,Nungambakkam
+chennai,Adyar
+chennai,Besant Nagar
+chennai,Triplicane
+chennai,George Town
+chennai,Royapuram
+chennai,Anna Nagar
+chennai,Guindy
+chennai,Kilpauk
+chennai,Purasawalkam
+chennai,Perambur
+chennai,Tondiarpet
+rameswaram,Pamban
+rameswaram,Thangachimadam
+rameswaram,Mandapam
+rameswaram,Ramanathapuram
+rameswaram,Natarajapuram
+kanyakumari,Agastheeswaram
+kanyakumari,Suchindram
+kanyakumari,Kottaram
+kanyakumari,Vivekanandapuram
+kanyakumari,Chinnamuttom
+kanyakumari,Nagercoil
+kanyakumari,Kovalam
+ooty,Charing Cross
+ooty,Fern Hill
+ooty,Lovedale
+ooty,Elk Hill
+ooty,Finger Post
+ooty,Ketti
+ooty,Pudumund
+ooty,Kandal
+ooty,Westbrook
+bengaluru,Shivajinagar
+bengaluru,Indiranagar
+bengaluru,Koramangala
+bengaluru,Jayanagar
+bengaluru,Malleswaram
+bengaluru,Rajajinagar
+bengaluru,Hebbal
+bengaluru,Whitefield
+bengaluru,Basavanagudi
+bengaluru,Yelahanka
+bengaluru,Richmond Town
+bengaluru,Frazer Town
+bengaluru,Ulsoor
+bengaluru,Gandhinagar
+mysuru,Nazarbad
+mysuru,Saraswathipuram
+mysuru,Jayalakshmipuram
+mysuru,Gokulam
+mysuru,Vijayanagar
+mysuru,Kuvempunagar
+mysuru,Siddhartha Layout
+mysuru,Yadavagiri
+mysuru,Lashkar Mohalla
+mysuru,Bannimantap
+mysuru,Devaraja Mohalla
+mysuru,Mandi Mohalla
+hampi,Hampi
+hampi,Kamalapur
+hampi,Hosapete
+hampi,Anegundi
+hampi,Virupapur Gaddi
+hampi,Kadirampura
+hampi,Sanapur
+puri,Swargadwar
+puri,Baliapanda
+puri,Penthakata
+puri,Sipasarubali
+puri,Matitota
+puri,Talabania
+puri,Bali Sahi
+puri,Chakra Tirtha
+konark,Konark
+konark,Gop
+konark,Kakatpur
+konark,Chandrabhaga
+konark,Ramachandi
+konark,Nuagaon
+kolkata,Esplanade
+kolkata,Salt Lake
+kolkata,New Town
+kolkata,Ballygunge
+kolkata,Gariahat
+kolkata,Alipore
+kolkata,Shyambazar
+kolkata,Howrah
+kolkata,Bhowanipore
+kolkata,Dum Dum
+kolkata,Behala
+kolkata,Tollygunge
+kolkata,Kalighat
+kolkata,Bowbazar
+kolkata,Park Circus
+darjeeling,Ghoom
+darjeeling,Lebong
+darjeeling,Jalapahar
+darjeeling,Singamari
+darjeeling,Lochnagar
+darjeeling,Alubari
+darjeeling,Chowk Bazaar
+darjeeling,Ghum
+srinagar,Rajbagh
+srinagar,Lal Chowk
+srinagar,Sonwar
+srinagar,Nishat
+srinagar,Hazratbal
+srinagar,Shalimar
+srinagar,Rainawari
+srinagar,Batamaloo
+srinagar,Bemina
+srinagar,Nowgam
+srinagar,Jawahar Nagar
+srinagar,Shivpora
+srinagar,Dalgate
+leh,Changspa
+leh,Karzoo
+leh,Skara
+leh,Sankar
+leh,Choglamsar
+leh,Spituk
+leh,Chubi
+leh,Housing Colony
+jodhpur,Sardarpura
+jodhpur,Ratanada
+jodhpur,Paota
+jodhpur,Shastri Nagar
+jodhpur,Navchokiya
+jodhpur,Chopasni Housing Board
+jodhpur,Mandore
+jodhpur,Basni
+jodhpur,Sojati Gate
+jaisalmer,Gandhi Colony
+jaisalmer,Dedansar
+jaisalmer,Sam
+jaisalmer,Kishanghat
+jaisalmer,Hanuman Chouraha
+jaisalmer,Amar Sagar
+pushkar,Pushkar
+pushkar,Ganahera
+pushkar,Motisar
+pushkar,Kharekhari
+pushkar,Badi Basti
+nainital,Mallital
+nainital,Tallital
+nainital,Sukhatal
+nainital,Ayarpata
+nainital,Sher-ka-Danda
+nainital,Bhowali
+nainital,Snow View
+mussoorie,Landour
+mussoorie,Kulri
+mussoorie,Barlowganj
+mussoorie,Happy Valley
+mussoorie,Kempty
+mussoorie,Jharipani
+mussoorie,Library
+kedarnath,Gaurikund
+kedarnath,Sonprayag
+kedarnath,Sitapur
+kedarnath,Phata
+kedarnath,Guptkashi
+kedarnath,Rambara
+kedarnath,Trijuginarayan
+aurangabad,Cidco
+aurangabad,Osmanpura
+aurangabad,Garkheda
+aurangabad,Samarth Nagar
+aurangabad,Aurangpura
+aurangabad,Begumpura
+aurangabad,Cantonment
+aurangabad,Waluj
+aurangabad,Chikalthana
+aurangabad,Shahganj
+aurangabad,Harsul
+khajuraho,Khajuraho
+khajuraho,Rajnagar
+khajuraho,Bamitha
+khajuraho,Basari
+khajuraho,Chandranagar
+kevadia,Kevadia
+kevadia,Garudeshwar
+kevadia,Rajpipla
+kevadia,Gora
+kevadia,Navagam
+kevadia,Limdi
+pondicherry,White Town
+pondicherry,Muthialpet
+pondicherry,Lawspet
+pondicherry,Mudaliarpet
+pondicherry,Ariyankuppam
+pondicherry,Auroville
+pondicherry,Reddiarpalayam
+pondicherry,Saram
+pondicherry,Kosapalayam
+pondicherry,Uppalam

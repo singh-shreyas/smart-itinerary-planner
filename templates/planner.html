@@ -29,7 +29,8 @@
 
             <div class="form-section" id="step-destination">
               <h2><span class="step">1</span>Destination</h2>
-              <p>Your base city is where every day starts and ends (your hotel or arrival point).</p>
+              <p>Your base city, and the area of it you stay in: every day starts and ends there, so all travel times are
+                worked out from that area.</p>
               <div class="row g-3">
                 <div class="col-md-6">
                   <label class="form-label" for="city">Base city</label>
@@ -44,22 +45,21 @@
                     {% endfor %}
                   </select>
                   <div class="form-text" id="city-help" data-readiness>
-                    {% if opts %}{{ opts.readiness.reachable }} of {{ opts.readiness.total }} attractions can be planned by road.{% endif %}
+                    {% if opts %}{{ opts.readiness.reachable }} of {{ opts.readiness.total }} attractions can be planned from here.{% endif %}
                   </div>
                   {{ ui.field_error(errors, 'city') }}
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label" for="start">Start &amp; end each day at</label>
-                  <select class="form-select {{ ui.invalid(errors, 'start') }}" id="start" name="start" aria-describedby="start-error">
+                  <label class="form-label" for="start">Where you'll stay</label>
+                  <select class="form-select {{ ui.invalid(errors, 'start') }}" id="start" name="start" aria-describedby="stay-note start-error">
                     {% if opts %}
-                      <optgroup label="Stations and hubs">
-                        {% for p in opts.starts %}<option value="{{ p.slug }}" {% if p.slug == values.start %}selected{% endif %}>{{ p.name }}</option>{% endfor %}
-                      </optgroup>
-                      <optgroup label="Or an attraction">
-                        {% for a in opts.attractions if a.road %}<option value="{{ a.slug }}" {% if a.slug == values.start %}selected{% endif %}>{{ a.name }}</option>{% endfor %}
-                      </optgroup>
+                      {% for p in opts.stays %}<option value="{{ p.slug }}" {% if p.slug == values.start %}selected{% endif %} data-note="{{ p.note or '' }}">{{ p.label }}</option>{% endfor %}
                     {% endif %}
                   </select>
+                  <div class="form-text" id="stay-note" aria-live="polite">
+                    {% set chosen = (opts.stays|selectattr('slug', 'equalto', values.start)|list or opts.stays[:1]) if opts else [] %}
+                    {% if chosen and chosen[0].note %}* {{ chosen[0].note }}{% else %}Five neighbourhoods, one in each part of the city, from OpenStreetMap.{% endif %}
+                  </div>
                   {{ ui.field_error(errors, 'start') }}
                 </div>
                 <div class="col-12">
@@ -123,27 +123,49 @@
               </div>
             </div>
 
-            <div class="form-section">
-              <h2><span class="step">3</span>Daily budget <span class="chip ms-1">Optional</span></h2>
-              <p>Entry fees per person per day (plus shopping and transport if you include them). Leave it empty for no limit.</p>
-              <div class="row g-3 align-items-center">
-                <div class="col-md-5">
-                  <label class="form-label visually-hidden" for="budget">Daily budget in rupees</label>
-                  <div class="input-icon">
-                    <span class="bi" style="font-style: normal; font-weight: 600;">₹</span>
-                    <input class="form-control {{ ui.invalid(errors, 'budget') }}" type="number" id="budget" name="budget" min="0" step="10"
-                           max="100000" inputmode="numeric" placeholder="No limit" value="{{ values.budget }}" aria-describedby="budget-error">
-                  </div>
-                </div>
-                <div class="col-md-7">
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" role="switch" id="transport" name="transport" value="on" {% if values.transport %}checked{% endif %}>
-                    <label class="form-check-label" for="transport">Count local transport in the budget <span class="text-muted">(about ₹{{ TRANSPORT_RATE }}/km)</span></label>
-                  </div>
-                </div>
-                <div class="col-12">{{ ui.field_error(errors, 'budget') }}</div>
+            <div class="form-section" id="step-mode">
+              <h2><span class="step">3</span>Places and itinerary mode</h2>
+              <p>Choose what to see, then how to spread it over the days of your trip. The same places can give very different trips.</p>
+              <span class="form-label d-block" id="choose-label">Places to visit</span>
+              <div class="segmented mb-2" role="radiogroup" aria-labelledby="choose-label">
+                <input type="radio" name="choose" id="choose-auto" value="auto" {% if values.choose != 'pick' %}checked{% endif %}>
+                <label for="choose-auto">Let the planner choose</label>
+                <input type="radio" name="choose" id="choose-pick" value="pick" {% if values.choose == 'pick' %}checked{% endif %}>
+                <label for="choose-pick">I'll pick the places</label>
               </div>
+              <p class="form-text mt-0" id="choose-help" data-auto="The planner picks the most valuable places that fit your days (see “Advanced” for how)."
+                 data-pick="Tick the places you want to see. The itinerary mode below decides which day each one goes on.">{{ 'Tick the places you want to see. The itinerary mode below decides which day each one goes on.' if values.choose == 'pick' else 'The planner picks the most valuable places that fit your days (see “Advanced” for how).' }}</p>
+              <div class="pick-box {{ 'd-none' if values.choose != 'pick' }}" id="pick-box">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="small"><strong id="pick-count">{{ values.places|length }}</strong> selected (up to {{ max_picked }})</span>
+                </div>
+                <div class="exclude-list" id="pick-list" role="group" aria-label="Places to visit">
+                  {% if opts %}
+                    {% for a in opts.attractions %}
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="places" value="{{ a.slug }}" id="pk-{{ a.slug }}" {% if a.slug in values.places %}checked{% endif %} {% if not a.timed %}disabled{% endif %}>
+                        <label class="form-check-label d-flex justify-content-between gap-2" for="pk-{{ a.slug }}"><span>{{ a.name }}{% if a.access %} <span class="chip chip-xs {{ 'chip-warning' if not a.timed }}">{{ a.access }}{{ ' · not timed' if not a.timed }}</span>{% endif %}</span><span class="text-muted small">{{ a.visit|duration }}</span></label>
+                      </div>
+                    {% endfor %}
+                  {% endif %}
+                </div>
+                {{ ui.field_error(errors, 'places') }}
+              </div>
+
+              <span class="form-label d-block mt-4" id="mode-pick-label">How should the days be spread?</span>
+              <div class="row g-3" role="radiogroup" aria-labelledby="mode-pick-label">
+                {% for key, m in MODES.items() %}
+                  <div class="col-md-4">
+                    <div class="choice-card">
+                      <input type="radio" name="mode" id="itmode-{{ key }}" value="{{ key }}" {% if values.mode == key %}checked{% endif %}>
+                      <label for="itmode-{{ key }}"><i class="bi {{ m.icon }} choice-icon"></i><strong>{{ m.label }}</strong><span>{{ m.text }}</span></label>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+              {{ ui.field_error(errors, 'mode') }}
             </div>
+
 
             <div class="form-section">
               <h2><span class="step">4</span>Interests</h2>
@@ -240,12 +262,7 @@
                   </select>
                   {{ ui.field_error(errors, 'shop_min') }}
                 </div>
-                <div class="col-md-6">
-                  <label class="form-label small" for="shop_spend">Planned spend per shopping stop (₹)</label>
-                  <input class="form-control" type="number" min="0" step="100" id="shop_spend" name="shop_spend" value="{{ values.shop_spend }}" placeholder="0" inputmode="numeric">
-                  {{ ui.field_error(errors, 'shop_spend') }}
-                </div>
-                <div class="col-12"><div class="form-text">Shopping stops are planned only with a shopping interest (markets, malls, handicrafts or fashion). Their spend counts towards your daily budget.</div></div>
+                <div class="col-md-6 d-flex align-items-end"><div class="form-text">Shopping stops are planned only with a shopping interest (markets, malls, handicrafts or fashion).</div></div>
               </div>
             </div>
 
@@ -271,6 +288,7 @@
                 <summary class="fw-semibold"><span class="step-inline">7</span>Advanced: algorithm and exclusions</summary>
                 <div class="mt-3">
                   <span class="form-label d-block">Selection strategy</span>
+                  <p class="form-text mt-0">Used when the planner chooses the places: how it decides which ones fit each day.</p>
                   <div class="row g-3 mb-4">
                     {% set strategy_icons = {'dp': 'bi-grid-3x3', 'greedy': 'bi-lightning-charge', 'max_visits': 'bi-list-ol'} %}
                     {% for key, label in STRATEGIES.items() %}
@@ -289,7 +307,7 @@
                       {% for a in opts.attractions %}
                         <div class="form-check">
                           <input class="form-check-input" type="checkbox" name="exclude" value="{{ a.slug }}" id="ex-{{ a.slug }}" {% if a.slug in values.exclude %}checked{% endif %}>
-                          <label class="form-check-label d-flex justify-content-between gap-2" for="ex-{{ a.slug }}"><span>{{ a.name }}</span><span class="text-muted small">{{ a.visit|duration }} · {{ 'Free' if a.fee == 0 else a.fee|inr }}</span></label>
+                          <label class="form-check-label d-flex justify-content-between gap-2" for="ex-{{ a.slug }}"><span>{{ a.name }}</span><span class="text-muted small">{{ a.visit|duration }}</span></label>
                         </div>
                       {% endfor %}
                     {% endif %}
@@ -310,7 +328,7 @@
               <li><i class="bi bi-calendar3"></i><div><strong>Dates</strong><span data-summary="dates">{{ values.days }} day(s) from {{ values.start_date }}</span></div></li>
               <li><i class="bi bi-clock"></i><div><strong>Each day</strong><span data-summary="hours">{{ values.day_start }}–{{ values.day_end }}</span></div></li>
               <li><i class="bi bi-egg-fried"></i><div><strong>Meals</strong><span data-summary="meals">Lunch and dinner breaks</span></div></li>
-              <li><i class="bi bi-wallet2"></i><div><strong>Budget</strong><span data-summary="budget">{{ ('₹' ~ values.budget ~ ' per day') if values.budget else 'No limit' }}</span></div></li>
+              <li><i class="bi bi-distribute-horizontal"></i><div><strong>Itinerary</strong><span data-summary="mode">{{ MODES.get(values.mode, MODES['suggested']).label }}{{ ' · ' ~ values.places|length ~ ' places picked' if values.choose == 'pick' else ' · planner chooses places' }}</span></div></li>
               <li><i class="bi bi-sliders"></i><div><strong>Style</strong><span data-summary="style">{{ PACES.get(values.pace, PACES['balanced']).label }} pace</span></div></li>
             </ul>
             <button class="btn btn-brand btn-lg w-100" type="submit"><i class="bi bi-magic me-1"></i>Generate itinerary</button>

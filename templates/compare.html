@@ -42,10 +42,6 @@
           <input class="form-control {{ ui.invalid(errors, 'day_end') }}" type="time" id="c-to" name="day_end" value="{{ values.day_end }}">
         </div>
         <div class="col-6 col-md-3 col-xl-2">
-          <label class="form-label small" for="c-budget">Daily budget (₹)</label>
-          <input class="form-control {{ ui.invalid(errors, 'budget') }}" type="number" min="0" step="10" id="c-budget" name="budget" value="{{ values.budget }}" placeholder="No limit">
-        </div>
-        <div class="col-6 col-md-3 col-xl-2">
           <label class="form-label small" for="c-pace">Pace</label>
           <select class="form-select" id="c-pace" name="pace">
             {% for key, p in PACES.items() %}<option value="{{ key }}" {% if values.pace == key %}selected{% endif %}>{{ p.label }}</option>{% endfor %}
@@ -55,15 +51,12 @@
         {% for i in values.interests %}<input type="hidden" name="interests" value="{{ i }}">{% endfor %}
         {% for s in values.also or [] %}<input type="hidden" name="also" value="{{ s }}">{% endfor %}
         {% for s in values.venue_style or [] %}<input type="hidden" name="venue_style" value="{{ s }}">{% endfor %}
-        {% for key in ['interest_mode', 'lunch', 'lunch_from', 'lunch_to', 'lunch_min', 'dinner', 'dinner_from', 'dinner_to', 'dinner_min', 'venues', 'veg', 'shop_min', 'shop_spend', 'start'] %}
+        {% if values.choose == 'pick' %}<input type="hidden" name="choose" value="pick">{% for s in values.places or [] %}<input type="hidden" name="places" value="{{ s }}">{% endfor %}{% endif %}
+        {% for key in ['interest_mode', 'lunch', 'lunch_from', 'lunch_to', 'lunch_min', 'dinner', 'dinner_from', 'dinner_to', 'dinner_min', 'venues', 'veg', 'shop_min', 'start', 'mode'] %}
           {% if values.get(key) %}<input type="hidden" name="{{ key }}" value="{{ values[key] }}">{% endif %}
         {% endfor %}
         {% if values.exclude %}<input type="hidden" name="exclude" value="{{ values.exclude|join(',') }}">{% endif %}
-        <div class="col-12 col-md-6 col-xl-12 d-flex flex-wrap align-items-center justify-content-between gap-3">
-          <div class="form-check form-switch mb-0">
-            <input class="form-check-input" type="checkbox" role="switch" id="c-transport" name="transport" value="on" {% if values.transport %}checked{% endif %}>
-            <label class="form-check-label small" for="c-transport">Count local transport (about ₹{{ TRANSPORT_RATE }}/km) in the daily budget</label>
-          </div>
+        <div class="col-12 col-md-6 col-xl-12 d-flex flex-wrap align-items-center justify-content-end gap-3">
           <button class="btn btn-brand" type="submit"><i class="bi bi-arrow-repeat me-1"></i>Run comparison</button>
         </div>
       </div>
@@ -72,12 +65,12 @@
       {% endif %}
     </form>
     {% set presets = [
-      ('Tight budget: Varanasi, ₹300/day incl. transport', {'city': 'varanasi', 'days': 1, 'start_date': '2026-11-02', 'budget': 300, 'transport': 'on', 'interests': 'history'}),
+      ('Varanasi in one day, history', {'city': 'varanasi', 'days': 1, 'start_date': '2026-11-02', 'interests': 'history'}),
       ('Delhi weekend, history lover', {'city': 'delhi', 'days': 2, 'start_date': '2026-11-07', 'interests': 'history'}),
       ('Delhi until 23:00', {'city': 'delhi', 'days': 1, 'start_date': '2026-11-03', 'day_start': '10:00', 'day_end': '23:00'}),
       ('Agra + Mathura + Vrindavan', {'city': 'agra', 'also': 'mathura,vrindavan', 'days': 3, 'start_date': '2026-11-02', 'interests': 'spirituality'}),
       ('Haridwar + Rishikesh', {'city': 'haridwar', 'also': 'rishikesh', 'days': 2, 'start_date': '2026-11-02'}),
-      ('Jaipur, 3 days, ₹600/day', {'city': 'jaipur', 'days': 3, 'start_date': '2026-11-02', 'budget': 600}),
+      ('Jaipur, 3 days', {'city': 'jaipur', 'days': 3, 'start_date': '2026-11-02'}),
     ] %}
     <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
       <span class="small text-muted me-1">Try a scenario:</span>
@@ -93,8 +86,7 @@
   <div class="container">
     <p class="small text-muted mt-3 mb-0">
       Scenario: <strong>{{ city.name }}</strong> · {{ trip.days }} day{{ 's' if trip.days > 1 }} from {{ trip.start_date|short_date }} ·
-      {{ trip.day_start|hhmm }}–{{ trip.day_end|hhmm }} · from {{ city.place(trip.start).name }} · {{ PACES[trip.pace].label }} pace ·
-      {{ ('₹' ~ trip.budget ~ '/day' ~ (' incl. transport' if trip.include_transport else '')) if trip.budget is not none else 'no budget limit' }}
+      {{ trip.day_start|hhmm }}–{{ trip.day_end|hhmm }} · from {{ city.place(trip.start).name }} · {{ PACES[trip.pace].label }} pace
       {% if trip.meals %}· {{ trip.meals|map(attribute='label')|join(' & ') }} breaks{% endif %}
       · data #{{ result.versions.data }} · settings #{{ result.versions.settings }}
     </p>
@@ -133,7 +125,6 @@
                   ('coverage', 'Places visited', 'stops', ''),
                   ('travel', 'Travel per place', 'travel_per_stop', 'min'),
                   ('utilisation', 'Time spent sightseeing', 'utilisation', 'pct'),
-                  ('budget', 'Value per ₹100 (smoothed)', 'value_per_100', ''),
                 ] %}
                 {% for key, label, metric, unit in measures %}
                   {% set subs = result.strategies|map(attribute='subscores')|map(attribute=key)|list %}
@@ -161,13 +152,13 @@
             <div class="small mt-2">
               <p>Each measure is first compared within this trip: for “higher is better” measures the subscore is
                 <code>100 × value ÷ best value</code>; for travel per place (lower is better) it is <code>100 × best ÷ value</code>.
-                So minutes, rupees and counts are never added together directly. The overall score is the weighted sum:
-                {% for k, w in weights.items() %}{{ (100 * w)|round|int }}% {{ {'value': 'value', 'coverage': 'coverage', 'travel': 'travel efficiency', 'utilisation': 'time utilisation', 'budget': 'budget efficiency'}[k] }}{{ ', ' if not loop.last else '.' }}{% endfor %}
+                So minutes, counts and shares are never added together directly. The overall score is the weighted sum:
+                {% for k, w in weights.items() %}{{ (100 * w)|round|int }}% {{ {'value': 'value', 'coverage': 'coverage', 'travel': 'travel efficiency', 'utilisation': 'time utilisation'}[k] }}{{ ', ' if not loop.last else '.' }}{% endfor %}
                 Value carries the most weight because it is what the planner tries to maximise; coverage and time use matter to a traveller;
-                travel and budget efficiency break ties between similar plans.</p>
+                travel efficiency matters because this is a travel-optimisation system. There is no cost component: the planner does not
+                optimise money, so the score does not claim to measure it.</p>
               <p class="mb-0">Feasibility is a gate, not a weight: a plan with any constraint violation is never recommended. Runtime is shown
-                but not scored, because a few milliseconds do not change anyone's day. {% if 'budget' not in weights %}No plan spends anything here,
-                so budget efficiency is left out and the other weights are scaled up.{% endif %}</p>
+                but not scored, because a few milliseconds do not change anyone's day.</p>
             </div>
           </details>
         </div>
@@ -208,6 +199,39 @@
     </div>
 
     <!-- 2. Why they differ -->
+    <div class="compare-section" id="modes">
+      <span class="eyebrow">1b · Itinerary modes</span>
+      <h2 class="mt-2">The same places, spread three ways</h2>
+      <div class="shows">
+        <div><i class="bi bi-check2"></i>Shows: one fixed set of {{ result.modes.rows[0].selected }} places{{ ' (yours)' if trip.places else ' (chosen by ' ~ STRATEGY_SHORT[trip.strategy] ~ ')' }} planned with each mode, and what that does to the days.</div>
+        <div><i class="bi bi-dash-circle"></i>Does not show: a winner. The modes answer different questions; pick the one that matches how you want to travel.</div>
+      </div>
+      <div class="card-soft overflow-auto mt-3">
+        <table class="table table-soft mb-0">
+          <thead><tr><th scope="col">Mode</th><th scope="col">Places per day</th><th scope="col" class="text-end">Active days</th>
+            <th scope="col" class="text-end">Travel</th><th scope="col" class="text-end">Longest day out</th>
+            <th scope="col" class="text-end">Beyond a comfortable {{ result.modes.comfort_min|duration }}</th><th scope="col" class="text-end">Valid</th><th scope="col"></th></tr></thead>
+          <tbody>
+            {% for m in result.modes.rows %}
+              <tr>
+                <th scope="row">{{ m.label }}<br><span class="small text-muted fw-normal">{{ m.text }}</span></th>
+                <td class="tabular">{{ m.per_day|join(' + ') }}</td>
+                <td class="text-end tabular">{{ m.active_days }} of {{ trip.days }}</td>
+                <td class="text-end tabular">{{ m.travel_min|duration }}</td>
+                <td class="text-end tabular">{{ m.longest_min|duration }}</td>
+                <td class="text-end tabular">{{ m.over_comfort_min|duration if m.over_comfort_min else '—' }}</td>
+                <td class="text-end">{% if m.violations == 0 %}<span class="chip chip-success"><i class="bi bi-check2"></i>yes</span>{% else %}<span class="chip chip-danger">{{ m.violations }}</span>{% endif %}</td>
+                <td><a class="small" href="{{ url_for('planner.itinerary', **trip.to_query(mode=m.key)) }}">View plan</a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if result.modes.identical %}
+        <p class="small text-muted mt-2 mb-0">Identical plans: {% for a, b in result.modes.identical %}{{ MODES[a].label }} = {{ MODES[b].label }}{{ ', ' if not loop.last }}{% endfor %}. That is expected when the fastest plan is already comfortable or even.</p>
+      {% endif %}
+    </div>
+
     <div class="compare-section" id="objectives">
       <span class="eyebrow">2 · Objectives</span>
       <h2 class="mt-2">What each strategy optimises — and why results differ or coincide</h2>
@@ -261,7 +285,7 @@
               <tr>
                 <td class="text-nowrap">Day {{ r.day }} <span class="text-muted small">{{ r.date|weekday_short }}</span></td>
                 <td class="text-end">{{ r.candidates }}</td>
-                <td class="text-end text-nowrap" title="Day minus {% for k, v in r.reserved.items() %}{{ k }} {{ v }} min{{ ', ' if not loop.last }}{% endfor %}">{{ r.time_cap_min|duration }}{% if r.money_cap is not none %}<br><span class="small text-muted">₹{{ r.money_cap }}</span>{% endif %}</td>
+                <td class="text-end text-nowrap" title="Day minus {% for k, v in r.reserved.items() %}{{ k }} {{ v }} min{{ ', ' if not loop.last }}{% endfor %}">{{ r.time_cap_min|duration }}</td>
                 <td class="text-end">{{ r.greedy.score }}<br><span class="small text-muted">{{ r.greedy.count }} stops</span></td>
                 <td class="text-end is-best">{{ r.dp.score }}<br><span class="small text-muted">{{ r.dp.count }} stops</span></td>
                 <td class="text-end">{{ r.max_visits.score }}<br><span class="small text-muted {{ 'fw-bold text-body' if r.max_visits.count > r.dp.count }}">{{ r.max_visits.count }} stops</span></td>
@@ -275,7 +299,7 @@
       <p class="small text-muted mt-2">On the same instance DP's value is never below Greedy's and Max visits' count is never below anyone's, because both are exact for this model.
         Capacity = your day minus the shortest first ride, the unavoidable extra of the ride home and the meal breaks (hover for the numbers).</p>
       {% else %}
-        <div class="card-soft empty-state"><div class="empty-icon"><i class="bi bi-grid-3x3"></i></div><h3>No feasible day to compare</h3><p class="mb-0">No day of this trip had candidate attractions. Try a longer daily window or a higher budget.</p></div>
+        <div class="card-soft empty-state"><div class="empty-icon"><i class="bi bi-grid-3x3"></i></div><h3>No feasible day to compare</h3><p class="mb-0">No day of this trip had candidate attractions. Try a longer daily window or another date.</p></div>
       {% endif %}
     </div>
 
@@ -350,7 +374,7 @@
         </div>
       </div>
       {% else %}
-        <div class="card-soft empty-state"><div class="empty-icon"><i class="bi bi-bezier2"></i></div><h3>No planned days to route</h3><p class="mb-0">This scenario produced no stops. Try another date, longer hours or a higher budget.</p></div>
+        <div class="card-soft empty-state"><div class="empty-icon"><i class="bi bi-bezier2"></i></div><h3>No planned days to route</h3><p class="mb-0">This scenario produced no stops. Try another date or longer hours.</p></div>
       {% endif %}
     </div>
 

@@ -1,0 +1,40 @@
+city,slug,name,lat,lng,coord_source
+delhi,ndls-start,New Delhi Railway Station,28.6430,77.2194,
+delhi,aerocity-start,Aerocity (near the airport),28.5491,77.1210,
+agra,agra-cantt-start,Agra Cantt Railway Station,27.1580,77.9905,
+jaipur,jaipur-jn-start,Jaipur Junction Railway Station,26.9196,75.7878,
+varanasi,varanasi-jn-start,Varanasi Junction Railway Station,25.3266,82.9875,
+ayodhya,ayodhya-dham-junction-railway-station-start,Ayodhya Dham Junction railway station,26.78777,82.20008,wikipedia
+tirupati,tirupati-railway-station-start,Tirupati railway station,13.62829,79.41953,openstreetmap
+mumbai,mumbai-central-railway-station-start,Mumbai Central railway station,18.96970,72.81940,wikipedia
+amritsar,amritsar-junction-railway-station-start,Amritsar Junction railway station,31.63321,74.86714,openstreetmap
+udaipur,udaipur-city-railway-station-start,Udaipur City railway station,24.56854,73.69982,wikipedia
+rishikesh,yog-nagari-rishikesh-railway-station-start,Yog Nagari Rishikesh railway station,30.10996,78.27808,wikipedia
+mathura,mathura-junction-railway-station-start,Mathura Junction railway station,27.48011,77.67376,openstreetmap
+shirdi,sainagar-shirdi-railway-station-start,Sainagar Shirdi railway station,19.78060,74.48066,openstreetmap
+katra,shri-mata-vaishno-devi-katra-railway-station-start,Shri Mata Vaishno Devi Katra railway station,32.98304,74.93500,openstreetmap
+ujjain,ujjain-junction-railway-station-start,Ujjain Junction railway station,23.17960,75.78190,wikipedia
+shimla,shimla-railway-station-start,Shimla railway station,31.10250,77.15972,wikipedia
+prayagraj,prayagraj-junction-railway-station-start,Prayagraj Junction railway station,25.44600,81.82890,wikipedia
+ajmer,ajmer-junction-railway-station-start,Ajmer Junction railway station,26.45634,74.63735,openstreetmap
+hyderabad,hyderabad-deccan-railway-station-start,Hyderabad Deccan railway station,17.39240,78.46750,wikipedia
+kochi,ernakulam-junction-railway-station-start,Ernakulam Junction railway station,9.96885,76.29160,wikipedia
+alleppey,alappuzha-railway-station-start,Alappuzha railway station,9.48460,76.32230,wikipedia
+madurai,madurai-junction-railway-station-start,Madurai Junction railway station,9.92000,78.11028,wikipedia
+chennai,chennai-central-railway-station-start,Chennai Central railway station,13.08250,80.27500,wikipedia
+rameswaram,rameswaram-railway-station-start,Rameswaram railway station,9.28195,79.30900,openstreetmap
+kanyakumari,kanyakumari-railway-station-start,Kanyakumari railway station,8.08785,77.54686,openstreetmap
+ooty,udagamandalam-railway-station-start,Udagamandalam railway station,11.40518,76.69635,openstreetmap
+bengaluru,bengaluru-city-railway-station-start,Bengaluru City railway station,12.97833,77.56944,wikipedia
+mysuru,mysore-junction-railway-station-start,Mysore Junction railway station,12.31630,76.64540,wikipedia
+hampi,hosapete-junction-railway-station-start,Hosapete Junction railway station,15.28650,76.38670,wikipedia
+puri,puri-railway-station-start,Puri railway station,19.80793,85.83779,openstreetmap
+kolkata,howrah-railway-station-start,Howrah railway station,22.58290,88.34280,wikipedia
+darjeeling,darjeeling-railway-station-start,Darjeeling railway station,27.03780,88.26300,wikipedia
+leh,leh-airport-start,Leh airport,34.13583,77.54528,wikipedia
+jodhpur,jodhpur-junction-railway-station-start,Jodhpur Junction railway station,26.28306,73.02250,wikipedia
+jaisalmer,jaisalmer-railway-station-start,Jaisalmer railway station,26.91502,70.92675,openstreetmap
+aurangabad,aurangabad-railway-station-start,Aurangabad railway station,19.86000,75.31000,wikipedia
+khajuraho,khajuraho-railway-station-start,Khajuraho railway station,24.79680,79.88930,wikipedia
+kevadia,ekta-nagar-railway-station-start,Ekta Nagar railway station,21.88750,73.68880,wikipedia
+pondicherry,puducherry-railway-station-start,Puducherry railway station,11.92500,79.82810,wikipedia

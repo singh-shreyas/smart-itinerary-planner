@@ -6,6 +6,7 @@ This is the "truth" check every candidate route goes through:
     for each stop in order:
         (take any meal that is due -- see below)
         arrive = previous leave + planned travel (shortest path, rounded up to 10 min)
+                 + any wait for a ferry that only runs inside a time window
         start  = earliest moment >= arrive inside one of today's opening windows,
                  no later than the last entry, with start + visit <= closing time
         end    = start + visit duration
@@ -23,8 +24,11 @@ there is one (that detour is a travel leg of its own), otherwise as a generic
 break where you are -- in which case no venue is claimed.
 
 Each travel leg is counted exactly once (from the planning table) and each visit
-and meal exactly once, so nothing is double-counted. If the first stop is not
-open yet, the traveller simply leaves later instead of waiting there.
+and meal exactly once, so nothing is double-counted. A leg may mix road with a
+walk, trek or ferry (see city_data.py); its access parts are inside its planned
+minutes, so the trek up and the trek down are each counted once. If the first
+stop (or its ferry) is not open yet, the traveller simply leaves later instead
+of waiting there.
 
 A route that breaks a rule is still simulated to the end (the visit is forced
 to start on arrival) so we can count *how many* rules it breaks; that count is
@@ -158,7 +162,7 @@ def simulate(order, ctx, scores=None, detailed=False):
             travel = plan[here][stop]
             if travel == math.inf:
                 break
-            arrive = clock + travel
+            arrive = clock + travel + city.window_wait(here, stop, clock)[0]
             start = earliest_start(attraction, ctx.weekday, arrive, duration)
             leave_next = (start if start is not None else arrive) + duration + ctx.buffer
             if clock >= meal.earliest or leave_next > meal.latest_start:
@@ -172,7 +176,11 @@ def simulate(order, ctx, scores=None, detailed=False):
             return Schedule(list(order), False, depart or ctx.day_start, math.inf, math.inf, violations,
                             visits, meals=meals, timeline=timeline)
         leave_at = clock
-        arrive = clock + travel
+        first_ride = position == 0 and here == ctx.start_id
+        wait, problem = city.window_wait(here, stop, leave_at)
+        if first_ride and wait:
+            leave_at, wait = leave_at + wait, 0              # leave later instead of waiting for the ferry
+        arrive = leave_at + travel + wait
         start = earliest_start(attraction, ctx.weekday, arrive, duration)
         if start is None:
             if not attraction.windows_on(ctx.weekday):
@@ -181,9 +189,12 @@ def simulate(order, ctx, scores=None, detailed=False):
                 violations.append(f"Reaches {attraction.name} at {fmt_hhmm(arrive)}, too late to fit the visit "
                                   f"in its opening hours ({attraction.hours_label(ctx.weekday)})")
             start = arrive                                   # forced, so we can keep counting
-        if position == 0 and here == ctx.start_id and start > arrive:
+        if first_ride and start > arrive:
             leave_at += start - arrive                       # leave the hotel later instead of waiting
             arrive = start
+            problem = city.window_wait(here, stop, leave_at)[1]
+        if problem:
+            violations.append(f"On the way to {attraction.name}: {problem}")
         if depart is None:
             depart = leave_at
         end = start + duration
@@ -191,7 +202,7 @@ def simulate(order, ctx, scores=None, detailed=False):
         travel_total += travel
         travel_km += city.km[here][stop]
         if detailed:
-            visit = Visit(attraction=attraction, leg=city.leg(here, stop, depart=leave_at), arrive=arrive,
+            visit = Visit(attraction=attraction, leg=city.leg(here, stop, depart=leave_at, wait=wait), arrive=arrive,
                           start=start, end=end, leave=leave, score=scores.get(stop, 0) if scores else 0)
             visits.append(visit)
             timeline.append(visit)
@@ -213,10 +224,13 @@ def simulate(order, ctx, scores=None, detailed=False):
         violations.append(f"No road route back to {city.places[ctx.start_id].name}")
         return Schedule(list(order), False, depart, math.inf, math.inf, violations, visits,
                         meals=meals, timeline=timeline)
-    return_leg = city.leg(here, ctx.start_id, depart=clock) if detailed else None
+    back_wait, problem = city.window_wait(here, ctx.start_id, clock)
+    if problem:
+        violations.append(f"On the way back: {problem}")
+    return_leg = city.leg(here, ctx.start_id, depart=clock, wait=back_wait) if detailed else None
     travel_total += back
     travel_km += city.km[here][ctx.start_id]
-    return_time = clock + back
+    return_time = clock + back + back_wait
     here, clock = ctx.start_id, return_time
     if return_time > ctx.day_end:
         violations.append(f"Back at {city.places[ctx.start_id].name} at {fmt_hhmm(return_time)}, "

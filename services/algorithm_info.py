@@ -26,22 +26,22 @@ ALGORITHMS = [
     {
         "key": "greedy", "name": "Greedy selection", "icon": "bi-lightning-charge",
         "file": "algorithms/greedy.py", "time": "O(n log n)", "space": "O(n)", "role": "Strategy / baseline",
-        "summary": "Takes attractions in order of value per unit of time (and money) while they still fit. "
+        "summary": "Takes attractions in order of value per minute of the day while they still fit. "
                    "Fast, but can miss the best combination.",
     },
     {
         "key": "dp", "name": "Dynamic programming (0/1 knapsack)", "icon": "bi-grid-3x3",
-        "file": "algorithms/dynamic_programming.py", "time": "O(n · T · M)", "space": "O(n · T · M)",
+        "file": "algorithms/dynamic_programming.py", "time": "O(n · T)", "space": "O(n · T)",
         "role": "Default strategy",
-        "summary": "A 2-D knapsack over available minutes and daily budget that finds the highest-value set "
+        "summary": "A 0/1 knapsack over the day's available minutes that finds the highest-value set "
                    "of attractions for the day's estimated capacity.",
     },
     {
         "key": "max_visits", "name": "Max visits (DP on the count)", "icon": "bi-list-ol",
-        "file": "algorithms/max_visits.py", "time": "O(n · T · M)", "space": "O(n · T · M)",
+        "file": "algorithms/max_visits.py", "time": "O(n · T)", "space": "O(n · T)",
         "role": "Strategy",
         "summary": "The same knapsack DP with every place worth one visit (ties broken by value), so it "
-                   "finds the largest number of places that fit the day's time and budget.",
+                   "finds the largest number of places that fit the day's time.",
     },
     {
         "key": "nn", "name": "Nearest Neighbour", "icon": "bi-geo-alt",

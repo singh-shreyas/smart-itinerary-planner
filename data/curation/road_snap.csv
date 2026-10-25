@@ -8,6 +8,7 @@ aurangabad,ajanta-caves,Ajanta Caves,758
 hampi,vittala-temple,Vittala Temple,749
 ajmer,ana-sagar-lake,Ana Sagar Lake,731
 srinagar,dal-lake,Dal Lake,671
+kedarnath,kedarnath-stay-west,Sitapur,623
 katra,banganga,Banganga,507
 prayagraj,triveni-sangam,Triveni Sangam,502
 kanyakumari,sunset-point,Sunset Point,489
@@ -16,17 +17,22 @@ haridwar,chandi-devi-temple,Chandi Devi Temple,475
 udaipur,fateh-sagar-lake,Fateh Sagar Lake,473
 udaipur,lake-pichola,Lake Pichola,469
 aurangabad,daulatabad-fort,Daulatabad Fort,456
-kevadia,kevadia-town-centre-start,Kevadia town centre,387
+konark,konark-stay-south,Ramachandi,428
+shirdi,shirdi-stay-west,Pohegaon Khurd,407
 pushkar,savitri-temple,Savitri Temple,367
 kevadia,sardar-sarovar-dam,Sardar Sarovar Dam,355
+kedarnath,kedarnath-stay-east,Baunsar,348
+manali,manali-stay-west,Majhach,311
 konark,chandrabhaga-beach,Chandrabhaga Beach,304
 hampi,elephant-stables,Elephant Stables,300
 mysuru,brindavan-gardens,Brindavan Gardens,291
+konark,konark-stay-west,Gop,264
 hampi,hampi-bazaar,Hampi Bazaar,255
 mysuru,mysuru-zoo,Mysuru Zoo,255
 hyderabad,golconda-fort,Golconda Fort,233
 khajuraho,duladeo-temple,Duladeo Temple (Southern Group),233
 nainital,naini-lake,Naini Lake,223
+kevadia,kevadia-stay-south,Fulsar,210
 haridwar,mansa-devi-temple,Mansa Devi Temple,204
 chennai,marina-beach,Marina Beach,189
 hampi,virupaksha-temple,Virupaksha Temple,185
@@ -35,36 +41,52 @@ aurangabad,bibi-ka-maqbara,Bibi Ka Maqbara,183
 rishikesh,beatles-ashram,Beatles Ashram,183
 kolkata,victoria-memorial,Victoria Memorial,182
 ajmer,nareli-jain-temple,Nareli Jain Temple,175
+hampi,hampi-stay-central,Hampi,175
 srinagar,nishat-bagh,Nishat Bagh,173
 konark,konark-sun-temple,Konark Sun Temple,172
 madurai,meenakshi-amman-temple,Meenakshi Amman Temple,171
-pushkar,pushkar-lake,Pushkar Lake,171
 pushkar,brahma-temple,Brahma Temple,171
+pushkar,pushkar-lake,Pushkar Lake,171
 jodhpur,mehrangarh-fort,Mehrangarh Fort,166
+manali,manali-stay-north,Vashisht,166
+munnar,munnar-stay-north,Kadalar Estate,162
+shimla,shimla-stay-west,Prospect Hill,162
 chennai,besant-nagar-beach,Besant Nagar Beach (Elliot's Beach),161
+jaisalmer,jaisalmer-stay-east,Darbangaon,159
 jaisalmer,gadisar-lake,Gadisar Lake,157
+jaisalmer,jaisalmer-stay-south,Soron Ki Dhani,154
 madurai,vandiyur-mariamman-teppakulam,Vandiyur Mariamman Teppakulam,152
+haridwar,haridwar-stay-west,BHEL Township,147
 mathura,kusum-sarovar,Kusum Sarovar,147
+chennai,chennai-stay-west,Egmore,145
 pondicherry,auroville,Auroville (Matrimandir),145
 udaipur,saheliyon-ki-bari,Saheliyon-ki-Bari,145
 darjeeling,himalayan-mountaineering-institute,Himalayan Mountaineering Institute,137
 hampi,lotus-mahal,Lotus Mahal,137
 leh,leh-airport-start,Leh airport,137
-tirupati,tirumala-venkateswara-temple,Tirumala Venkateswara Temple,135
+kevadia,kevadia-stay-east,Wadifali,135
 tirupati,govindaraja-swamy-temple,Govindaraja Swamy Temple,135
+tirupati,tirumala-venkateswara-temple,Tirumala Venkateswara Temple,135
 amritsar,golden-temple,Golden Temple (Harmandir Sahib),133
+darjeeling,darjeeling-stay-south,Sonada,128
 mussoorie,gun-hill,Gun Hill,128
 puri,jagannath-temple,Jagannath Temple,128
+shirdi,shirdi-stay-east,Pimpalwadi,127
 mysuru,mysore-palace,Mysore Palace,126
-jaisalmer,kuldhara,Kuldhara,123
+aurangabad,aurangabad-stay-north,Harsul,123
 delhi,bukhara,Bukhara,123
-khajuraho,khajuraho-town-centre-start,Khajuraho town centre,120
+jaisalmer,kuldhara,Kuldhara,123
+kedarnath,gaurikund-trek-start,Gaurikund (road head for the Kedarnath trek),120
+kedarnath,kedarnath-stay-central,Gaurikund,120
 puri,narendra-tank,Narendra Tank,119
 rishikesh,ram-jhula,Ram Jhula,117
 chennai,government-museum,Government Museum,116
 khajuraho,western-group-of-temples,Western Group of Temples,115
+ayodhya,ayodhya-stay-west,Cantonment,114
+khajuraho,khajuraho-stay-north,Rajnagar,113
 rameswaram,ramanathaswamy-temple,Ramanathaswamy Temple,112
 shimla,himachal-state-museum,Himachal State Museum,111
+katra,katra-stay-west,Reasi,109
 ayodhya,ram-mandir,Ram Mandir,108
 chennai,fort-st-george,Fort St. George,108
 leh,namgyal-tsemo-monastery,Namgyal Tsemo Monastery,108
@@ -75,31 +97,39 @@ alleppey,marari-beach,Marari Beach,100
 mathura,vishram-ghat,Vishram Ghat,98
 delhi,indian-accent,Indian Accent,97
 alleppey,alappuzha-beach,Alappuzha Beach,94
+ooty,ooty-stay-west,Indunagar,94
 srinagar,shalimar-bagh,Shalimar Bagh (Mughal Gardens),94
 jodhpur,umaid-bhawan-palace,Umaid Bhawan Palace,93
-srinagar,srinagar-city-centre-start,Srinagar city centre,89
+mumbai,mumbai-stay-east,Tilak Nagar,92
 srinagar,shankaracharya-temple,Shankaracharya Temple,89
 mathura,shri-krishna-janmasthan,Shri Krishna Janmasthan,88
 bengaluru,iskcon-temple-bengaluru,ISKCON Temple Bengaluru,87
+mathura,mathura-stay-east,Lohaban,86
 prayagraj,prayagraj-junction-railway-station-start,Prayagraj Junction railway station,86
 leh,shanti-stupa,Shanti Stupa,85
 vrindavan,govardhan-hill,Govardhan Hill,85
 madurai,madurai-junction-railway-station-start,Madurai Junction railway station,84
+prayagraj,prayagraj-stay-south,Naini,84
 srinagar,hazratbal-shrine,Hazratbal Shrine,83
-jodhpur,jodhpur-city-centre-start,Jodhpur city centre,82
 aurangabad,ellora-caves,Ellora Caves,79
+aurangabad,aurangabad-stay-west,Waluj,77
 ayodhya,ayodhya-dham-junction-railway-station-start,Ayodhya Dham Junction railway station,77
 kochi,forum-mall-kochi,Forum Mall Kochi,77
 kolkata,dakshineswar-kali-temple,Dakshineswar Kali Temple,76
 rishikesh,lakshman-jhula,Lakshman Jhula,76
 kolkata,nahoum-and-sons,Nahoum & Sons,74
+varanasi,varanasi-stay-central,Cantonment,72
 vrindavan,prem-mandir,Prem Mandir,72
+chennai,chennai-stay-south,Teynampet,71
 kochi,ernakulam-junction-railway-station-start,Ernakulam Junction railway station,71
-hyderabad,salar-jung-museum,Salar Jung Museum,70
+shimla,shimla-stay-central,The Retreat,71
 chennai,express-avenue,Express Avenue,70
+hyderabad,salar-jung-museum,Salar Jung Museum,70
+kevadia,kevadia-stay-west,Tilakvada,70
 kolkata,new-market,New Market,70
 leh,leh-palace,Leh Palace,67
 madurai,gandhi-memorial-museum,Gandhi Memorial Museum,67
+tirupati,tirupati-stay-south,Tiruchanur,67
 hyderabad,chowmahalla-palace,Chowmahalla Palace,66
 tirupati,kapila-theertham,Kapila Theertham,66
 madurai,alagar-koyil,Alagar Koyil,65
@@ -107,244 +137,421 @@ prayagraj,all-saints-cathedral,All Saints Cathedral,65
 ayodhya,kanak-bhawan,Kanak Bhawan,64
 kochi,paradesi-synagogue,Paradesi Synagogue,64
 mumbai,mumbai-central-railway-station-start,Mumbai Central railway station,63
+nainital,nainital-stay-central,Nainital,63
 puri,puri-beach,Puri Beach,63
+kevadia,kevadia-stay-north,Tankhala,62
 ajmer,akbari-fort-and-museum,Akbari Fort & Museum,61
 bengaluru,bangalore-palace,Bangalore Palace,61
 prayagraj,anand-bhavan,Anand Bhavan,61
+tirupati,tirupati-stay-west,Padmavathi Nagar,61
+udaipur,udaipur-stay-central,Udaipur Police Lines,61
 vrindavan,iskcon-temple-vrindavan,ISKCON Temple Vrindavan,61
 amritsar,jallianwala-bagh,Jallianwala Bagh,59
+ooty,ooty-stay-north,Vazhaithottam,59
+srinagar,srinagar-stay-central,Munawar Abad,59
 ajmer,ajmer-junction-railway-station-start,Ajmer Junction railway station,58
+ayodhya,ayodhya-stay-north,Nawabganj,58
 bengaluru,vidhana-soudha,Vidhana Soudha,58
 mathura,mathura-junction-railway-station-start,Mathura Junction railway station,58
+shimla,shimla-stay-east,Navbhahar,58
 bengaluru,tipu-sultans-summer-palace,Tipu Sultan's Summer Palace,57
+nainital,nainital-stay-east,Bhowali,57
+puri,puri-stay-east,Balighai,57
 rishikesh,neelkanth-mahadev-temple,Neelkanth Mahadev Temple,57
 ujjain,vedh-shala,Vedh Shala (Jantar Mantar),57
 amritsar,partition-museum,Partition Museum,56
+konark,konark-stay-east,Kakatpur,56
+manali,manali-stay-south,Simsa,55
 nainital,naina-devi-temple,Naina Devi Temple,55
-sabarimala,pamba-road-head-start,Pamba (road head),54
-sabarimala,pamba,Pamba (river bank and base camp),54
 mysuru,mall-of-mysore,Mall of Mysore,54
 ooty,ooty-municipal-market,Ooty Municipal Market,54
-jodhpur,jodhpur-junction-railway-station-start,Jodhpur Junction railway station,53
+sabarimala,pamba,Pamba (river bank and base camp),54
+alleppey,alleppey-stay-central,Mullakkal,53
 bengaluru,orion-mall,Orion Mall,53
+delhi,delhi-stay-south,Defence Colony,53
+jodhpur,jodhpur-junction-railway-station-start,Jodhpur Junction railway station,53
+jodhpur,jodhpur-stay-north,Anganwa,53
+kolkata,kolkata-stay-west,Maidan,53
 ajmer,ajmer-sharif-dargah,Ajmer Sharif Dargah,52
 ujjain,mahakaleshwar-jyotirlinga,Mahakaleshwar Jyotirlinga,52
+ooty,ooty-stay-east,Coonoor,51
 aurangabad,panchakki,Panchakki,50
 kevadia,statue-of-unity,Statue of Unity,50
 mumbai,chhatrapati-shivaji-maharaj-terminus,Chhatrapati Shivaji Maharaj Terminus,50
+jaisalmer,jaisalmer-stay-central,Amar Sagar,49
 udaipur,sajjangarh,Sajjangarh (Monsoon Palace),49
+mussoorie,mussoorie-stay-central,Mussoorie,48
 chennai,kapaleeshwarar-temple,Kapaleeshwarar Temple,47
-hampi,hampi-village-start,Hampi village,47
+jaisalmer,jaisalmer-stay-west,Moolsagar,47
+khajuraho,khajuraho-stay-south,Bamitha,47
 pushkar,rangji-temple,Rangji Temple,47
 rameswaram,dr-a-p-j-abdul-kalam-memorial,Dr. A. P. J. Abdul Kalam Memorial,47
 madurai,thirumalai-nayakkar-mahal,Thirumalai Nayakkar Mahal,46
 manali,hadimba-devi-temple,Hadimba Devi Temple,46
-amritsar,amritsar-city-centre-start,Amritsar city centre,45
+rameswaram,rameswaram-stay-west,Thangachimadam,46
 amritsar,durgiana-temple,Durgiana Temple,45
-calangute,calangute-town-centre-start,Calangute town centre,45
 calangute,calangute-beach,Calangute Beach,45
 kolkata,college-street-coffee-house,College Street Coffee House,45
+rishikesh,rishikesh-stay-central,Swargashram,45
 ayodhya,dashrath-mahal,Dashrath Mahal,44
 kochi,chinese-fishing-nets,Chinese Fishing Nets (Fort Kochi Beach),44
 kochi,marine-drive-kochi,Marine Drive,44
+katra,katra-stay-south,Domel,43
 mysuru,st-philomenas-cathedral,St. Philomena's Cathedral,43
 udaipur,udaipur-city-railway-station-start,Udaipur City railway station,43
+udaipur,udaipur-stay-north,Liyo Ka Gurha,43
 hampi,hosapete-junction-railway-station-start,Hosapete Junction railway station,42
 kevadia,cactus-garden,Cactus Garden,42
 munnar,echo-point,Echo Point,42
 ooty,ooty-lake,Ooty Lake,42
+srinagar,srinagar-stay-west,Qamarwari,42
 bengaluru,bengaluru-city-railway-station-start,Bengaluru City railway station,41
+darjeeling,darjeeling-stay-east,Rangli Rangliot,41
+sabarimala,sabarimala-stay-east,Gavi,41
+shirdi,shirdi-stay-north,Kopargaon,41
 udaipur,city-palace,City Palace,41
-puri,puri-city-centre-start,Puri city centre,39
+kedarnath,kedarnath-stay-north,Trijugi Nārāyan,40
+leh,leh-stay-north,Murabak,40
+srinagar,srinagar-stay-east,Sonwar,40
 rishikesh,parmarth-niketan,Parmarth Niketan,39
+katra,katra-stay-north,Dingi Dhar,38
 puri,puri-railway-station-start,Puri railway station,38
+vrindavan,vrindavan-stay-east,Raya,38
 kevadia,ekta-nagar-railway-station-start,Ekta Nagar railway station,37
 kolkata,marble-palace,Marble Palace,37
+rishikesh,rishikesh-stay-east,Laxman Jhula,37
+agra,agra-stay-west,Bodla,36
 amritsar,amritsar-junction-railway-station-start,Amritsar Junction railway station,36
-shimla,shimla-railway-station-start,Shimla railway station,36
+ayodhya,ayodhya-stay-central,Faizabad,36
 hyderabad,gvk-one,GVK One,36
-hyderabad,charminar-area-start,Charminar area,35
+pondicherry,pondicherry-stay-south,Harbour,36
+shimla,shimla-railway-station-start,Shimla railway station,36
+darjeeling,darjeeling-stay-central,Ghoom,35
+haridwar,haridwar-stay-central,Kankhal,35
+jaipur,jaipur-stay-west,Sodala,35
 khajuraho,parshvanatha-temple,Parshvanatha Temple (Eastern Group),35
+leh,leh-stay-south,Choglamsar,35
 manali,old-manali,Old Manali,35
 mumbai,siddhivinayak-temple,Siddhivinayak Temple,35
 mysuru,devaraja-market,Devaraja Market,35
+rishikesh,rishikesh-stay-north,Ghughatyani Talli,35
 srinagar,old-city,Old City (Downtown Srinagar),35
 kolkata,indian-museum,Indian Museum,34
+rameswaram,rameswaram-stay-south,Natarajapuram,34
+tirupati,tirupati-stay-central,Tataiah Gunta,34
 darjeeling,batasia-loop,Batasia Loop,33
-rishikesh,triveni-ghat,Triveni Ghat,33
 hyderabad,moazzam-jahi-market,Moazzam Jahi Market,33
+khajuraho,khajuraho-stay-west,Gora,33
+kolkata,kolkata-stay-central,Esplanade,33
+rishikesh,triveni-ghat,Triveni Ghat,33
+shirdi,shirdi-stay-south,Rahata,33
 calangute,st-alex-church,St. Alex Church,32
 darjeeling,happy-valley-tea-estate,Happy Valley Tea Estate,32
+jaipur,jaipur-stay-north,Ambabari,32
+kochi,kochi-stay-east,Thevara,32
+nainital,nainital-stay-south,Durgapur,32
 pushkar,varaha-temple,Varaha Temple,32
+agra,agra-stay-central,Shahganj,31
+ajmer,ajmer-stay-north,Ghooghra,31
+ajmer,ajmer-stay-west,Ajaysar,31
+amritsar,amritsar-stay-east,Sultanwind,31
 hyderabad,charminar,Charminar,31
+hyderabad,hyderabad-stay-central,Jambagh,31
+kevadia,kevadia-stay-central,Garudeshwar,31
+madurai,madurai-stay-south,Anuppanadi,31
 ooty,government-rose-garden,Government Rose Garden,31
+bengaluru,russell-market,Russell Market,30
 calangute,calangute-market,Calangute Market,30
+chennai,chennai-stay-north,George Town,30
+delhi,delhi-stay-east,Nizamuddin West,30
 hyderabad,hyderabad-deccan-railway-station-start,Hyderabad Deccan railway station,30
+kochi,kochi-stay-central,Thoppumpady,30
+leh,leh-stay-west,Spituk,30
 shimla,viceregal-lodge,Viceregal Lodge (Rashtrapati Niwas),30
 shirdi,shri-sai-baba-samadhi-mandir,Shri Sai Baba Samadhi Mandir,30
 srinagar,pari-mahal,Pari Mahal,30
 tirupati,tirupati-railway-station-start,Tirupati railway station,30
-bengaluru,russell-market,Russell Market,30
 ajmer,adhai-din-ka-jhonpra,Adhai Din Ka Jhonpra,29
 darjeeling,tiger-hill,Tiger Hill,29
+mussoorie,mussoorie-stay-north,herneidel,29
 mysuru,chamundi-hill,Chamundi Hill (Chamundeshwari Temple),29
+puri,puri-stay-south,Garharodhanga,29
 ujjain,kal-bhairav-temple,Kal Bhairav Temple,29
+vrindavan,vrindavan-stay-north,Mant,29
+ayodhya,ayodhya-stay-east,Amorha,28
 calangute,baga-beach,Baga Beach,28
+kanyakumari,kanyakumari-stay-central,Kanyakumari,28
 khajuraho,khajuraho-railway-station-start,Khajuraho railway station,28
+kolkata,kolkata-stay-north,Maniktala,28
+leh,leh-stay-east,Saboo Yoknos,28
 mathura,government-museum-mathura,Government Museum Mathura,28
 mussoorie,kempty-falls,Kempty Falls,28
+nainital,nainital-stay-west,Sariya,28
 udaipur,jagdish-temple,Jagdish Temple,28
+agra,sadar-bazaar,Sadar Bazaar,27
 ayodhya,ram-ki-paidi,Ram Ki Paidi,27
+hampi,hampi-stay-south,Hosa Malapanagudi,27
 jaisalmer,jaisalmer-railway-station-start,Jaisalmer railway station,27
+jaisalmer,jaisalmer-stay-north,Bada Bag,27
+kochi,kochi-stay-south,Palluruthy,27
 kolkata,st-pauls-cathedral,St. Paul's Cathedral,27
 mathura,dwarkadhish-temple,Dwarkadhish Temple,27
 shimla,mall-road,Mall Road,27
-agra,sadar-bazaar,Sadar Bazaar,27
+ujjain,ujjain-stay-east,Dhatrawada,27
+hampi,hampi-stay-north,Ramapura,26
 haridwar,daksheswar-mahadev-temple,Daksheswar Mahadev Temple,26
+katra,katra-stay-central,Katra,26
 kolkata,howrah-railway-station-start,Howrah railway station,26
+kolkata,kolkata-stay-south,Ripon Street,26
+madurai,madurai-stay-central,Poondhotam,26
+mumbai,mumbai-stay-north,Andheri East,26
 chennai,san-thome-basilica,San Thome Basilica,25
+ooty,ooty-stay-south,Achanakal hatty,25
+srinagar,srinagar-stay-north,Nowshera,25
 vrindavan,banke-bihari-temple,Banke Bihari Temple,25
 chennai,chennai-central-railway-station-start,Chennai Central railway station,24
-chennai,chennai-city-centre-start,Chennai city centre,24
-pondicherry,basilica-of-the-sacred-heart,Basilica of the Sacred Heart,24
 delhi,khari-baoli,Khari Baoli,24
+jaipur,jaipur-stay-central,Bani Park,24
+pondicherry,basilica-of-the-sacred-heart,Basilica of the Sacred Heart,24
+puri,puri-stay-north,Batagaon,24
+pushkar,pushkar-stay-south,Kharekhari,24
+rishikesh,rishikesh-stay-south,Kolghatti,24
+varanasi,varanasi-stay-north,Sarnath,24
+vrindavan,vrindavan-stay-central,Vrindavan,24
+alleppey,alleppey-stay-west,Kunnumpuram,23
+hampi,hampi-stay-east,Powerhouse Colony,23
 haridwar,har-ki-pauri,Har Ki Pauri,23
+jodhpur,jodhpur-stay-west,Jwala Vihar,23
+kochi,centre-square-mall,Centre Square Mall,23
+madurai,madurai-stay-west,SS Colony,23
 ooty,government-botanical-garden,Government Botanical Garden,23
 ujjain,ujjain-junction-railway-station-start,Ujjain Junction railway station,23
-kochi,centre-square-mall,Centre Square Mall,23
+vrindavan,vrindavan-stay-west,Chhatikara,23
 darjeeling,peace-pagoda,Peace Pagoda,22
-katra,shri-mata-vaishno-devi-katra-railway-station-start,Shri Mata Vaishno Devi Katra railway station,22
-shirdi,sainagar-shirdi-railway-station-start,Sainagar Shirdi railway station,22
 jaipur,laxmi-mishthan-bhandar,Laxmi Mishthan Bhandar (LMB),22
+kanyakumari,kanyakumari-stay-west,Santhaiyadi,22
+katra,shri-mata-vaishno-devi-katra-railway-station-start,Shri Mata Vaishno Devi Katra railway station,22
 kolkata,quest-mall,Quest Mall,22
+madurai,madurai-stay-north,BB Kulam,22
+mysuru,mysuru-stay-south,Vani Vilas,22
 pondicherry,providence-mall,Providence Mall,22
+shirdi,sainagar-shirdi-railway-station-start,Sainagar Shirdi railway station,22
+udaipur,udaipur-stay-south,Dakan Kotra,22
+ujjain,ujjain-stay-west,Daudkhedi,22
+varanasi,varanasi-stay-east,Sigra,22
+darjeeling,darjeeling-stay-north,Jorethang,21
+jodhpur,jodhpur-stay-east,Saran Nagar,21
+pondicherry,pondicherry-stay-north,Rainbow Nagar,21
+prayagraj,prayagraj-stay-east,Bairhana,21
+pushkar,pushkar-stay-east,Makarwali,21
 rameswaram,rameswaram-railway-station-start,Rameswaram railway station,21
+varanasi,varanasi-stay-west,Daniyalpur,21
+agra,agra-stay-east,Taj Ganj,20
 ayodhya,hanuman-garhi,Hanuman Garhi,20
+kolkata,tiretta-bazaar,Tiretta Bazaar,20
+leh,leh-stay-central,Chubi,20
 leh,thiksey-monastery,Thiksey Monastery,20
 munnar,mattupetty-dam,Mattupetty Dam,20
 mysuru,mysore-junction-railway-station-start,Mysore Junction railway station,20
+pondicherry,pondicherry-stay-central,Odiansalai,20
+prayagraj,prayagraj-stay-central,Civil Lines,20
 puri,gundicha-temple,Gundicha Temple,20
+sabarimala,sabarimala-stay-north,Sathram,20
 shimla,kufri,Kufri,20
-kolkata,tiretta-bazaar,Tiretta Bazaar,20
-ajmer,ajmer-city-centre-start,Ajmer city centre,19
-katra,katra-town-centre-start,Katra town centre,19
+ujjain,ujjain-stay-north,Gonsa,20
+calangute,calangute-stay-south,Candolim,19
+katra,katra-trek-start,Katra (start of the Vaishno Devi trek),19
 konark,ramachandi-temple,Ramachandi Temple,19
 ooty,doddabetta-peak,Doddabetta Peak,19
+pushkar,pushkar-stay-central,Pushkar,19
 rameswaram,agni-theertham,Agni Theertham,19
-jodhpur,jaswant-thada,Jaswant Thada,18
-kochi,st-francis-church,St. Francis Church,18
+agra,agra-stay-north,Civil Lines,18
+aurangabad,aurangabad-stay-south,Georai,18
+darjeeling,darjeeling-stay-west,Sukhiapokhri,18
 delhi,dariba-kalan,Dariba Kalan,18
 hyderabad,shah-ghouse-caf,Shah Ghouse Café,18
-alleppey,alappuzha-town-centre-start,Alappuzha town centre,17
+jodhpur,jaswant-thada,Jaswant Thada,18
+kochi,st-francis-church,St. Francis Church,18
+madurai,madurai-stay-east,Anna Nagar,18
+rameswaram,rameswaram-stay-east,Mukundarayar Chathiram,18
+ajmer,ajmer-stay-south,Makhupura,17
+amritsar,amritsar-stay-central,Hussainpura,17
 aurangabad,aurangabad-railway-station-start,Aurangabad railway station,17
-rishikesh,yog-nagari-rishikesh-railway-station-start,Yog Nagari Rishikesh railway station,17
+ayodhya,ayodhya-stay-south,Ashapur,17
+delhi,delhi-stay-central,Paharganj,17
+hampi,hampi-stay-west,Hosapete,17
+khajuraho,khajuraho-stay-central,Khajuraho,17
+khajuraho,khajuraho-stay-east,Dhoguwan,17
+kochi,kochi-stay-north,Chirattapalam,17
 madurai,vishaal-mall,Vishaal Mall,17
+mussoorie,mussoorie-stay-east,Sisters' Bazaar,17
+rishikesh,yog-nagari-rishikesh-railway-station-start,Yog Nagari Rishikesh railway station,17
+sabarimala,sabarimala-stay-west,Plappally,17
+udaipur,udaipur-stay-east,Debari,17
 alleppey,alappuzha-railway-station-start,Alappuzha railway station,16
-mumbai,colaba-hotel-area-start,Colaba (hotel area),16
+manali,manali-stay-central,Model Town,16
+mysuru,mysuru-stay-west,Sarasvatipuram,16
+ooty,ooty-stay-central,Udhagamandalam,16
 ooty,tea-factory-and-tea-museum,Tea Factory & Tea Museum,16
 shirdi,chavadi,Chavadi,16
 ujjain,ram-ghat,Ram Ghat,16
-rameswaram,rameswaram-town-centre-start,Rameswaram town centre,15
+ajmer,ajmer-stay-east,Rasoolpura,15
+aurangabad,aurangabad-stay-east,Cidco,15
+bengaluru,bengaluru-stay-east,Shanthala Nagar,15
+calangute,calangute-stay-west,Baga,15
+haridwar,haridwar-stay-north,Shyampur,15
+munnar,munnar-stay-east,Devikulam,15
 rameswaram,dhanushkodi,Dhanushkodi,15
 vrindavan,radha-raman-temple,Radha Raman Temple,15
+bengaluru,bengaluru-stay-south,Wilson Garden,14
+chennai,new-woodlands-hotel,New Woodlands Hotel,14
 darjeeling,darjeeling-railway-station-start,Darjeeling railway station,14
+haridwar,haridwar-stay-south,Missarpur,14
+hyderabad,hyderabad-stay-east,Dilsukh Nagar,14
 jaisalmer,jaisalmer-fort,Jaisalmer Fort,14
 kanyakumari,kanyakumari-railway-station-start,Kanyakumari railway station,14
-leh,leh-town-centre-start,Leh town centre,14
-shimla,shimla-city-centre-start,Shimla city centre,14
-chennai,new-woodlands-hotel,New Woodlands Hotel,14
+kanyakumari,kanyakumari-stay-east,Ottayalvilai,14
+mathura,mathura-stay-central,Maholi,14
+sabarimala,sabarimala-stay-central,Pamba,14
+tirupati,tirupati-stay-east,Daminedu,14
+bengaluru,vv-puram-food-street,VV Puram Food Street,13
 leh,magnetic-hill,Magnetic Hill,13
+pondicherry,pondicherry-stay-east,Solai Nagar,13
 pondicherry,puducherry-railway-station-start,Puducherry railway station,13
 prayagraj,allahabad-fort,Allahabad Fort,13
 shimla,the-ridge,The Ridge,13
-vrindavan,vrindavan-town-centre-start,Vrindavan town centre,13
-bengaluru,vv-puram-food-street,VV Puram Food Street,13
+bengaluru,bengaluru-stay-central,Gandhinagar,12
+jaipur,jaipur-stay-east,Adarsh Nagar,12
 jodhpur,clock-tower,Clock Tower (Ghanta Ghar),12
+kanyakumari,kanyakumari-stay-north,Kottaram,12
+kanyakumari,kanyakumari-stay-south,Kovalam,12
 manali,manu-temple,Manu Temple,12
+mysuru,mysuru-stay-east,Nazarbad,12
 pondicherry,sri-aurobindo-ashram,Sri Aurobindo Ashram,12
+rameswaram,rameswaram-stay-central,Rameswaram,12
+tirupati,tirupati-stay-north,Jeevakona,12
+amritsar,amritsar-stay-west,Khairabad,11
 bengaluru,cubbon-park,Cubbon Park,11
 jaisalmer,patwon-ki-haveli,Patwon Ki Haveli,11
 jaisalmer,salim-singh-ki-haveli,Salim Singh Ki Haveli,11
-mussoorie,mussoorie-town-centre-start,Mussoorie town centre,11
-ooty,ooty-town-centre-start,Ooty town centre,10
-puri,raghurajpur-artist-village,Raghurajpur Artist Village,10
+konark,konark-stay-central,Konark,11
+mussoorie,mussoorie-stay-west,dhobighat,11
+prayagraj,prayagraj-stay-north,Tagore Town,11
+prayagraj,prayagraj-stay-west,Chowk,11
+rishikesh,rishikesh-stay-west,Ashutosh Nagar,11
+ujjain,ujjain-stay-south,Sai Vihar Colony,11
+agra,agra-stay-south,Agra Cantonment,10
+ajmer,ajmer-stay-central,Sedariya,10
+aurangabad,aurangabad-stay-central,Osmanpura,10
 bengaluru,koshys,Koshy's,10
 delhi,khan-market,Khan Market,10
+kolkata,kolkata-stay-east,CA Block,10
+mysuru,mysuru-stay-north,Yadavagiri,10
+puri,raghurajpur-artist-village,Raghurajpur Artist Village,10
+ujjain,ujjain-stay-central,Vidyapati Nagar,10
+amritsar,amritsar-stay-north,Heir,9
 ayodhya,guptar-ghat,Guptar Ghat (Saryu),9
+bengaluru,gandhi-bazaar,Gandhi Bazaar,9
 jodhpur,sardar-market,Sardar Market,9
+kochi,kochi-stay-west,Mulamkuzhi,9
 manali,atal-tunnel,Atal Tunnel,9
+mumbai,mumbai-stay-central,Bandra Kurla Complex,9
 pondicherry,french-quarter,French Quarter (White Town),9
 rameswaram,pamban-bridge,Pamban Bridge,9
-rishikesh,rishikesh-city-centre-start,Rishikesh city centre,9
-udaipur,udaipur-city-centre-start,Udaipur city centre,9
-bengaluru,gandhi-bazaar,Gandhi Bazaar,9
-munnar,kdhp-tea-museum,KDHP Tea Museum,8
-shirdi,dwarkamai,Dwarkamai,8
-tirupati,tirupati-city-centre-start,Tirupati city centre,8
+rameswaram,rameswaram-stay-north,Attankarai,9
+shimla,shimla-stay-north,Longwood,9
+bengaluru,bengaluru-stay-west,Seshadripuram,8
 calangute,mapusa-market,Mapusa Market,8
 delhi,moti-mahal,Moti Mahal,8
-aurangabad,city-centre-start,City centre,7
+jodhpur,jodhpur-stay-south,Basni,8
+katra,katra-stay-east,Jangal Gali,8
+mathura,mathura-stay-west,Satoha,8
+munnar,kdhp-tea-museum,KDHP Tea Museum,8
+munnar,munnar-stay-central,Munnar,8
+pondicherry,pondicherry-stay-west,Kosapalayam,8
+puri,puri-stay-central,Swargadwara,8
+shirdi,dwarkamai,Dwarkamai,8
+chennai,chennai-stay-central,Triplicane,7
 jaisalmer,sam-sand-dunes,Sam Sand Dunes,7
 kochi,mattancherry-palace,Mattancherry Palace,7
-mysuru,mysuru-city-centre-start,Mysuru city centre,7
+konark,konark-stay-north,Begunia,7
+manali,manali-stay-east,Hamtah,7
 shimla,christ-church,Christ Church,7
-shirdi,shirdi-town-centre-start,Shirdi town centre,7
-kanyakumari,kanyakumari-town-centre-start,Kanyakumari town centre,6
-kochi,kochi-city-centre-start,Kochi city centre,6
-konark,konark-town-centre-start,Konark town centre,6
-manali,solang-valley,Solang Valley,6
-nainital,eco-cave-gardens,Eco Cave Gardens,6
+udaipur,udaipur-stay-west,Galera,7
+calangute,calangute-stay-central,Calangute,6
+calangute,calangute-stay-north,Anjuna,6
+delhi,delhi-stay-west,Satya Niketan,6
 delhi,gali-paranthe-wali,Gali Paranthe Wali,6
+haridwar,haridwar-stay-east,Chila,6
 hyderabad,laad-bazaar,Laad Bazaar,6
-ayodhya,ayodhya-city-centre-start,Ayodhya city centre,5
-bengaluru,bengaluru-city-centre-start,Bengaluru city centre,5
+manali,solang-valley,Solang Valley,6
+mumbai,mumbai-stay-west,Juhu,6
+mussoorie,mussoorie-stay-south,Barlowganj,6
+mysuru,mysuru-stay-central,Mandi Mohalla,6
+nainital,eco-cave-gardens,Eco Cave Gardens,6
+sabarimala,sabarimala-stay-south,Chalakkayam,6
+vrindavan,vrindavan-stay-south,Kaliyanpur,6
+alleppey,alleppey-stay-south,Vadackal,5
+hyderabad,hyderabad-stay-south,Aliabad,5
 mussoorie,lal-tibba,Lal Tibba,5
 ooty,udagamandalam-railway-station-start,Udagamandalam railway station,5
-darjeeling,darjeeling-town-centre-start,Darjeeling town centre,4
-haridwar,haridwar-city-centre-start,Haridwar city centre,4
+puri,puri-stay-west,Alipada,5
+bengaluru,bengaluru-stay-north,Vasanth Nagar,4
+calangute,calangute-stay-east,Alto Porvorim,4
+hyderabad,cafe-bahar,Cafe Bahar,4
 jodhpur,mandore-gardens,Mandore Gardens,4
 jodhpur,rao-jodha-desert-rock-park,Rao Jodha Desert Rock Park,4
-mathura,mathura-city-centre-start,Mathura city centre,4
-nainital,nainital-town-centre-start,Nainital town centre,4
-pondicherry,pondicherry-city-centre-start,Pondicherry city centre,4
-hyderabad,cafe-bahar,Cafe Bahar,4
+kedarnath,kedarnath-stay-south,Sonprayag,4
+alleppey,alleppey-stay-east,Kainakary,3
 bengaluru,lalbagh-botanical-garden,Lalbagh Botanical Garden,3
+chennai,chennai-stay-east,Royapuram,3
+jaipur,world-trade-park,World Trade Park,3
 jaisalmer,nathmal-ki-haveli,Nathmal Ki Haveli,3
 kolkata,howrah-bridge,Howrah Bridge,3
-mumbai,marine-drive,Marine Drive,3
-jaipur,world-trade-park,World Trade Park,3
+mathura,mathura-stay-north,Kinarai,3
 mumbai,leopold-cafe,Leopold Cafe,3
+mumbai,marine-drive,Marine Drive,3
+mumbai,mumbai-stay-south,Colaba,3
+munnar,munnar-stay-west,Viripara,3
+pushkar,pushkar-stay-west,Motisar,3
+shirdi,shirdi-stay-central,Sainagar,3
 varanasi,dalmandi,Dalmandi,3
-kolkata,kolkata-city-centre-start,Kolkata city centre,2
-manali,rohtang-pass,Rohtang Pass,2
-munnar,munnar-town-centre-start,Munnar town centre,2
-pondicherry,promenade-beach,Promenade Beach,2
-ujjain,ujjain-city-centre-start,Ujjain city centre,2
 calangute,mall-de-goa,Mall De Goa,2
 chennai,t-nagar,T. Nagar,2
+delhi,delhi-stay-north,Karol Bagh,2
 delhi,sarojini-nagar-market,Sarojini Nagar Market,2
-kolkata,aminia,Aminia,2
+hyderabad,hyderabad-stay-north,Nampally,2
+jaipur,jaipur-stay-south,Bapu Nagar,2
 kolkata,6-ballygunge-place,6 Ballygunge Place,2
+kolkata,aminia,Aminia,2
+manali,rohtang-pass,Rohtang Pass,2
 mysuru,sayyaji-rao-road,Sayyaji Rao Road,2
+pondicherry,promenade-beach,Promenade Beach,2
+pushkar,pushkar-stay-north,Tilora,2
+srinagar,srinagar-stay-south,Jawahar Nagar,2
+alleppey,alleppey-stay-north,Kommady,1
+amritsar,amritsar-stay-south,Guru Kirpa Avenue - 2,1
 amritsar,attari-wagah-border-ceremony,Attari–Wagah Border Ceremony,1
-hyderabad,qutb-shahi-tombs,Qutb Shahi Tombs,1
-kochi,fort-kochi,Fort Kochi,1
-madurai,madurai-city-centre-start,Madurai city centre,1
-manali,vashisht-hot-springs,Vashisht Hot Springs,1
-prayagraj,prayagraj-city-centre-start,Prayagraj city centre,1
-pushkar,pushkar-town-centre-start,Pushkar town centre,1
-vrindavan,nidhivan,Nidhivan,1
 bengaluru,commercial-street,Commercial Street,1
+hyderabad,hyderabad-stay-west,Mehdipatnam,1
+hyderabad,qutb-shahi-tombs,Qutb Shahi Tombs,1
+jodhpur,jodhpur-stay-central,Paota,1
+kochi,fort-kochi,Fort Kochi,1
+manali,vashisht-hot-springs,Vashisht Hot Springs,1
+mathura,mathura-stay-south,Baburi,1
 mumbai,crawford-market,Crawford Market,1
-jaisalmer,jaisalmer-city-centre-start,Jaisalmer city centre,0
-kanyakumari,kanyakumari-beach,Kanyakumari Beach,0
-manali,manali-town-centre-start,Manali town centre,0
-mumbai,colaba-causeway,Colaba Causeway,0
-munnar,top-station,Top Station,0
-mussoorie,mall-road-mussoorie,Mall Road,0
-mussoorie,camels-back-road,Camel's Back Road,0
-nainital,mall-road-nainital,Mall Road,0
-prayagraj,akshayavat,Akshayavat,0
+vrindavan,nidhivan,Nidhivan,1
 chennai,pondy-bazaar,Pondy Bazaar,0
+kanyakumari,kanyakumari-beach,Kanyakumari Beach,0
+mumbai,colaba-causeway,Colaba Causeway,0
 mumbai,r-city-mall,R City Mall,0
+munnar,munnar-stay-south,Anachal,0
+munnar,top-station,Top Station,0
+mussoorie,camels-back-road,Camel's Back Road,0
+mussoorie,mall-road-mussoorie,Mall Road,0
+nainital,mall-road-nainital,Mall Road,0
+nainital,nainital-stay-north,Kilbary,0
+prayagraj,akshayavat,Akshayavat,0
 shimla,lower-bazaar,Lower Bazaar,0
+shimla,shimla-stay-south,New Shimla,0
+varanasi,varanasi-stay-south,Lanka,0

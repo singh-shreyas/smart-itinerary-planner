@@ -22,12 +22,12 @@ def _ssl_context():
 SSL_CONTEXT = _ssl_context()
 
 
-def fetch(url, attempts=6):
+def fetch(url, attempts=6, timeout=60):
     """GET with polite retries (public APIs answer 429 when we go too fast)."""
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     for attempt in range(attempts):
         try:
-            with urllib.request.urlopen(req, timeout=60, context=SSL_CONTEXT) as resp:
+            with urllib.request.urlopen(req, timeout=timeout, context=SSL_CONTEXT) as resp:
                 return resp.read()
         except urllib.error.HTTPError as exc:
             if exc.code in (429, 503) and attempt < attempts - 1:

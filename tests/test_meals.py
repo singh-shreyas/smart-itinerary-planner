@@ -4,7 +4,7 @@ import copy
 
 import pytest
 
-from conftest import DINNER, LUNCH, RATE, make_trip
+from conftest import DINNER, LUNCH, make_trip
 from services.itinerary_generator import plan_trip
 from services.models import MealBreak, MealSetting
 from services.validator import check_itinerary
@@ -34,7 +34,7 @@ def meals(day):
 
 
 def test_lunch_is_a_separate_entry_inside_its_window(tiny_city):
-    plan = plan_trip(tiny_city, make_trip(lunch=LUNCH, dinner=DINNER), RATE)
+    plan = plan_trip(tiny_city, make_trip(lunch=LUNCH, dinner=DINNER))
     assert plan.violations == []
     day = plan.days[0]
     lunch = meals(day)["lunch"]
@@ -49,7 +49,7 @@ def test_lunch_is_a_separate_entry_inside_its_window(tiny_city):
 def test_meal_goes_to_a_nearby_listed_food_place(tiny_city):
     """Garden ends 12:30 (+15 buffer); Chaat Street is 10 planned minutes away and open: lunch goes there."""
     trip = make_trip(day_start=11 * 60, day_end=15 * 60, exclude=ALL_BUT_GARDEN, lunch=LUNCH, veg_only=True)
-    plan = plan_trip(tiny_city, trip, RATE)
+    plan = plan_trip(tiny_city, trip)
     assert plan.violations == []
     lunch = meals(plan.days[0])["lunch"]
     assert lunch.venue is not None and lunch.venue.slug == "chaat-street"
@@ -60,7 +60,7 @@ def test_meal_goes_to_a_nearby_listed_food_place(tiny_city):
 
 def test_without_venue_suggestions_the_break_is_generic(tiny_city):
     trip = make_trip(day_start=11 * 60, day_end=15 * 60, exclude=ALL_BUT_GARDEN, lunch=LUNCH, food_venues=False)
-    plan = plan_trip(tiny_city, trip, RATE)
+    plan = plan_trip(tiny_city, trip)
     lunch = meals(plan.days[0])["lunch"]
     assert lunch.venue is None and lunch.leg is None and lunch.location_name == "Garden"
     assert plan.violations == []
@@ -69,7 +69,7 @@ def test_without_venue_suggestions_the_break_is_generic(tiny_city):
 def test_meals_after_returning_are_taken_near_the_base(tiny_city):
     """Only the fort is left: back at 10:35, so lunch and dinner are taken near the hotel later."""
     trip = make_trip(day_end=22 * 60, exclude=ALL_BUT_GARDEN[1:] + ("garden",), lunch=LUNCH, dinner=DINNER)
-    plan = plan_trip(tiny_city, trip, RATE)
+    plan = plan_trip(tiny_city, trip)
     assert plan.violations == []
     day = plan.days[0]
     assert [v.attraction.slug for v in day.visits] == ["fort"]
@@ -83,7 +83,7 @@ def test_a_long_visit_never_swallows_lunch(tiny_city):
     """The 2-hour palace would run through a 12:00-13:00 lunch window, so lunch comes first."""
     short_lunch = MealSetting("lunch", 12 * 60, 13 * 60, 30)
     keep = ("fort", "museum", "temple", "island", "aarti", "garden")
-    plan = plan_trip(tiny_city, make_trip(day_start=11 * 60 + 30, day_end=17 * 60, exclude=keep, lunch=short_lunch), RATE)
+    plan = plan_trip(tiny_city, make_trip(day_start=11 * 60 + 30, day_end=17 * 60, exclude=keep, lunch=short_lunch))
     assert plan.violations == []
     kinds = ["meal" if isinstance(e, MealBreak) else e.attraction.slug for e in plan.days[0].timeline]
     assert kinds == ["meal", "palace"]
@@ -91,8 +91,8 @@ def test_a_long_visit_never_swallows_lunch(tiny_city):
 
 def test_meal_time_is_reserved_in_the_knapsack(tiny_city):
     trace_without, trace_with = [], []
-    plan_trip(tiny_city, make_trip(), RATE, trace=trace_without)
-    plan_trip(tiny_city, make_trip(lunch=LUNCH), RATE, trace=trace_with)
+    plan_trip(tiny_city, make_trip(), trace=trace_without)
+    plan_trip(tiny_city, make_trip(lunch=LUNCH), trace=trace_with)
     cap_without = trace_without[0]["instance"].time_cap
     cap_with = trace_with[0]["instance"].time_cap
     assert trace_with[0]["instance"].reserved["meals"] == 45
@@ -100,15 +100,15 @@ def test_meal_time_is_reserved_in_the_knapsack(tiny_city):
 
 
 def test_validator_catches_a_meal_outside_its_window(tiny_city):
-    plan = copy.deepcopy(plan_trip(tiny_city, make_trip(lunch=LUNCH), RATE))
+    plan = copy.deepcopy(plan_trip(tiny_city, make_trip(lunch=LUNCH)))
     meal = meals(plan.days[0])["lunch"]
     meal.start, meal.end = 15 * 60, 15 * 60 + 45
-    assert any("lunch" in p.lower() for p in check_itinerary(plan, tiny_city, RATE))
+    assert any("lunch" in p.lower() for p in check_itinerary(plan, tiny_city))
 
 
 def test_validator_catches_a_missing_meal(tiny_city):
-    plan = copy.deepcopy(plan_trip(tiny_city, make_trip(lunch=LUNCH), RATE))
+    plan = copy.deepcopy(plan_trip(tiny_city, make_trip(lunch=LUNCH)))
     day = plan.days[0]
     day.timeline = [e for e in day.timeline if not isinstance(e, MealBreak)]
     day.meals = []
-    assert any("lunch appears 0 times" in p for p in check_itinerary(plan, tiny_city, RATE))
+    assert any("lunch appears 0 times" in p for p in check_itinerary(plan, tiny_city))
