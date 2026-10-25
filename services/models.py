@@ -36,13 +36,51 @@ class Place:
     id: int
     slug: str
     name: str
-    kind: str
+    kind: str                            # attraction / stay / transport / access
     lat: float
     lng: float
     city_slug: str = ""
     city_name: str = ""
-    access: str = "road"
-    access_note: str | None = None
+    direction: str | None = None         # stay areas: north / south / east / west / central
+    direction_note: str | None = None    # stay areas: set when the area is not really in that direction
+    note: str | None = None
+    source_url: str | None = None
+
+    @property
+    def stay_label(self):
+        """'Paharganj (Central)': the name shown in the stay dropdown."""
+        return f"{self.name} ({self.direction.capitalize()}{'*' if self.direction_note else ''})"
+
+
+ACCESS_LABELS = {
+    "road": "By road", "road_walk": "Road, then a walk", "trek": "On foot (trek)", "ferry": "By ferry",
+    "boat": "By boat", "ropeway": "By ropeway", "helicopter": "By helicopter",
+    "public_transport_walk": "Public transport, then a walk", "restricted": "Restricted access",
+    "unknown": "Access unknown",
+}
+MODE_ICONS = {"road": "bi-car-front", "walk": "bi-person-walking", "trek": "bi-signpost-split",
+              "ferry": "bi-water", "boat": "bi-water", "ropeway": "bi-cable-car"}
+
+
+@dataclass(frozen=True)
+class Segment:
+    """One part of a travel leg: a road drive, a walk, a trek, a ferry crossing, ...
+
+    minutes are raw estimates (road: OSRM free-flow x traffic factor). The leg
+    as a whole is rounded up to 10 minutes; its segments are not.
+    """
+    mode: str
+    minutes: int
+    km: float
+    basis: str = "road_data"             # road_data / source / estimate
+    note: str = ""
+    depart_open: int | None = None       # e.g. first ferry
+    depart_close: int | None = None      # e.g. last ferry
+    source_url: str | None = None
+
+    @property
+    def is_road(self):
+        return self.mode == "road"
 
 
 @dataclass
@@ -80,8 +118,16 @@ class Attraction:
     place_type: str | None = None
     cuisine: tuple = ()                  # meal-venue styles (food places only)
     vegetarian: str = "unknown"
-    access: str = "road"
+    # How you get there (data/access.csv). 'road' = a road reaches it.
+    access_type: str = "road"
+    road_access: str = "yes"             # does a road reach the attraction itself? yes / no / unknown
+    access_point_id: int | None = None   # where the road ends
+    access_modes: str | None = None
+    access_timing: str = "road_data"     # road_data / sourced / estimated / unknown
+    last_mile_m: int | None = None
     access_note: str | None = None
+    access_source_url: str | None = None
+    alternatives: tuple = ()             # other ways in: shown, never used in a plan
     kinds: frozenset = frozenset()       # {'sight', 'food', 'shopping'} from its categories
 
     def windows_on(self, weekday):
@@ -103,6 +149,19 @@ class Attraction:
     @property
     def rated(self):
         return self.rating is not None
+
+    @property
+    def timed(self):
+        """Can the planner time the journey there? False = access data missing (never guessed)."""
+        return self.access_timing != "unknown"
+
+    @property
+    def special_access(self):
+        return self.access_type != "road"
+
+    @property
+    def access_label(self):
+        return ACCESS_LABELS.get(self.access_type, self.access_type)
 
     @property
     def is_food_or_shopping_only(self):
@@ -153,8 +212,6 @@ class TripRequest:
     days: int
     day_start: int
     day_end: int
-    budget: int | None
-    include_transport: bool
     interests: tuple
     pace: str
     start: str
@@ -168,7 +225,8 @@ class TripRequest:
     venue_styles: tuple = ()             # preferred meal-venue styles
     veg_only: bool = False
     shop_minutes: int | None = None      # time per shopping stop (None = the place's own estimate)
-    shop_spend: int = 0                  # planned spend per shopping stop, counted in the budget
+    mode: str = "suggested"              # evenly / suggested / optimized (services/distribution.py)
+    places: tuple = ()                   # attraction slugs the traveller picked (empty = the planner chooses)
 
     @property
     def city_slugs(self):
@@ -193,7 +251,6 @@ class TripRequest:
             "days": trip.days,
             "day_start": fmt_hhmm(trip.day_start),
             "day_end": fmt_hhmm(trip.day_end),
-            "budget": "" if trip.budget is None else trip.budget,
             "pace": trip.pace,
             "start": trip.start,
             "strategy": trip.strategy,
@@ -202,14 +259,16 @@ class TripRequest:
             "lunch": "on" if trip.lunch else "off",
             "dinner": "on" if trip.dinner else "off",
             "venues": "on" if trip.food_venues else "off",
+            "mode": trip.mode,
         }
+        if trip.places:
+            query["choose"] = "pick"
+            query["places"] = ",".join(trip.places)
         for meal in trip.meals:
             prefix = meal.kind
             query[f"{prefix}_from"] = fmt_hhmm(meal.earliest)
             query[f"{prefix}_to"] = fmt_hhmm(meal.latest_end)
             query[f"{prefix}_min"] = meal.minutes
-        if trip.include_transport:
-            query["transport"] = "on"
         if trip.exclude:
             query["exclude"] = ",".join(trip.exclude)
         if trip.extra_cities:
@@ -220,8 +279,6 @@ class TripRequest:
             query["veg"] = "on"
         if trip.shop_minutes:
             query["shop_min"] = trip.shop_minutes
-        if trip.shop_spend:
-            query["shop_spend"] = trip.shop_spend
         return query
 
 
@@ -242,10 +299,25 @@ class Leg:
     estimated: bool = False                      # the path uses a straight-line estimate, not road data
     depart: int | None = None                    # clock time the leg starts
     purpose: str = "travel"                      # 'travel' or 'meal' (a detour to a food place)
+    segments: tuple = ()                         # Segment parts in order (road, walk, trek, ferry, ...)
+    wait: int = 0                                # minutes waiting for a ferry's first departure
 
     @property
     def arrive(self):
-        return None if self.depart is None else self.depart + self.minutes
+        return None if self.depart is None else self.depart + self.minutes + self.wait
+
+    @property
+    def access_min(self):
+        """Minutes of the leg spent walking, trekking or on a ferry (raw, before rounding)."""
+        return sum(s.minutes for s in self.segments if not s.is_road)
+
+    @property
+    def access_km(self):
+        return sum(s.km for s in self.segments if not s.is_road)
+
+    @property
+    def special(self):
+        return any(not s.is_road for s in self.segments)
 
 
 @dataclass
@@ -310,7 +382,6 @@ class DayPlan:
     depart: int                              # time the traveller leaves the start point
     visits: list
     return_leg: Leg | None
-    transport_rate: float                    # Rs per km used for the transport estimate
     branch: str = ""                         # routing branch that produced this order
     empty_reason: str | None = None
     suggestions: list = field(default_factory=list)
@@ -318,7 +389,6 @@ class DayPlan:
     timeline: list = field(default_factory=list)   # Visit and MealBreak entries in time order
     day_start: int = 0
     day_end: int = 0
-    shop_spend: int = 0                      # planned spend per shopping stop
     focus: str = ""                          # which city (or cities) the day was planned around
     free_time_notes: list = field(default_factory=list)
     filled: list = field(default_factory=list)     # attraction ids added by the fill step
@@ -339,7 +409,7 @@ class DayPlan:
     def return_time(self):
         if not self.visits:
             return None
-        return self.return_leg.depart + self.return_leg.minutes
+        return self.return_leg.arrive
 
     @property
     def end_time(self):
@@ -385,8 +455,18 @@ class DayPlan:
         return sum(m.end - m.start for m in self.meals)
 
     @property
+    def access_min(self):
+        """Walking, trekking and ferry minutes inside the day's travel (already part of travel_min)."""
+        return sum(leg.access_min for leg in self.legs)
+
+    @property
+    def road_travel_min(self):
+        return self.local_travel_min - self.access_min
+
+    @property
     def wait_min(self):
-        return sum(v.wait for v in self.visits) + sum(m.wait for m in self.meals)
+        legs = sum(leg.wait for leg in self.legs)
+        return sum(v.wait for v in self.visits) + sum(m.wait for m in self.meals) + legs
 
     @property
     def buffer_min(self):
@@ -405,29 +485,14 @@ class DayPlan:
         return 0 if not self.visits else self.day_end - self.end_time
 
     @property
-    def fees(self):
-        return sum(v.attraction.fee for v in self.visits)
-
-    @property
-    def shopping_spend(self):
-        return self.shop_spend * sum(1 for v in self.visits if v.attraction.is_shopping_only)
-
-    @property
-    def transport_cost(self):
-        return int(round(self.km_exact * self.transport_rate))
-
-    @property
     def score(self):
         return sum(v.score for v in self.visits)
-
-    def spend(self, include_transport):
-        return self.fees + self.shopping_spend + (self.transport_cost if include_transport else 0)
 
 
 @dataclass
 class Skipped:
     attraction: Attraction
-    code: str                 # excluded / unreachable / no_road / closed / over_budget / does_not_fit / not_selected / opt_in / interest
+    code: str                 # excluded / unreachable / access_unknown / closed / does_not_fit / not_selected / opt_in / interest
     reason: str               # one-line explanation shown to the user
     details: list = field(default_factory=list)
 
@@ -445,6 +510,9 @@ class Itinerary:
     estimated_links: list = field(default_factory=list)  # city pairs joined by a straight-line estimate
     interest_notes: list = field(default_factory=list)   # interests with no / little data in these cities
     versions: dict = field(default_factory=dict)         # data / config / plan fingerprints
+    selected: list = field(default_factory=list)         # attraction ids the mode distributed
+    distribution: object = None                          # services.distribution.Distribution
+    mode_notes: list = field(default_factory=list)       # plain-language summary of the plan's shape
 
     @property
     def visits(self):
@@ -487,6 +555,14 @@ class Itinerary:
         return sum(day.wait_min for day in self.days)
 
     @property
+    def access_min(self):
+        return sum(day.access_min for day in self.days)
+
+    @property
+    def active_days(self):
+        return [d for d in self.days if d.visits]
+
+    @property
     def buffer_min(self):
         return sum(day.buffer_min for day in self.days)
 
@@ -497,18 +573,6 @@ class Itinerary:
     @property
     def available_min(self):
         return sum(day.window_min for day in self.days)
-
-    @property
-    def fees(self):
-        return sum(day.fees for day in self.days)
-
-    @property
-    def transport_cost(self):
-        return sum(day.transport_cost for day in self.days)
-
-    @property
-    def spend(self):
-        return sum(day.spend(self.trip.include_transport) for day in self.days)
 
     @property
     def illustrative(self):

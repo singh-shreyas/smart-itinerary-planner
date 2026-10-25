@@ -42,10 +42,6 @@ def parse_trip_args(args):
     return parse_trip(args, lambda slugs: city_data(slugs[0], slugs[1:]), {c["slug"] for c in categories()})
 
 
-def transport_rate():
-    return current_app.config["TRANSPORT_COST_PER_KM"]
-
-
 def read_catalog(name="destinations.csv"):
     """The team's catalog files (names only), if present."""
     path = os.path.join(current_app.config["DATA_DIR"], "catalog", name)
@@ -61,6 +57,28 @@ def read_data_csv(name):
         return []
     with open(path, newline="", encoding="utf-8") as f:
         return [r for r in csv.DictReader(f) if not next(iter(r.values()), "").startswith("#")]
+
+
+TIMING_LABELS = {"road_data": "road data (OSRM)", "sourced": "times from a cited source",
+                 "estimated": "estimated from a cited distance and climb", "unknown": "not known"}
+ALTERNATIVE_STATUS = {"operating_unverified": "Not used in timings: schedule and availability not verified — "
+                                              "verify independently",
+                      "planned": "Planned, not operating"}
+
+
+def access_info(a, city=None):
+    """Everything the interface shows about how an attraction is reached (JSON-safe)."""
+    point = city.places.get(a.access_point_id) if (city is not None and a.access_point_id) else None
+    return {
+        "type": a.access_type, "label": a.access_label, "road_access": a.road_access,
+        "modes": [m for m in (a.access_modes or "").split(";") if m],
+        "timing": a.access_timing, "timing_label": TIMING_LABELS.get(a.access_timing, a.access_timing),
+        "timed": a.timed, "note": a.access_note, "source_url": a.access_source_url,
+        "access_point": point.name if point else None, "last_mile_m": a.last_mile_m,
+        "alternatives": [{"label": x["label"], "modes": x["modes"], "from": x["starts_from"],
+                          "minutes": x["minutes"], "status": ALTERNATIVE_STATUS[x["status"]],
+                          "note": x["note"], "source_url": x["source_url"]} for x in a.alternatives],
+    }
 
 
 def catalog_only():
@@ -173,6 +191,10 @@ def itinerary_to_dict(itinerary):
                         "leave": fmt_hhmm(v.leave), "wait_min": v.wait, "travel_min": v.leg.minutes,
                         "travel_min_raw": v.leg.raw_minutes, "travel_km": v.leg.km, "via": v.leg.via,
                         "intercity": v.leg.intercity, "estimated_travel": v.leg.estimated,
+                        "segments": [{"mode": s.mode, "minutes": s.minutes, "km": s.km, "basis": s.basis}
+                                     for s in v.leg.segments],
+                        "access_min": v.leg.access_min, "ferry_wait_min": v.leg.wait,
+                        "access": access_info(v.attraction) if v.attraction.special_access else None,
                         "fee_inr": v.attraction.fee, "score": v.score, "filled": v.attraction.id in day.filled}
                        for v in day.visits],
             "timeline": timeline,
@@ -182,19 +204,23 @@ def itinerary_to_dict(itinerary):
             "totals": {"score": day.score, "travel_min": day.travel_min, "intercity_min": day.intercity_min,
                        "km": day.km, "sight_min": day.sight_min, "meal_min": day.meal_min,
                        "wait_min": day.wait_min, "buffer_min": day.buffer_min, "free_min": day.free_min,
-                       "fees_inr": day.fees, "transport_inr": day.transport_cost,
-                       "spend_inr": day.spend(trip.include_transport)},
+                       "access_min": day.access_min},
             "empty_reason": day.empty_reason,
             "free_time_notes": day.free_time_notes,
         })
     return {
         "city": trip.city, "also": list(trip.extra_cities), "strategy": trip.strategy, "start": trip.start,
+        "mode": trip.mode, "places_picked": list(trip.places),
+        "summary": {"selected": len(itinerary.selected), "scheduled": itinerary.stops,
+                    "active_days": len(itinerary.active_days), "trip_days": trip.days,
+                    "per_day": [len(d.visits) for d in itinerary.days],
+                    "min_days": itinerary.distribution.min_days if itinerary.distribution else None,
+                    "notes": itinerary.mode_notes},
         "illustrative": itinerary.illustrative, "runtime_ms": round(itinerary.runtime_ms, 2),
         "travel_rounding_min": config.TRAVEL_ROUNDING_MIN,
         "days": days,
         "totals": {"stops": itinerary.stops, "score": itinerary.score, "travel_min": itinerary.travel_min,
-                   "km": itinerary.km, "sight_min": itinerary.sight_min, "meal_min": itinerary.meal_min,
-                   "spend_inr": itinerary.spend},
+                   "km": itinerary.km, "sight_min": itinerary.sight_min, "meal_min": itinerary.meal_min},
         "skipped": [{"slug": s.attraction.slug, "reason": s.code, "detail": s.reason} for s in itinerary.skipped],
         "estimated_links": [{"from": a, "to": b, "straight_km": km} for a, b, km in itinerary.estimated_links],
         "interest_notes": [n["text"] for n in itinerary.interest_notes],

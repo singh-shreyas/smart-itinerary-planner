@@ -1,7 +1,7 @@
 """Requirements 8 and 10: interests change selection; food and shopping are optional and honest."""
 
 from algorithms.scoring import attraction_score, expand_categories, matches_interests
-from conftest import RATE, make_trip
+from conftest import make_trip
 from services.itinerary_generator import plan_trip, trip_context
 
 PARENTS = {"street-food": "food", "cafes": "food", "trekking": "adventure"}
@@ -30,22 +30,22 @@ def test_interests_change_the_score_for_multi_category_places():
 
 
 def test_food_places_are_opt_in(tiny_city):
-    plan = plan_trip(tiny_city, make_trip(day_end=21 * 60), RATE)
+    plan = plan_trip(tiny_city, make_trip(day_end=21 * 60))
     assert skipped(plan)["chaat-street"].code == "opt_in"
-    with_food = plan_trip(tiny_city, make_trip(day_end=21 * 60, interests=("food",)), RATE)
+    with_food = plan_trip(tiny_city, make_trip(day_end=21 * 60, interests=("food",)))
     assert "chaat-street" not in skipped(with_food) or skipped(with_food)["chaat-street"].code != "opt_in"
     assert with_food.violations == []
 
 
 def test_only_matching_interests_mode_removes_the_rest(tiny_city):
-    plan = plan_trip(tiny_city, make_trip(day_end=21 * 60, interests=("spirituality",), interest_mode="only"), RATE)
+    plan = plan_trip(tiny_city, make_trip(day_end=21 * 60, interests=("spirituality",), interest_mode="only"))
     assert plan.violations == []
     assert {v.attraction.slug for v in plan.visits} <= {"temple", "aarti"}
     assert skipped(plan)["fort"].code == "interest"
 
 
 def test_interest_with_no_or_little_data_is_reported(tiny_city):
-    plan = plan_trip(tiny_city, make_trip(interests=("nightlife", "spirituality", "history")), RATE)
+    plan = plan_trip(tiny_city, make_trip(interests=("nightlife", "spirituality", "history")))
     notes = {n["interest"]: n for n in plan.interest_notes}
     assert notes["nightlife"]["count"] == 0 and "cannot change your plan" in notes["nightlife"]["text"]
     assert notes["spirituality"]["count"] == 2                       # temple and evening aarti: limited data
@@ -55,22 +55,18 @@ def test_interest_with_no_or_little_data_is_reported(tiny_city):
 
 def test_interest_with_enough_data_is_not_flagged(tiny_area):
     area = tiny_area("testville", "riverton")                       # fort, palace and river fort: 3 places
-    plan = plan_trip(area, make_trip(extra_cities=("riverton",), interests=("history",)), RATE)
+    plan = plan_trip(area, make_trip(extra_cities=("riverton",), interests=("history",)))
     assert plan.interest_notes == []
 
 
-def test_shopping_time_and_spend_are_used(tiny_area):
+def test_shopping_time_is_used(tiny_area):
     area = tiny_area("testville", "riverton")
-    trip = make_trip(extra_cities=("riverton",), interests=("markets",), shop_minutes=90, shop_spend=300,
+    trip = make_trip(extra_cities=("riverton",), interests=("markets",), shop_minutes=90,
                      exclude=("fort", "museum", "temple", "garden", "aarti", "palace", "river-fort", "river-ghat"))
-    plan = plan_trip(area, trip, RATE)
+    plan = plan_trip(area, trip)
     assert plan.violations == []
     visit = next(v for v in plan.visits if v.attraction.slug == "spice-market")
     assert visit.end - visit.start == 90
-    day = next(d for d in plan.days if visit in d.visits)
-    assert day.shopping_spend == 300 and day.spend(False) == day.fees + 300
-    over = plan_trip(area, trip.with_changes(budget=200), RATE)
-    assert skipped(over)["spice-market"].code == "over_budget"       # the planned spend counts in the budget
 
 
 def test_vegetarian_filter_uses_only_explicit_data(tiny_area):

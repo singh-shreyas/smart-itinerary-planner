@@ -24,9 +24,6 @@ class Config:
     # single assumed traffic factor. This is an ASSUMPTION, not a calibrated
     # value, and it is shown on the About page.
     TRAFFIC_FACTOR = 1.5
-    # Estimated local transport cost (auto-rickshaw / cab), rupees per km.
-    # Illustrative value used only when the user includes transport in the budget.
-    TRANSPORT_COST_PER_KM = 12
     # Before replacing the database, the old file is copied to instance/backups/.
     # Only the newest few copies are kept.
     DB_BACKUPS_KEPT = 5
@@ -35,7 +32,6 @@ class Config:
 # --- Trip input limits (used by server-side validation) -------------------
 MAX_DAYS = 5
 MIN_DAY_LENGTH_MIN = 120          # day end must be at least 2 hours after start
-MAX_BUDGET_INR = 100_000
 DEFAULT_DAY_START = "09:00"
 DEFAULT_DAY_END = "19:00"
 DEFAULT_PACE = "balanced"
@@ -74,6 +70,7 @@ MAX_EXTRA_CITIES = 3
 #   minutes = km * DETOUR / SPEED * 60
 ESTIMATE_DETOUR_FACTOR = 1.35
 ESTIMATE_SPEED_KMH = 40
+WALK_SPEED_KMH = 4                 # walking pace for short last-mile walks (an assumption, labelled as one)
 
 # --- Meals ------------------------------------------------------------------
 # Defaults for the lunch and dinner breaks: (earliest start, latest end, minutes).
@@ -96,7 +93,6 @@ VENUE_STYLES = {
     "local-specialty": "Local specialities",
 }
 SHOP_MINUTES = (30, 45, 60, 90, 120)       # time choices per shopping stop
-MAX_SHOP_SPEND_INR = 20_000
 
 # --- Pace --------------------------------------------------------------------
 # Buffer minutes added after every visit (rest, photos, food, finding the exit).
@@ -120,7 +116,7 @@ STRATEGIES = {
 STRATEGY_SHORT = {"dp": "DP", "greedy": "Greedy", "max_visits": "Max visits"}
 STRATEGY_OBJECTIVES = {
     "dp": "Maximise the total value score. Exact (optimal) for the per-day knapsack model.",
-    "greedy": "Take places in order of value per unit of time and money. Fast, but can miss "
+    "greedy": "Take places in order of value per minute of the day. Fast, but can miss "
               "a better combination.",
     "max_visits": "Maximise the number of visits; among equally long lists, the higher total "
                   "value wins. Exact for the per-day knapsack model.",
@@ -128,11 +124,8 @@ STRATEGY_OBJECTIVES = {
 
 # --- Dynamic programming discretisation ------------------------------------
 # Item weights are rounded UP to 10-minute units and the capacity rounded DOWN,
-# so any set the DP accepts really fits. Money units are max(Rs 10, budget/100)
-# so the money axis never has more than ~100 cells.
+# so any set the DP accepts really fits.
 DP_TIME_UNIT_MIN = 10
-DP_MIN_MONEY_UNIT = 10
-DP_MAX_MONEY_CELLS = 100
 
 # --- Comparison page ------------------------------------------------------
 HELD_KARP_MAX_STOPS = 10          # 2^k * k^2 grows fast; exact tour only for small days
@@ -144,13 +137,41 @@ QUALITY_LAMBDA = 0.2              # Q = total score - lambda * travel minutes
 # (100 = best of the three), so quantities in different units are never mixed
 # directly. Runtime is reported separately and does not count: a few
 # milliseconds do not change the traveller's day. Weights sum to 1.
+# There is no cost component: the planner optimises travel and time, not money.
+# (Until the budget feature was removed, "value per rupee" had 0.10; that share
+# went half to travel, since this is a travel-optimisation system, and half to
+# value, so value stays the largest single factor.)
 SCORECARD_WEIGHTS = {
-    "value": 0.40,        # total value score of the planned places
+    "value": 0.45,        # total value score of the planned places
     "coverage": 0.20,     # number of places visited
-    "travel": 0.15,       # travel minutes per place (fewer is better)
+    "travel": 0.20,       # travel minutes per place (fewer is better)
     "utilisation": 0.15,  # share of the available time spent sightseeing
-    "budget": 0.10,       # value per rupee spent
 }
+
+# --- Itinerary modes (services/distribution.py) -------------------------------
+# What to visit (the places you pick, or the strategy's choice) is separate
+# from how it is spread over the trip, which is the mode.
+MODES = {
+    "evenly": {"label": "Evenly Distributed", "icon": "bi-distribute-horizontal",
+               "text": "Spread attractions as evenly as possible across your selected trip days."},
+    "suggested": {"label": "Suggested", "icon": "bi-stars",
+                  "text": "A balanced itinerary that combines comfortable daily schedules with efficient travel."},
+    "optimized": {"label": "Most Optimized", "icon": "bi-lightning",
+                  "text": "Complete your selected attractions in the fewest feasible days."},
+}
+DEFAULT_MODE = "suggested"
+MAX_PICKED_PLACES = 25            # a hand-picked list longer than this is refused (keeps the search fast)
+# Suggested mode. A day is comfortable when you are out for at most 70% of your
+# window and never more than 8 hours. Cost of a plan, in minutes:
+#   2 x minutes beyond comfortable + travel + 0.25 x deviation from the average day
+#   + 60 for every active day beyond the minimum.
+# So an extra day must remove at least 30 min of over-long days (or 60 min of
+# travel) to be worth it. See the calibration in scripts/benchmark.py.
+COMFORT_SHARE = 0.7
+COMFORT_MAX_MIN = 8 * 60
+SUGGESTED_OVERLOAD_WEIGHT = 2
+SUGGESTED_IMBALANCE_WEIGHT = 0.25
+SUGGESTED_DAY_COST = 60
 
 # --- Fill step --------------------------------------------------------------
 # After a day's route is fixed, any leftover candidate that still fits (cheapest
@@ -165,8 +186,10 @@ def fingerprint_settings():
     each itinerary, so a changed plan can be traced to a changed setting."""
     return {
         "W": [W_RATING, W_POPULARITY, W_INTEREST], "prior": RATING_PRIOR, "paces": PACES,
-        "dp_unit": [DP_TIME_UNIT_MIN, DP_MIN_MONEY_UNIT, DP_MAX_MONEY_CELLS],
-        "rounding": TRAVEL_ROUNDING_MIN, "multi": [MULTI_CITY_MAX_KM, ESTIMATE_DETOUR_FACTOR, ESTIMATE_SPEED_KMH],
+        "dp_unit": DP_TIME_UNIT_MIN,
+        "rounding": TRAVEL_ROUNDING_MIN, "multi": [MULTI_CITY_MAX_KM, ESTIMATE_DETOUR_FACTOR, ESTIMATE_SPEED_KMH], "walk": WALK_SPEED_KMH,
         "venue_detour": MEAL_VENUE_MAX_DETOUR_MIN, "fill": FILL_STEP,
-        "traffic": Config.TRAFFIC_FACTOR, "transport": Config.TRANSPORT_COST_PER_KM,
+        "suggested": [COMFORT_SHARE, COMFORT_MAX_MIN, SUGGESTED_OVERLOAD_WEIGHT, SUGGESTED_IMBALANCE_WEIGHT,
+                      SUGGESTED_DAY_COST],
+        "traffic": Config.TRAFFIC_FACTOR,
     }

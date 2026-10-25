@@ -47,7 +47,7 @@ def test_old_database_is_upgraded_with_backup_and_user_data_kept(tmp_path):
     assert reason is not None
     conn = sqlite3.connect(path)
     assert conn.execute("SELECT name, url FROM saved_trips").fetchall() == [("Weekend", "/itinerary?city=delhi&days=2")]
-    assert conn.execute("SELECT COUNT(*) FROM cities").fetchone()[0] == 4
+    assert conn.execute("SELECT COUNT(*) FROM cities").fetchone()[0] == 6
     conn.close()
     backups = os.listdir(tmp_path / "backups")
     assert len(backups) == 1

@@ -2,7 +2,7 @@
 
 Every itinerary carries four short SHA-256 fingerprints:
 
-    inputs    the trip exactly as entered (city, dates, hours, budget, ...)
+    inputs    the trip exactly as entered (city, dates, hours, pace, ...)
     data      the CSV files the database was built from (database/migrations.py)
     settings  every planner setting in config.py that can change a plan
     plan      the resulting timeline (days, stops, meals, times)

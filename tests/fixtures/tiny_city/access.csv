@@ -1,0 +1,5 @@
+city,slug,access_type,road_access,access_point,modes,last_mile_m,note,source_url
+hillview,cliff-temple,road_walk,yes,,road;walk,900,Roads end about 0.9 km from the temple.,
+hillview,summit-shrine,trek,no,hill-trailhead,trek,,A 10 km trek from the trailhead.,
+hillview,ferry-isle,ferry,no,hill-jetty,ferry;walk,,An island reached by ferry.,
+hillview,mist-lake,boat,no,,boat,,A lake reached by boat; the crossing time is unknown.,

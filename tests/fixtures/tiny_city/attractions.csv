@@ -1,15 +1,34 @@
-city,slug,name,lat,lng,coord_source,categories,rating,popularity,visit_minutes,fee_inr,in_team_catalog,data_status,wiki_title,description,cuisine,vegetarian,access,access_note,place_type
-testville,fort,Fort,10.0200,10.0000,approximate,history;architecture,4.5,0.9,60,50,no,illustrative,,Open daily 09:00-17:00 (last entry 16:30).,,,,,
-testville,museum,Museum,10.0300,10.0200,approximate,museums,4.0,0.6,90,100,no,illustrative,,Closed on Mondays.,,,,,
-testville,temple,Temple,9.9800,10.0300,approximate,spirituality,4.8,0.7,45,0,no,illustrative,,Split hours: closed 12:00-16:00.,,,,,
-testville,garden,Garden,10.0000,10.0400,approximate,nature,4.2,0.5,60,0,no,illustrative,,Free and open all day.,,,,,
-testville,island,Island,10.1000,10.1000,approximate,nature,4.9,0.9,60,0,no,illustrative,,No road reaches it (unreachable on purpose).,,,,,
-testville,aarti,Evening Aarti,10.0100,10.0500,approximate,spirituality,4.7,0.8,60,0,no,illustrative,,Evening only: 18:00-19:30 (last entry 18:30).,,,,,
-testville,palace,Palace,9.9700,9.9800,approximate,history,4.6,0.8,120,600,no,illustrative,,Expensive: Rs 600 entry.,,,,,
-testville,chaat-street,Chaat Street,10.0050,10.0450,approximate,street-food,,0.6,45,0,no,illustrative,,Food-only place (opt-in); vegetarian street food used as a meal venue.,street-food;local-specialty,yes,,,food
-riverton,river-fort,River Fort,10.0100,10.3700,approximate,history;architecture,4.4,0.7,60,40,no,illustrative,,The main sight of Riverton.,,,,,
-riverton,river-ghat,River Ghat,9.9950,10.3600,approximate,spirituality;lakes-viewpoints,,0.5,45,0,no,estimate,,Unrated riverside steps (scored with the neutral prior).,,,,,
-riverton,spice-market,Spice Market,10.0050,10.3550,approximate,markets;handicrafts,,0.4,60,0,no,estimate,,Shopping-only place (opt-in).,,,,,
-riverton,river-cafe,River Cafe,10.0000,10.3700,approximate,cafes,,0.3,45,0,no,estimate,,Cafe used as a meal venue (vegetarian not known).,cafe-bakery,unknown,,,food
-westford,west-temple,West Temple,10.0050,9.3650,approximate,spirituality,4.5,0.6,45,0,no,illustrative,,Westford's sight; no road link to Testville in the data.,,,,,
-farville,far-lake,Far Lake,11.5050,10.0050,approximate,nature,4.0,0.5,60,0,no,illustrative,,Too far for a shared trip.,,,,,
+city,slug,name,lat,lng,coord_source,categories,rating,popularity,visit_minutes,fee_inr,in_team_catalog,data_status,wiki_title,description,cuisine,vegetarian,place_type
+testville,fort,Fort,10.0200,10.0000,approximate,history;architecture,4.5,0.9,60,50,no,illustrative,,Open daily 09:00-17:00 (last entry 16:30).,,,
+testville,museum,Museum,10.0300,10.0200,approximate,museums,4.0,0.6,90,100,no,illustrative,,Closed on Mondays.,,,
+testville,temple,Temple,9.9800,10.0300,approximate,spirituality,4.8,0.7,45,0,no,illustrative,,Split hours: closed 12:00-16:00.,,,
+testville,garden,Garden,10.0000,10.0400,approximate,nature,4.2,0.5,60,0,no,illustrative,,Free and open all day.,,,
+testville,island,Island,10.1000,10.1000,approximate,nature,4.9,0.9,60,0,no,illustrative,,No road reaches it (unreachable on purpose).,,,
+testville,aarti,Evening Aarti,10.0100,10.0500,approximate,spirituality,4.7,0.8,60,0,no,illustrative,,Evening only: 18:00-19:30 (last entry 18:30).,,,
+testville,palace,Palace,9.9700,9.9800,approximate,history,4.6,0.8,120,600,no,illustrative,,Expensive: Rs 600 entry.,,,
+testville,chaat-street,Chaat Street,10.0050,10.0450,approximate,street-food,,0.6,45,0,no,illustrative,,Food-only place (opt-in); vegetarian street food used as a meal venue.,street-food;local-specialty,yes,food
+riverton,river-fort,River Fort,10.0100,10.3700,approximate,history;architecture,4.4,0.7,60,40,no,illustrative,,The main sight of Riverton.,,,
+riverton,river-ghat,River Ghat,9.9950,10.3600,approximate,spirituality;lakes-viewpoints,,0.5,45,0,no,estimate,,Unrated riverside steps (scored with the neutral prior).,,,
+riverton,spice-market,Spice Market,10.0050,10.3550,approximate,markets;handicrafts,,0.4,60,0,no,estimate,,Shopping-only place (opt-in).,,,
+riverton,river-cafe,River Cafe,10.0000,10.3700,approximate,cafes,,0.3,45,0,no,estimate,,Cafe used as a meal venue (vegetarian not known).,cafe-bakery,unknown,food
+westford,west-temple,West Temple,10.0050,9.3650,approximate,spirituality,4.5,0.6,45,0,no,illustrative,,Westford's sight; no road link to Testville in the data.,,,
+farville,far-lake,Far Lake,11.5050,10.0050,approximate,nature,4.0,0.5,60,0,no,illustrative,,Too far for a shared trip.,,,
+hillview,hill-market,Hill Market,14.0050,10.0000,approximate,history,4.0,0.6,60,0,no,illustrative,,Road access: an ordinary stop.,,,
+hillview,cliff-temple,Cliff Temple,14.0100,10.0100,approximate,history,4.2,0.6,60,0,no,illustrative,,"Road, then a 900 m walk.",,,temple
+hillview,summit-shrine,Summit Shrine,14.0500,10.0500,approximate,history,4.8,0.9,60,0,no,illustrative,,A long trek from the trailhead.,,,temple
+hillview,ferry-isle,Ferry Isle,13.9800,10.0300,approximate,history,4.5,0.7,60,0,no,illustrative,,Ferry 09:30-13:00 only.,,,
+hillview,mist-lake,Mist Lake,14.0300,9.9700,approximate,nature,4.6,0.8,60,0,no,illustrative,,Boat access of unknown duration.,,,lake
+gridville,g1,G1,16.0020,10.0000,approximate,history,4.0,0.5,60,0,no,illustrative,,close place for mode tests.,,,
+gridville,g2,G2,16.0040,10.0000,approximate,history,4.0,0.5,60,0,no,illustrative,,close place for mode tests.,,,
+gridville,g3,G3,16.0060,10.0000,approximate,history,4.0,0.5,60,0,no,illustrative,,close place for mode tests.,,,
+gridville,g4,G4,16.0080,10.0000,approximate,history,4.0,0.5,60,0,no,illustrative,,close place for mode tests.,,,
+gridville,g5,G5,16.0100,10.0000,approximate,history,4.0,0.5,60,0,no,illustrative,,close place for mode tests.,,,
+gridville,g6,G6,16.0120,10.0000,approximate,history,4.0,0.5,60,0,no,illustrative,,close place for mode tests.,,,
+gridville,long1,LONG1,15.9900,10.0100,approximate,history,4.0,0.5,360,0,no,illustrative,,long place for mode tests.,,,
+gridville,long2,LONG2,15.9800,10.0100,approximate,history,4.0,0.5,360,0,no,illustrative,,long place for mode tests.,,,
+gridville,long3,LONG3,15.9700,10.0100,approximate,history,4.0,0.5,360,0,no,illustrative,,long place for mode tests.,,,
+gridville,far1,FAR1,16.3100,10.0000,approximate,history,4.0,0.5,60,0,no,illustrative,,far place for mode tests.,,,
+gridville,far2,FAR2,16.3200,10.0000,approximate,history,4.0,0.5,60,0,no,illustrative,,far place for mode tests.,,,
+gridville,sw1,SW1,16.0000,10.0030,approximate,history,4.0,0.5,45,0,no,illustrative,,window place for mode tests.,,,
+gridville,sw2,SW2,16.0000,10.0060,approximate,history,4.0,0.5,45,0,no,illustrative,,window place for mode tests.,,,
+gridville,sw3,SW3,16.0000,10.0090,approximate,history,4.0,0.5,45,0,no,illustrative,,window place for mode tests.,,,

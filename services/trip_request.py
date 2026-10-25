@@ -155,26 +155,6 @@ def parse_trip(args, load_area, category_slugs, today=None, all_cities=None):
         errors["day_end"] = (f"Your day must end at least {config.MIN_DAY_LENGTH_MIN // 60} hours after it starts "
                              f"(after {fmt_hhmm(day_start + config.MIN_DAY_LENGTH_MIN)}).")
 
-    # Budget -----------------------------------------------------------------
-    raw = _clean(args.get("budget")).replace(",", "").replace("₹", "")
-    values["budget"] = raw
-    budget = None
-    if raw:
-        try:
-            budget = int(float(raw))
-            if float(raw) != budget:
-                raise ValueError
-        except ValueError:
-            errors["budget"] = "Budget must be a whole number of rupees, or leave it empty for no limit."
-            budget = None
-        else:
-            if budget < 0:
-                errors["budget"] = "Budget cannot be negative."
-            elif budget > config.MAX_BUDGET_INR:
-                errors["budget"] = f"Budget must be at most ₹{config.MAX_BUDGET_INR:,}."
-    include_transport = _switch(args, "transport", False)
-    values["transport"] = "on" if include_transport else ""
-
     # Interests --------------------------------------------------------------
     interests = sorted(set(_split_list(args, "interests")))
     values["interests"] = interests
@@ -212,14 +192,6 @@ def parse_trip(args, load_area, category_slugs, today=None, all_cities=None):
             errors["shop_min"] = "Choose one of the listed shopping times."
         else:
             shop_minutes = int(raw)
-    raw = _clean(args.get("shop_spend")).replace(",", "").replace("₹", "")
-    values["shop_spend"] = raw
-    shop_spend = 0
-    if raw:
-        if not raw.isdigit() or int(raw) > config.MAX_SHOP_SPEND_INR:
-            errors["shop_spend"] = f"Shopping spend must be a whole number from 0 to ₹{config.MAX_SHOP_SPEND_INR:,}."
-        else:
-            shop_spend = int(raw)
 
     # Pace and strategy -------------------------------------------------------
     pace = _clean(args.get("pace")) or config.DEFAULT_PACE
@@ -230,30 +202,51 @@ def parse_trip(args, load_area, category_slugs, today=None, all_cities=None):
     values["strategy"] = strategy
     if strategy not in config.STRATEGIES:
         errors["strategy"] = "Unknown selection strategy."
+    mode = _clean(args.get("mode")) or config.DEFAULT_MODE
+    values["mode"] = mode
+    if mode not in config.MODES:
+        errors["mode"] = "Choose Evenly Distributed, Suggested or Most Optimized."
 
-    # Start point and exclusions (need a valid city) ----------------------------
+    # Places to visit: empty = the planner chooses (with the strategy above).
+    choose = _clean(args.get("choose")) or ("pick" if _split_list(args, "places") else "auto")
+    values["choose"] = choose
+    places = sorted(set(_split_list(args, "places"))) if choose == "pick" else []
+    values["places"] = places
+    if choose == "pick" and not places:
+        errors["places"] = "Pick at least one place to visit, or let the planner choose."
+    elif len(places) > config.MAX_PICKED_PLACES:
+        errors["places"] = f"Pick at most {config.MAX_PICKED_PLACES} places."
+
+    # Stay area and exclusions (need a valid city) ----------------------------
+    # Every day starts and ends at one of the base city's five stay areas --
+    # never at an attraction or a station. Empty = the central area.
     start = _clean(args.get("start"))
     exclude = sorted(set(_split_list(args, "exclude")))
     values["exclude"] = exclude
     if city is not None:
         if not start:
-            start = city.start_points[0].slug if city.start_points else ""
-        if city.place(start) is None:
-            errors["start"] = "Choose a starting point in your base city."
+            start = city.stays[0].slug if city.stays else ""
+        if city.stay(start) is None:
+            errors["start"] = f"Choose one of the stay areas in {city.name}."
         if area is not None:
             bad = [s for s in exclude if area.attraction_by_slug(s) is None]
             if bad:
                 errors["exclude"] = f"Not an attraction in {area.name}: {', '.join(bad)}."
             elif exclude and len(exclude) >= len(area.attractions):
                 errors["exclude"] = "Keep at least one attraction in the plan."
+            bad = [s for s in places if area.attraction_by_slug(s) is None]
+            if bad and "places" not in errors:
+                errors["places"] = f"Not an attraction in {area.name}: {', '.join(bad)}."
+            elif set(places) & set(exclude):
+                errors["places"] = "A place cannot be both picked and excluded."
     values["start"] = start
 
     if errors:
         return None, errors, values
     trip = TripRequest(city=city_slug, start_date=start_date, days=days, day_start=day_start, day_end=day_end,
-                       budget=budget, include_transport=include_transport, interests=tuple(interests),
+                       interests=tuple(interests),
                        pace=pace, start=start, strategy=strategy, exclude=tuple(exclude),
                        extra_cities=tuple(extras), interest_mode=interest_mode, lunch=lunch, dinner=dinner,
                        food_venues=food_venues, venue_styles=tuple(venue_styles), veg_only=veg_only,
-                       shop_minutes=shop_minutes, shop_spend=shop_spend)
+                       shop_minutes=shop_minutes, mode=mode, places=tuple(places))
     return trip, {}, values

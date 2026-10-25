@@ -4,18 +4,19 @@ It does not reuse any of the planner's intermediate values (it even recomputes
 the 10-minute travel rounding from the raw Dijkstra table). For every day it
 walks the timeline again and checks that:
     - no attraction appears twice in the trip, none the user excluded, none blocked
-      by the trip's rules (no road access, food/shopping not asked for, interests)
+      by the trip's rules (access not timed, food/shopping not asked for, interests)
     - each leg starts where the previous activity ended, departs no earlier than
       that activity's end, and its minutes equal the shortest-path time rounded
       UP to 10 minutes (no leg is infinite, none is silently zero)
-    - arrival = departure + travel (travel counted once, never skipped)
+    - arrival = departure + travel + any ferry wait (travel counted once, never skipped)
+    - a leg's parts (road, walk, trek, ferry) add up to its raw shortest-path time,
+      and a part with a departure window (first / last ferry) starts inside it
     - every visit starts inside an opening window for that date's weekday, no
       later than the last entry, lasts its planned duration, and ends by closing time
     - every needed meal (lunch / dinner) is there exactly once, inside its
       window, with its full duration, at an open venue or where you already are
     - activities never overlap and time never goes backwards
     - the ride back reaches the start point, and everything ends by the end of the day
-    - the day's spend is within the budget (when a budget is set)
     - every attraction not in the plan has a stated reason
 
 An empty list means the itinerary satisfies every constraint. A non-empty list
@@ -37,13 +38,13 @@ def _open_for(attraction, weekday, start, minutes):
     return any(w.open_min <= start <= w.latest_start(minutes) for w in attraction.windows_on(weekday))
 
 
-def check_itinerary(itinerary, city, transport_rate):
+def check_itinerary(itinerary, city):
     trip = itinerary.trip
     buffer = config.PACES[trip.pace]["buffer"]
     start_id = city.place(trip.start).id
     problems, seen = [], set()
     blocked = {s.attraction.id: s.code for s in itinerary.skipped
-               if s.code in ("excluded", "no_road", "opt_in", "interest")}
+               if s.code in ("excluded", "access_unknown", "opt_in", "interest")}
 
     def check_leg(label, leg, here, clock):
         """Returns the arrival time (or None if the leg is unusable)."""
@@ -54,8 +55,23 @@ def check_itinerary(itinerary, city, transport_rate):
             problems.append(f"{label}: leg starts at the wrong place")
         travel = city.dist[here][leg.to_id]
         if travel == math.inf:
-            problems.append(f"{label}: no road route from the previous place")
+            problems.append(f"{label}: no route from the previous place")
             return None
+        if sum(seg.minutes for seg in leg.segments) != travel:
+            problems.append(f"{label}: the leg's parts add up to {sum(seg.minutes for seg in leg.segments)} min, "
+                            f"not the {travel} min of the shortest path")
+        offset = 0
+        for seg in leg.segments:
+            if seg.depart_open is not None or seg.depart_close is not None:
+                at = (leg.depart or 0) + leg.wait + offset
+                if seg.depart_open is not None and at < seg.depart_open:
+                    problems.append(f"{label}: the {seg.mode} would leave at {fmt_hhmm(at)}, before {fmt_hhmm(seg.depart_open)}")
+                if seg.depart_close is not None and at > seg.depart_close:
+                    problems.append(f"{label}: the {seg.mode} would leave at {fmt_hhmm(at)}, after the last one "
+                                    f"({fmt_hhmm(seg.depart_close)})")
+            offset += seg.minutes
+        if leg.wait < 0:
+            problems.append(f"{label}: negative wait")
         expected = _expected_minutes(city, here, leg.to_id)
         if leg.minutes != expected:
             problems.append(f"{label}: leg says {leg.minutes} min, travel table says {expected} min "
@@ -63,7 +79,7 @@ def check_itinerary(itinerary, city, transport_rate):
         if leg.depart is None or leg.depart < clock:
             problems.append(f"{label}: leaves before the previous activity ends")
             return None
-        return leg.depart + leg.minutes
+        return leg.depart + leg.minutes + leg.wait
 
     for day in itinerary.days:
         label = f"Day {day.index}"
@@ -106,6 +122,8 @@ def check_itinerary(itinerary, city, transport_rate):
                     problems.append(f"{name} was excluded by the user")
                 if a.id in blocked:
                     problems.append(f"{name} is blocked by the trip's rules ({blocked[a.id]})")
+                if not a.timed:
+                    problems.append(f"{name}: its access has no known duration, so it cannot be scheduled")
                 arrive = check_leg(name, entry.leg, here, clock)
                 if arrive is None:
                     break
@@ -177,13 +195,6 @@ def check_itinerary(itinerary, city, transport_rate):
             problems.append(f"{label}: visits and timeline disagree")
         if abs(day.km - legs_km) > 0.1 * (len(day.legs) + 1):
             problems.append(f"{label}: distance {day.km} km does not match the road graph ({legs_km:.1f} km)")
-
-        if trip.budget is not None:
-            shopping = trip.shop_spend * sum(1 for v in day.visits if v.attraction.is_shopping_only)
-            spend = day.fees + shopping + (round(legs_km * transport_rate) if trip.include_transport else 0)
-            # Allow Rs 1 for rounding the transport estimate to whole rupees.
-            if spend > trip.budget + 1:
-                problems.append(f"{label}: spends ₹{spend}, more than the ₹{trip.budget} budget")
 
     explained = {s.attraction.id for s in itinerary.skipped if s.reason}
     for aid, attraction in city.attractions.items():

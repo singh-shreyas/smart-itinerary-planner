@@ -75,10 +75,10 @@ def _register_template_helpers(app):
             "PACES": config.PACES,
             "STRATEGIES": config.STRATEGIES,
             "STRATEGY_SHORT": config.STRATEGY_SHORT,
+            "MODES": config.MODES,
             "ROUNDING": config.TRAVEL_ROUNDING_MIN,
             "MAX_DAYS": config.MAX_DAYS,
             "TRAFFIC_FACTOR": app.config["TRAFFIC_FACTOR"],
-            "TRANSPORT_RATE": app.config["TRANSPORT_COST_PER_KM"],
             "active_endpoint": request.endpoint or "",
         }
 

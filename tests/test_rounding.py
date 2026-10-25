@@ -4,7 +4,7 @@ import math
 
 import pytest
 
-from conftest import RATE, make_trip
+from conftest import make_trip
 from services.itinerary_generator import plan_trip
 from services.timeutil import fmt_duration, fmt_hhmm, fmt_travel, round_up_travel
 
@@ -37,7 +37,7 @@ def test_planning_table_is_the_raw_table_rounded_up(tiny_city):
 
 
 def test_every_leg_is_a_multiple_of_ten_and_the_timeline_adds_up(tiny_city):
-    plan = plan_trip(tiny_city, make_trip(days=2, day_end=20 * 60), RATE)
+    plan = plan_trip(tiny_city, make_trip(days=2, day_end=20 * 60))
     assert plan.violations == []
     for day in plan.days:
         for leg in day.legs:
@@ -49,7 +49,7 @@ def test_every_leg_is_a_multiple_of_ten_and_the_timeline_adds_up(tiny_city):
 
 def test_clock_times_are_not_rounded(tiny_city):
     """Only travel durations are rounded: a 09:05 start stays 09:05 and visits keep their own lengths."""
-    plan = plan_trip(tiny_city, make_trip(day_start=9 * 60 + 5, exclude=("museum",)), RATE)
+    plan = plan_trip(tiny_city, make_trip(day_start=9 * 60 + 5, exclude=("museum",)))
     day = plan.days[0]
     assert fmt_hhmm(day.depart) == "09:05"
     assert all(v.end - v.start == v.attraction.visit_min for v in day.visits)

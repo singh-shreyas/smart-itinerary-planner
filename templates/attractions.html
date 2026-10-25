@@ -110,7 +110,7 @@
               {{ ui.image(a.image, a.name, width=640, height=480) }}
               <div class="attr-badges">
                 <div class="d-flex flex-wrap gap-1">{{ ui.category_chips(a, category_names) }}</div>
-                {% if a.access == 'no_road' %}<span class="chip chip-danger">No road</span>{% elif a.fee == 0 %}<span class="chip chip-green">Free</span>{% endif %}
+                {% if not a.timed %}<span class="chip chip-warning">Access not timed</span>{% elif a.special_access %}<span class="chip chip-warning">{{ a.access_label }}</span>{% elif a.fee == 0 %}<span class="chip chip-green">Free</span>{% endif %}
               </div>
             </div>
             <div class="attr-body">
@@ -159,7 +159,7 @@
         </div>
         <div class="d-flex flex-wrap gap-2 mb-3" id="attr-modal-chips"></div>
         <p id="attr-modal-desc"></p>
-        <div class="notice d-none mb-3" id="attr-modal-access"><i class="bi bi-sign-stop"></i><p></p></div>
+        <div class="notice d-none mb-3" id="attr-modal-access"><i class="bi bi-signpost-split"></i><div><p class="mb-1"></p><ul class="small mb-0"></ul></div></div>
         <div class="row g-4">
           <div class="col-md-6">
             <h3 class="h6 small-caps text-muted">Weekly opening hours</h3>

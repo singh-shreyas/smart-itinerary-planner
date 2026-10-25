@@ -91,9 +91,20 @@
     }
     document.getElementById("attr-modal-desc").textContent = item.description;
 
+    // How it is reached: shown for every place that is not simply "by road".
     var access = document.getElementById("attr-modal-access");
-    access.classList.toggle("d-none", item.access !== "no_road");
-    access.querySelector("p").textContent = item.access === "no_road" ? "Not planned by road: " + (item.access_note || "") : "";
+    var info = item.access || {};
+    access.classList.toggle("d-none", !info.type || info.type === "road");
+    access.querySelector("p").textContent = info.type && info.type !== "road"
+      ? info.label + ". " + (info.note || "") + (info.timed ? " Times: " + info.timing_label + "." : " The access time is not known, so the planner does not schedule it.")
+      : "";
+    var alts = access.querySelector("ul");
+    alts.innerHTML = "";
+    (info.alternatives || []).forEach(function (x) {
+      var li = document.createElement("li");
+      li.textContent = x.label + (x.from ? " from " + x.from : "") + (x.minutes ? ", about " + x.minutes + " min" : "") + " — " + x.status + ".";
+      alts.appendChild(li);
+    });
 
     var chips = document.getElementById("attr-modal-chips");
     chips.innerHTML = "";

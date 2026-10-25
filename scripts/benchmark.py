@@ -44,13 +44,12 @@ RESULTS = os.path.join(ROOT, "results")
 # ------------------------------------------------------------------ instance generators
 
 def knapsack_instance(rng, n):
-    """n attractions: score 30-100, 30-180 min visit + 5-30 min travel allowance, fees like real sites."""
+    """n attractions: score 30-100, 30-180 min visit + 5-30 min travel allowance."""
     items = []
     for i in range(n):
         minutes = rng.randint(30, 180) + rng.randint(5, 30)
-        fee = rng.choice([0, 0, 0, 20, 25, 40, 50, 100, 250, 500])
-        items.append(Item(i, rng.randint(30, 100), math.ceil(minutes / 10), math.ceil(fee / 10)))
-    return items, 54, 100          # 540 minutes in 10-min units; Rs 1000 in Rs 10 units
+        items.append(Item(i, rng.randint(30, 100), math.ceil(minutes / 10)))
+    return items, 54               # 540 minutes in 10-min units
 
 
 def route_instance(rng, k):
@@ -84,15 +83,15 @@ def bench_selection(sizes, seeds, repeats):
     for n in sizes:
         greedy_ms, dp_ms, ratios, dp_better = [], [], [], 0
         for seed in seeds:
-            items, T, M = knapsack_instance(random.Random(seed * 1000 + n), n)
-            g, d = greedy_select(items, T, M), dp_select(items, T, M)
+            items, T = knapsack_instance(random.Random(seed * 1000 + n), n)
+            g, d = greedy_select(items, T), dp_select(items, T)
             assert d.score >= g.score, "DP must never score below Greedy on the same instance"
             ratios.append(g.score / d.score if d.score else 1.0)
             dp_better += d.score > g.score
-            greedy_ms.append(median_ms(lambda: greedy_select(items, T, M), repeats))
-            dp_ms.append(median_ms(lambda: dp_select(items, T, M), repeats))
+            greedy_ms.append(median_ms(lambda: greedy_select(items, T), repeats))
+            dp_ms.append(median_ms(lambda: dp_select(items, T), repeats))
         rows.append({"n": n, "instances": len(seeds), "greedy_ms": statistics.median(greedy_ms),
-                     "dp_ms": statistics.median(dp_ms), "dp_cells": (n + 1) * 55 * 101,
+                     "dp_ms": statistics.median(dp_ms), "dp_cells": (n + 1) * 55,
                      "greedy_pct_of_dp": round(100 * statistics.mean(ratios), 2),
                      "dp_strictly_better_pct": round(100 * dp_better / len(seeds), 1)})
         print(f"selection n={n:3}: greedy {rows[-1]['greedy_ms']:.3f} ms, dp {rows[-1]['dp_ms']:.2f} ms, "
@@ -180,16 +179,16 @@ def bench_real_scenarios(quick=False):
     conn.close()
 
     lunch = MealSetting("lunch", 12 * 60, 14 * 60 + 30, 45)
-    grid = itertools.product(cities, range(2 if quick else 3), [1, 2, 3], [None, 300],
+    grid = itertools.product(cities, range(2 if quick else 3), [1, 2, 3], ["balanced", "relaxed"],
                              [(), ("history",), ("spirituality",)])
     dp_higher = greedy_higher = equal = mv_more_stops = mv_same_stops = 0
     gaps = []
-    for slug, offset, days, budget, interests in grid:
+    for slug, offset, days, pace, interests in grid:
         city = cities[slug]
         base = dict(city=slug, start_date=date(2026, 11, 2) + timedelta(days=offset), days=days, day_start=540,
-                    day_end=1140, budget=budget, include_transport=False, interests=interests, pace="balanced",
-                    start=city.start_points[0].slug, lunch=lunch)
-        plans = {key: plan_trip(city, TripRequest(strategy=key, **base), Config.TRANSPORT_COST_PER_KM)
+                    day_end=1140, interests=interests, pace=pace,
+                    start=city.stays[0].slug, lunch=lunch)
+        plans = {key: plan_trip(city, TripRequest(strategy=key, **base))
                  for key in ("dp", "greedy", "max_visits")}
         assert not any(p.violations for p in plans.values()), slug
         dp, greedy, mv = plans["dp"], plans["greedy"], plans["max_visits"]
@@ -211,10 +210,86 @@ def bench_real_scenarios(quick=False):
                "max_visits_more_stops": mv_more_stops, "max_visits_same_stops": mv_same_stops,
                "cities": list(cities),
                "grid": f"{len(cities)} highest-ranked ready cities x {2 if quick else 3} start days x 1-3 days x "
-                       "budget {none, 300} x interests {none, history, spirituality}; 09:00-19:00 with lunch"}
+                       "pace {balanced, relaxed} x interests {none, history, spirituality}; 09:00-19:00 with lunch"}
     print(f"real scenarios: {total} trips, DP higher {dp_higher}, Greedy higher {greedy_higher}, equal {equal}; "
           f"Max visits more stops than DP in {mv_more_stops}")
     return summary
+
+
+def bench_modes(quick=False):
+    """Calibrate Suggested mode on real cities, and compare the three modes.
+
+    Scenarios: the most popular timed places of each ready city (3, 4, 6 or 8 of them) over 3 or 5 days,
+    09:00-19:00 with lunch, from the central stay. For each scenario the fewest feasible days (Most
+    Optimized) and Suggested's choice under several "cost of one more day" values are recorded, with the
+    longest day each plan needs. A good day cost adds days when one long day is clearly over-long and
+    otherwise keeps the fastest plan.
+    """
+    import itertools
+    import tempfile
+    from datetime import date
+
+    import config
+    from config import Config
+    from database import queries
+    from database.db import connect
+    from database.seed_data import seed_database
+    from services.city_data import load_city
+    from services.itinerary_generator import plan_trip
+    from services.models import MealSetting, TripRequest
+
+    path = os.path.join(tempfile.mkdtemp(), "modes.db")
+    seed_database(path, Config.DATA_DIR)
+    conn = connect(path)
+    cities = []
+    for row in queries.list_cities(conn):
+        city = load_city(conn, row["slug"], Config.TRAFFIC_FACTOR)
+        if city.readiness()["status"] == "ready":
+            cities.append(city)
+        if len(cities) == (4 if quick else 10):
+            break
+    conn.close()
+    lunch = MealSetting("lunch", 12 * 60, 14 * 60 + 30, 45)
+    day_costs = [0, 30, 60, 90, 120]
+    saved = config.SUGGESTED_DAY_COST
+    rows = []
+    for city in cities:
+        ranked = sorted((a for a in city.attractions.values() if a.timed and not a.is_food_or_shopping_only),
+                        key=lambda a: (-a.popularity, a.id))
+        for n, days in itertools.product([3, 4, 6, 8], [3, 5]):
+            if len(ranked) < n:
+                continue
+            base = dict(city=city.slug, start_date=date(2026, 11, 3), days=days, day_start=540, day_end=1140,
+                        interests=(), pace="balanced", start=city.stays[0].slug, strategy="dp", lunch=lunch,
+                        places=tuple(a.slug for a in ranked[:n]))
+            fast = plan_trip(city, TripRequest(mode="optimized", **base), validate=False)
+            even = plan_trip(city, TripRequest(mode="evenly", **base), validate=False)
+
+            def longest(it):
+                return max((d.return_time - d.depart for d in it.days if d.visits), default=0)
+            row = {"city": city.slug, "places": n, "days": days, "scheduled": fast.stops,
+                   "optimized_days": len(fast.active_days), "optimized_longest": longest(fast),
+                   "evenly_days": len(even.active_days), "evenly_longest": longest(even)}
+            for cost in day_costs:
+                config.SUGGESTED_DAY_COST = cost
+                sug = plan_trip(city, TripRequest(mode="suggested", **base), validate=False)
+                row[f"suggested_days_{cost}"] = len(sug.active_days)
+                row[f"suggested_longest_{cost}"] = longest(sug)
+            config.SUGGESTED_DAY_COST = saved
+            rows.append(row)
+    summary = {"scenarios": len(rows), "cities": [c.slug for c in cities], "day_costs": day_costs, "by_cost": {}}
+    for cost in day_costs:
+        more = [r for r in rows if r[f"suggested_days_{cost}"] > r["optimized_days"]]
+        summary["by_cost"][cost] = {
+            "suggested_uses_more_days_pct": round(100 * len(more) / len(rows), 1) if rows else 0.0,
+            "mean_longest_day_saved_min": round(statistics.mean(
+                r["optimized_longest"] - r[f"suggested_longest_{cost}"] for r in more), 1) if more else 0.0,
+            "mean_extra_days": round(statistics.mean(
+                r[f"suggested_days_{cost}"] - r["optimized_days"] for r in more), 2) if more else 0.0,
+        }
+    print(f"modes: {len(rows)} scenarios; Suggested uses more days than Most Optimized in "
+          + ", ".join(f"{v['suggested_uses_more_days_pct']}% (cost {k})" for k, v in summary["by_cost"].items()))
+    return {"summary": summary, "rows": rows}
 
 
 def main():
@@ -231,7 +306,7 @@ def main():
             "platform": platform.platform(), "machine": platform.machine(),
             "processor": platform.processor() or "unknown",
             "seeds": seeds, "repeats": repeats, "timing": "median of repeats after one warm-up (perf_counter_ns)",
-            "selection_instance": "time cap 540 min (10-min units), budget Rs 1000 (Rs 10 units)",
+            "selection_instance": "time cap 540 min (10-min units)",
             "routing_instance": "start + k stops in a 15 x 15 km square, 25 km/h, up to 10% directional asymmetry",
             "graph_instance": "V points in a 30 x 30 km square, 5 nearest neighbours each, both directions",
         },
@@ -239,6 +314,7 @@ def main():
         "routing": bench_routing(list(range(4, 11)), seeds, repeats),
         "dijkstra": bench_dijkstra([25, 50, 100, 200], seeds, repeats),
         "real_scenarios": bench_real_scenarios(quick=args.quick),
+        "modes": bench_modes(quick=args.quick),
     }
     os.makedirs(RESULTS, exist_ok=True)
     with open(os.path.join(RESULTS, "benchmarks.json"), "w", encoding="utf-8") as f:

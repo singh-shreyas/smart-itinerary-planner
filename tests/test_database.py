@@ -15,9 +15,9 @@ from database.seed_data import SeedError, parse_days, seed_database
 def test_fixture_seeds_with_expected_counts(tiny_db):
     conn = connect(tiny_db)
     counts = queries.summary_counts(conn)
-    assert counts == {"cities": 4, "attractions": 14, "edges": 42, "categories": 26}
+    assert counts == {"cities": 6, "attractions": 33, "edges": 280, "categories": 26}
     city = queries.list_cities(conn)[0]                        # ordered by Top-50 rank
-    assert (city["slug"], city["attraction_count"], city["start_count"]) == ("testville", 8, 1)
+    assert (city["slug"], city["attraction_count"], city["stay_count"]) == ("testville", 8, 2)
     assert queries.get_city(conn, "nowhere") is None
     assert database_ready(tiny_db)
 
@@ -65,7 +65,12 @@ def test_unreachable_place_is_reported_as_a_warning(tmp_path):
     ("opening_hours.csv", "testville,ghost,Daily,09:00,17:00,\n", "unknown attraction"),
     ("travel_times.csv", "testville,fort,nowhere,5,1,manual\n", "unknown place"),
     ("travel_times.csv", "testville,fort,museum,-5,1,manual\n", "must be positive"),
-    ("start_points.csv", "testville,far,Far away,20.0,20.0\n", "km from the city centre"),
+    ("stay_areas.csv", "testville,far,Far away,south,20.0,20.0,approximate,\n", "km from the city centre"),
+    ("stay_areas.csv", "testville,ns,New Stand,north,10.01,10.0,approximate,\n", "already has a north stay area"),
+    ("stay_areas.csv", "testville,gx,Testville Junction,south,10.01,10.0,approximate,\n", "looks like a station"),
+    ("stay_areas.csv", "testville,fx,Fort,south,10.01,10.0,approximate,\n", "is an attraction of testville"),
+    ("access.csv", "testville,fort,teleport,no,,,,Beam me up.,\n", "access_type must be one of"),
+    ("access_segments.csv", "hillview,hill-trailhead,summit-shrine,2,trek,-5,1,,estimate,Bad.,\n", "positive minutes"),
 ])
 def test_invalid_rows_are_refused(tmp_path, filename, bad_line, message):
     data = tmp_path / "data"
@@ -92,16 +97,15 @@ def test_real_data_is_valid_and_fully_connected(real_db, tmp_path):
     conn = connect(real_db)
     slugs = {r["slug"] for r in queries.list_cities(conn)}
     assert {"agra", "delhi", "jaipur", "varanasi", "mumbai", "pondicherry"} <= slugs
-    # The original Delhi road graph is unchanged by the expansion: its 150 OSRM links between the original
-    # places are all still there; new places (food and shopping) only ADD links of their own.
+    # The original Delhi road graph is unchanged by the expansion: its 110 OSRM links between the original
+    # attractions are all still there; new places (food, shopping, stay areas) only ADD links of their own.
     original = conn.execute("""
         SELECT COUNT(*) FROM travel_edges e
         JOIN places a ON a.id = e.from_id JOIN places b ON b.id = e.to_id
         LEFT JOIN attractions aa ON aa.place_id = a.id LEFT JOIN attractions ab ON ab.place_id = b.id
         WHERE a.city_id = (SELECT id FROM cities WHERE slug = 'delhi') AND e.scope = 'local' AND e.source = 'osrm'
-          AND (a.kind = 'start' OR aa.description_source = 'project')
-          AND (b.kind = 'start' OR ab.description_source = 'project')""").fetchone()[0]
-    assert original == 150
+          AND aa.description_source = 'project' AND ab.description_source = 'project'""").fetchone()[0]
+    assert original == 110
     assert set(queries.edge_source_counts(conn, queries.get_city(conn, "delhi")["id"])) == {"osrm"}
 
 
@@ -120,15 +124,15 @@ def test_every_value_has_a_source(real_db):
         for column in ("rating_source", "popularity_source", "duration_source", "fee_source", "hours_source"):
             assert row[column], (row["slug"], column)
         assert (row["rating"] is None) == (row["rating_source"] == "none")      # no invented ratings
-        if row["access"] == "no_road":
-            assert row["access_note"]
+        if row["access_type"] != "road":
+            assert row["access_note"], row["slug"]                             # every special access is explained
 
 
 def test_slugs_are_unique_across_cities(tmp_path):
     data = tmp_path / "data"
     shutil.copytree(FIXTURE_DIR, data)
-    with open(data / "start_points.csv", "a", encoding="utf-8") as f:
-        f.write("riverton,hotel,Second hotel,10.0,10.365\n")
+    with open(data / "stay_areas.csv", "a", encoding="utf-8") as f:
+        f.write("riverton,hotel,Second Quarter,north,10.0,10.365,approximate,\n")
     with pytest.raises(SeedError) as excinfo:
         seed_database(str(tmp_path / "dup.db"), str(data))
     assert "duplicate slug hotel" in str(excinfo.value)

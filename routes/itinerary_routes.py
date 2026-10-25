@@ -13,25 +13,26 @@ import config
 from database import queries
 from database.db import get_db
 from routes.helpers import (area_for, categories, category_groups, city_data, jsonable, map_data, nearby_options,
-                            parse_trip_args, readiness_by_city, transport_rate)
+                            parse_trip_args, readiness_by_city)
 from services.comparison import run_comparison
 from services.itinerary_generator import plan_trip
 from services.timeutil import fmt_hhmm
 
 planner = Blueprint("planner", __name__)
 
-LIST_FIELDS = ("interests", "exclude", "also", "venue_style")
+LIST_FIELDS = ("interests", "exclude", "also", "venue_style", "places")
 
 
 def default_values(city_slug=""):
     lunch, dinner = config.DEFAULT_LUNCH, config.DEFAULT_DINNER
     return {"city": city_slug, "also": [], "start_date": date.today().isoformat(), "days": "2",
-            "day_start": config.DEFAULT_DAY_START, "day_end": config.DEFAULT_DAY_END, "budget": "",
-            "transport": "", "interests": [], "interest_mode": "prefer", "pace": config.DEFAULT_PACE, "start": "",
-            "strategy": config.DEFAULT_STRATEGY, "exclude": [],
+            "day_start": config.DEFAULT_DAY_START, "day_end": config.DEFAULT_DAY_END,
+            "interests": [], "interest_mode": "prefer", "pace": config.DEFAULT_PACE, "start": "",
+            "strategy": config.DEFAULT_STRATEGY, "exclude": [], "mode": config.DEFAULT_MODE, "choose": "auto",
+            "places": [],
             "lunch": "on", "lunch_from": lunch[0], "lunch_to": lunch[1], "lunch_min": str(lunch[2]),
             "dinner": "on", "dinner_from": dinner[0], "dinner_to": dinner[1], "dinner_min": str(dinner[2]),
-            "venues": "on", "venue_style": [], "veg": "", "shop_min": "", "shop_spend": ""}
+            "venues": "on", "venue_style": [], "veg": "", "shop_min": ""}
 
 
 def city_pairs(area):
@@ -66,9 +67,11 @@ def planner_context(values, errors):
         data = city_data(c["slug"])
         city_options[c["slug"]] = {
             "name": c["name"], "state": c["state"], "readiness": ready[c["slug"]], "nearby": near[c["slug"]],
-            "starts": [{"slug": p.slug, "name": p.name} for p in data.start_points],
+            "stays": [{"slug": p.slug, "name": p.name, "direction": p.direction, "label": p.stay_label,
+                       "note": p.direction_note} for p in data.stays],
             "attractions": [{"slug": a.slug, "name": a.name, "fee": a.fee, "visit": a.visit_min, "city": c["name"],
-                             "categories": list(a.categories), "road": a.access == "road"}
+                             "categories": list(a.categories), "timed": a.timed,
+                             "access": None if a.access_type == "road" else a.access_label}
                             for a in sorted(data.attractions.values(), key=lambda a: a.name)],
         }
     regions = {}
@@ -79,7 +82,7 @@ def planner_context(values, errors):
             "readiness": ready, "meal_durations": config.MEAL_DURATIONS, "venue_styles": config.VENUE_STYLES,
             "shop_minutes": config.SHOP_MINUTES, "interest_modes": config.INTEREST_MODES,
             "multi_city_km": config.MULTI_CITY_MAX_KM, "max_extra": config.MAX_EXTRA_CITIES,
-            "objectives": config.STRATEGY_OBJECTIVES}
+            "objectives": config.STRATEGY_OBJECTIVES, "max_picked": config.MAX_PICKED_PLACES}
 
 
 @planner.route("/plan")
@@ -106,7 +109,7 @@ def itinerary():
     if errors:
         return render_template("planner.html", **planner_context(values, errors)), 400
     area = area_for(trip)
-    result = plan_trip(area, trip, transport_rate())
+    result = plan_trip(area, trip)
     if result.violations:                       # would be a planner bug; never hide it
         current_app.logger.error("Validator found problems: %s", result.violations)
     return render_template("itinerary.html", it=result, trip=trip, city=area,
@@ -127,7 +130,7 @@ def compare():
         return render_template("compare.html", trip=None, result=None, values=values, errors=errors,
                                cities=cities), 400
     area = area_for(trip)
-    result = run_comparison(area, trip, transport_rate(), current_app.config["RESULTS_DIR"])
+    result = run_comparison(area, trip, current_app.config["RESULTS_DIR"])
     return render_template("compare.html", trip=trip, city=area, result=result, values=values, errors={},
                            cities=cities, chart_data=jsonable(result), weights=result["weights"],
                            objectives=config.STRATEGY_OBJECTIVES, labels_short=config.STRATEGY_SHORT)

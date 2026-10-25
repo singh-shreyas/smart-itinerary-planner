@@ -8,8 +8,8 @@ from flask import Blueprint, abort, current_app, jsonify, request
 
 from database import queries
 from database.db import get_db
-from routes.helpers import (area_for, city_data, itinerary_to_dict, jsonable, nearby_options, parse_trip_args,
-                            readiness_by_city, transport_rate)
+from routes.helpers import (access_info, area_for, city_data, itinerary_to_dict, jsonable, nearby_options, parse_trip_args,
+                            readiness_by_city)
 from services.comparison import run_comparison
 from services.itinerary_generator import plan_trip
 from services.timeutil import WEEKDAY_SHORT, fmt_hhmm
@@ -31,7 +31,7 @@ def cities():
     ready = readiness_by_city()
     near = nearby_options(rows)
     return jsonify([{"slug": c["slug"], "name": c["name"], "state": c["state"], "region": c["region"],
-                     "rank": c["top_rank"], "attractions": c["attraction_count"], "start_points": c["start_count"],
+                     "rank": c["top_rank"], "attractions": c["attraction_count"], "stay_areas": c["stay_count"],
                      "readiness": ready[c["slug"]],
                      "nearby": [{"slug": n["slug"], "straight_km": n["km"], "road_km": n["road_km"]}
                                 for n in near[c["slug"]]]}
@@ -46,7 +46,7 @@ def city_attractions(slug):
     return jsonify([{
         "slug": a.slug, "name": a.name, "lat": a.lat, "lng": a.lng, "categories": list(a.categories),
         "rating": a.rating, "popularity": a.popularity, "visit_minutes": a.visit_min, "fee_inr": a.fee,
-        "data_status": a.data_status, "access": a.access,
+        "data_status": a.data_status, "access": access_info(a, city),
         "sources": {"coordinates": a.coord_source, "rating": a.rating_source, "popularity": a.popularity_source,
                     "hours": a.hours_source, "fee": a.fee_source, "duration": a.duration_source},
         "hours": {WEEKDAY_SHORT[d]: [[fmt_hhmm(w.open_min), fmt_hhmm(w.close_min)] for w in ws]
@@ -59,7 +59,7 @@ def itinerary():
     trip, errors, _ = parse_trip_args(request.args)
     if errors:
         return jsonify(errors=errors), 400
-    return jsonify(jsonable(itinerary_to_dict(plan_trip(area_for(trip), trip, transport_rate()))))
+    return jsonify(jsonable(itinerary_to_dict(plan_trip(area_for(trip), trip))))
 
 
 @api.route("/compare")
@@ -67,7 +67,7 @@ def compare():
     trip, errors, _ = parse_trip_args(request.args)
     if errors:
         return jsonify(errors=errors), 400
-    result = run_comparison(area_for(trip), trip, transport_rate(), current_app.config["RESULTS_DIR"])
+    result = run_comparison(area_for(trip), trip, current_app.config["RESULTS_DIR"])
     for row in result["routing"]:
         row.pop("routes", None)                  # map coordinates are only needed by the page
     return jsonify(jsonable(result))

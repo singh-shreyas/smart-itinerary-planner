@@ -16,15 +16,18 @@ the travel time between two far-apart places is composed from local links.
 If OSRM has no answer for a pair, a clearly labelled straight-line estimate is
 stored instead (source = haversine_estimate).
 
-Places marked access = no_road (islands, trek-only shrines, ...) get no links,
-so the planner reports them as unreachable instead of inventing a road. For
-every other place the script prints how far OSRM had to "snap" it to the
-nearest road; a large snap distance means the coordinates may be off the road
-network and is written to data/curation/road_snap.csv for a human to check.
+Nodes: the stay areas (data/stay_areas.csv), transport points (stations) and
+access points (where a trek or ferry starts), plus every attraction a road
+reaches. Attractions with road_access = no in data/access.csv (islands,
+trek-only shrines, ...) get no road links: their trek / ferry links are curated
+in data/access_segments.csv, never invented here. For every other place the
+script records how far OSRM had to "snap" it to the nearest road; a large snap
+distance means the coordinates may be off the road network. These go to
+data/curation/road_snap.csv (merged with earlier runs) for a human to check.
 
 Intercity links: for every pair of cities whose centres are within the
 multi-city limit (100 km straight line), OSRM gives the road time between
-their first start points and between the two closest pairs of places across
+their central stay areas and between the two closest pairs of places across
 the cities. They go to data/intercity_times.csv.
 
 Routing data (c) OpenStreetMap contributors (ODbL), computed with OSRM.
@@ -67,16 +70,23 @@ def read_csv(name):
         return list(csv.DictReader(f))
 
 
+STAY_ORDER = ["central", "north", "east", "south", "west"]
+
+
 def read_places():
-    """{city: [place]} for places with road access, start points first (file order)."""
+    """{city: [place]} for every road node, the central stay area first (it is the city's hub)."""
+    off_road = {(r["city"], r["slug"]) for r in read_csv("access.csv") if r.get("road_access") != "yes"}
+    stays = sorted(read_csv("stay_areas.csv"),
+                   key=lambda r: (r["city"], STAY_ORDER.index(r["direction"]) if r["direction"] in STAY_ORDER else 9))
     places = defaultdict(list)
-    for name in ("start_points.csv", "attractions.csv"):
-        for row in read_csv(name):
-            if (row.get("access") or "road") == "no_road":
+    for name, rows in (("stay_areas.csv", stays), ("transport_points.csv", read_csv("transport_points.csv")),
+                       ("access_points.csv", read_csv("access_points.csv")), ("attractions.csv", read_csv("attractions.csv"))):
+        for row in rows:
+            if (row["city"], row["slug"]) in off_road:
                 continue
             places[row["city"]].append({"city": row["city"], "slug": row["slug"], "name": row["name"],
                                         "lat": float(row["lat"]), "lng": float(row["lng"]),
-                                        "start": name == "start_points.csv"})
+                                        "start": name == "stay_areas.csv" and row.get("direction") == "central"})
     return places
 
 
@@ -155,12 +165,37 @@ def build_city(nodes, offline, snap_log):
     return rows
 
 
+def bridge_pairs(nodes, existing_rows, new_pairs):
+    """Pairs that join the city's road graph into one piece again (closest pair across pieces), e.g. after
+    old start points that held two groups of places together were removed."""
+    index = {n["slug"]: i for i, n in enumerate(nodes)}
+    pairs = set(new_pairs) | {(index[r["from_slug"]], index[r["to_slug"]]) for r in existing_rows
+                              if r["from_slug"] in index and r["to_slug"] in index}
+    added = set()
+    while True:
+        label = list(range(len(nodes)))
+
+        def find(x):
+            while label[x] != x:
+                label[x] = label[label[x]]
+                x = label[x]
+            return x
+
+        for i, j in pairs | added:
+            label[find(i)] = find(j)
+        if len({find(i) for i in range(len(nodes))}) <= 1:
+            return added
+        i, j = min(((i, j) for i in range(len(nodes)) for j in range(len(nodes)) if find(i) != find(j)),
+                   key=lambda p: haversine_km(nodes[p[0]], nodes[p[1]]))
+        added |= {(i, j), (j, i)}
+
+
 def add_new_places(nodes, existing_rows, offline, snap_log):
     """Keep a city's existing links and connect only places that have none yet (each to its K nearest
     places, both directions), so adding a few places never changes the rest of the road graph."""
     linked = {r["from_slug"] for r in existing_rows} | {r["to_slug"] for r in existing_rows}
     fresh = [i for i, n in enumerate(nodes) if n["slug"] not in linked]
-    if not fresh:
+    if not fresh and not bridge_pairs(nodes, existing_rows, set()):
         return []
     pairs = set()
     for i in fresh:
@@ -169,6 +204,7 @@ def add_new_places(nodes, existing_rows, offline, snap_log):
         for j in nearest:
             pairs.add((i, j))
             pairs.add((j, i))
+    pairs |= bridge_pairs(nodes, existing_rows, pairs)
     involved = sorted({i for pair in pairs for i in pair})
     sub = [nodes[i] for i in involved]
     durations = distances = None
@@ -241,9 +277,20 @@ def main():
 
     places = read_places()
     known = {(city, n["slug"]) for city, nodes in places.items() for n in nodes}
-    # Links to places that no longer exist (or lost road access) are dropped.
+    # A place that MOVED (same slug, new coordinates -- e.g. a re-chosen stay area) must not keep its old
+    # travel times: its links are dropped and computed again. Coordinates of the last run are kept in
+    # data/curation/link_nodes.csv; without that file every stay area counts as moved.
+    previous = {(r["city"], r["slug"]): (r["lat"], r["lng"]) for r in read_csv(os.path.join("curation", "link_nodes.csv"))}
+    stays = {(r["city"], r["slug"]) for r in read_csv("stay_areas.csv")}
+    moved = {(city, n["slug"]) for city, nodes in places.items() for n in nodes
+             if (previous and previous.get((city, n["slug"])) not in (None, (f"{n['lat']:.6f}", f"{n['lng']:.6f}")))
+             or (not previous and (city, n["slug"]) in stays)}
+    if moved:
+        print(f"{len(moved)} places moved or are new stay areas: their links are recomputed")
+    # Links to places that no longer exist (or lost road access), or that moved, are dropped.
     existing = [r for r in read_csv("travel_times.csv")
-                if (r["city"], r["from_slug"]) in known and (r["city"], r["to_slug"]) in known]
+                if (r["city"], r["from_slug"]) in known and (r["city"], r["to_slug"]) in known
+                and (r["city"], r["from_slug"]) not in moved and (r["city"], r["to_slug"]) not in moved]
     have = {r["city"] for r in existing}
     out_rows = [] if args.all else [(r["city"], r["from_slug"], r["to_slug"], r["minutes"], r["km"], r["source"])
                                      for r in existing if r["city"] in places]
@@ -273,13 +320,23 @@ def main():
 
     if snap_log:
         path = os.path.join(DATA, "curation", "road_snap.csv")
+        merged = {(r["city"], r["slug"]): (r["city"], r["slug"], r["name"], int(r["snap_m"]))
+                  for r in read_csv(os.path.join("curation", "road_snap.csv"))
+                  if (r["city"], r["slug"]) in known}                 # earlier runs' places that still exist
+        merged.update({(c, s): (c, s, n, m) for c, s, n, m in snap_log})
         with open(path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f, lineterminator="\n")
             writer.writerow(["city", "slug", "name", "snap_m"])
-            writer.writerows(sorted(snap_log, key=lambda r: -r[3]))
+            writer.writerows(sorted(merged.values(), key=lambda r: (-r[3], r[0], r[1])))
         for city, slug, name, snap in snap_log:
             if snap > SNAP_WARN_M:
                 print(f"  check: {city}/{slug} ({name}) is {snap} m from the nearest road")
+
+    with open(os.path.join(DATA, "curation", "link_nodes.csv"), "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f, lineterminator="\n")
+        writer.writerow(["city", "slug", "lat", "lng"])
+        writer.writerows(sorted((city, n["slug"], f"{n['lat']:.6f}", f"{n['lng']:.6f}")
+                                for city, nodes in places.items() for n in nodes))
 
     inter = build_intercity(places, args.offline)
     with open(os.path.join(DATA, "intercity_times.csv"), "w", newline="", encoding="utf-8") as f:

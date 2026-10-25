@@ -18,6 +18,7 @@ import argparse
 import csv
 import math
 import os
+import re
 import sqlite3
 import sys
 from collections import defaultdict
@@ -39,6 +40,13 @@ WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 # (about 100 km from Chhatrapati Sambhajinagar / Aurangabad).
 MAX_KM_FROM_CENTRE = 110
 EDGE_SOURCES = ("osrm", "manual", "haversine_estimate")
+DIRECTIONS = ("central", "north", "east", "south", "west")
+STAYS_PER_CITY = len(DIRECTIONS)
+ACCESS_TYPES = ("road", "road_walk", "trek", "ferry", "boat", "ropeway", "helicopter", "public_transport_walk",
+                "restricted", "unknown")
+SEGMENT_MODES = ("walk", "trek", "ferry", "boat", "ropeway")
+# A stay area is somewhere to sleep, not a station, an airport or a sight.
+NOT_A_STAY = re.compile(r"station|railway|junction|airport|terminal|bus stand|hotel area|city centre|town centre", re.I)
 VALUE_SOURCES = ("wikipedia", "wikidata", "openstreetmap", "osm", "wikipedia_pageviews", "estimate", "illustrative",
                  "approximate", "none")
 
@@ -154,6 +162,7 @@ def load_and_validate(data_dir, strict=False):
     slug_owner = {}                                 # slug -> city (slugs are unique across cities)
 
     def add_place(row, kind):
+        """Common checks for every graph node (stays, transport points, access points, attractions)."""
         key = (row["city"], row["slug"])
         if row["city"] not in cities:
             errors.append(f"{row['_where']}: unknown city {row['city']}")
@@ -171,16 +180,43 @@ def load_and_validate(data_dir, strict=False):
         if km > MAX_KM_FROM_CENTRE:
             errors.append(f"{row['_where']}: {row['slug']} is {km:.0f} km from the city centre")
         row["kind"] = kind
-        row["access"] = row.get("access") or "road"
-        if row["access"] not in ("road", "no_road"):
-            errors.append(f"{row['_where']}: access must be road or no_road")
         row["coord_source"] = row.get("coord_source") or None
         places[key] = row
         slug_owner[row["slug"]] = row["city"]
         return row
 
-    for row in read_csv(data_dir, "start_points.csv"):
-        add_place(row, "start")
+    # Stay areas: five per city (central first, so it is also the city's hub for estimates).
+    stay_slots = defaultdict(dict)
+    stays = sorted(read_csv(data_dir, "stay_areas.csv"),
+                   key=lambda r: (r["city"], DIRECTIONS.index(r["direction"]) if r.get("direction") in DIRECTIONS else 9))
+    for row in stays:
+        where = row["_where"]
+        if row.get("direction") not in DIRECTIONS:
+            errors.append(f"{where}: direction must be one of {', '.join(DIRECTIONS)}")
+            continue
+        if NOT_A_STAY.search(row["name"]):
+            errors.append(f"{where}: '{row['name']}' looks like a station or placeholder, not an area to stay")
+            continue
+        if row["direction"] in stay_slots[row["city"]]:
+            errors.append(f"{where}: {row['city']} already has a {row['direction']} stay area")
+            continue
+        if any(o["name"].lower() == row["name"].lower() for o in stay_slots[row["city"]].values()):
+            errors.append(f"{where}: {row['name']} is listed twice for {row['city']}")
+            continue
+        if add_place(row, "stay") is not None:
+            for key in ("hotels_nearby",):
+                row[key] = int(row[key]) if row.get(key) else None
+            for key in ("distance_km", "bearing"):
+                row[key] = float(row[key]) if row.get(key) else None
+            stay_slots[row["city"]][row["direction"]] = row
+    for slug in cities:
+        if len(stay_slots[slug]) != STAYS_PER_CITY:
+            missing = [d for d in DIRECTIONS if d not in stay_slots[slug]]
+            warnings.append(f"{slug}: {len(stay_slots[slug])} stay areas (missing {', '.join(missing) or '-'})")
+    for row in read_csv(data_dir, "transport_points.csv", required=False):
+        add_place(row, "transport")
+    for row in read_csv(data_dir, "access_points.csv", required=False):
+        add_place(row, "access")
 
     attractions = {}
     for row in read_csv(data_dir, "attractions.csv"):
@@ -222,7 +258,96 @@ def load_and_validate(data_dir, strict=False):
         if strict and status == "illustrative":
             errors.append(f"{where}: {row['slug']} is marked illustrative (strict mode)")
         row["hours"] = []
+        row.update(access_type="road", road_access="yes", access_point=None, access_modes="road",
+                   last_mile_m=None, access_note=None, access_source_url=None, alternatives=[])
         attractions[(row["city"], row["slug"])] = row
+
+    for stay in (p for p in places.values() if p["kind"] == "stay"):
+        names = {a["name"].lower() for k, a in attractions.items() if k[0] == stay["city"]}
+        if stay["name"].lower() in names:
+            errors.append(f"{stay['_where']}: stay area '{stay['name']}' is an attraction of {stay['city']}")
+
+    # How each non-road attraction is reached (data/access.csv); every other attraction is 'road'.
+    for row in read_csv(data_dir, "access.csv", required=False):
+        key, where = (row["city"], row["slug"]), row["_where"]
+        if key not in attractions:
+            errors.append(f"{where}: access for unknown attraction {row['slug']}")
+            continue
+        if row["access_type"] not in ACCESS_TYPES:
+            errors.append(f"{where}: access_type must be one of {', '.join(ACCESS_TYPES)}")
+            continue
+        if row["road_access"] not in ("yes", "no", "unknown"):
+            errors.append(f"{where}: road_access must be yes / no / unknown")
+            continue
+        point = None
+        if row.get("access_point"):
+            point = (row["city"], row["access_point"])
+            if point not in places:
+                errors.append(f"{where}: unknown access point {row['access_point']}")
+                continue
+        last_mile = int(row["last_mile_m"]) if row.get("last_mile_m") else None
+        if row["access_type"] == "road_walk" and not last_mile:
+            errors.append(f"{where}: road_walk needs last_mile_m (metres from the nearest road)")
+        if not row.get("note"):
+            errors.append(f"{where}: every special access needs a note for the traveller")
+        attractions[key].update(access_type=row["access_type"], road_access=row["road_access"], access_point=point,
+                                access_modes=row.get("modes") or None, last_mile_m=last_mile,
+                                access_note=row.get("note"), access_source_url=row.get("source_url") or None)
+
+    # The default route of each non-road link, part by part (data/access_segments.csv).
+    segments = defaultdict(list)                    # (from key, to key) -> [segment]
+    for row in read_csv(data_dir, "access_segments.csv", required=False):
+        where = row["_where"]
+        a, b = (row["city"], row["from_slug"]), (row["city"], row["to_slug"])
+        if a not in places or b not in places or a == b:
+            errors.append(f"{where}: access segment between unknown places ({row['from_slug']} -> {row['to_slug']})")
+            continue
+        try:
+            seq, minutes, km = int(row["seq"]), int(row["minutes"]), float(row["km"])
+            window = [parse_hhmm(t) for t in row["depart_window"].split("-")] if row.get("depart_window") else [None, None]
+        except ValueError:
+            errors.append(f"{where}: bad number or time")
+            continue
+        if row["mode"] not in SEGMENT_MODES or row["basis"] not in ("source", "estimate"):
+            errors.append(f"{where}: mode must be {'/'.join(SEGMENT_MODES)} and basis source/estimate")
+            continue
+        if minutes <= 0 or km <= 0 or not row.get("note"):
+            errors.append(f"{where}: a segment needs positive minutes and km and a note")
+            continue
+        segments[(a, b)].append({"seq": seq, "mode": row["mode"], "minutes": minutes, "km": km,
+                                 "depart_open": window[0], "depart_close": window[1], "basis": row["basis"],
+                                 "note": row["note"], "source_url": row.get("source_url") or None})
+    for link, parts in segments.items():
+        parts.sort(key=lambda p: p["seq"])
+        if [p["seq"] for p in parts] != list(range(1, len(parts) + 1)):
+            errors.append(f"access segments {link[0][1]} -> {link[1][1]}: seq must run 1, 2, ...")
+    for row in read_csv(data_dir, "access_alternatives.csv", required=False):
+        key = (row["city"], row["slug"])
+        if key not in attractions:
+            errors.append(f"{row['_where']}: alternative for unknown attraction {row['slug']}")
+            continue
+        if row["status"] not in ("operating_unverified", "planned"):
+            errors.append(f"{row['_where']}: status must be operating_unverified or planned")
+            continue
+        row["minutes"] = int(row["minutes"]) if row.get("minutes") else None
+        attractions[key]["alternatives"].append(row)
+
+    # Timing confidence: unknown without a route; 'sourced' only if every part in and out is sourced.
+    for key, a in attractions.items():
+        if a["access_type"] == "road":
+            a["access_timing"] = "road_data"
+        elif a["access_type"] == "road_walk":
+            a["access_timing"] = "estimated"
+        else:
+            links = [parts for (x, y), parts in segments.items() if key in (x, y)]
+            inbound = any(y == key for (x, y) in segments)
+            outbound = any(x == key for (x, y) in segments)
+            if not (inbound and outbound):
+                a["access_timing"] = "unknown"
+            elif all(p["basis"] == "source" for parts in links for p in parts):
+                a["access_timing"] = "sourced"
+            else:
+                a["access_timing"] = "estimated"
 
     for row in read_csv(data_dir, "opening_hours.csv"):
         key = (row["city"], row["slug"])
@@ -267,8 +392,9 @@ def load_and_validate(data_dir, strict=False):
         if a == b:
             errors.append(f"{where}: edge from a place to itself")
             return
-        if "no_road" in (places[a]["access"], places[b]["access"]):
-            errors.append(f"{where}: edge touches a place marked no_road ({a[1]} -> {b[1]})")
+        off_road = [k for k in (a, b) if k in attractions and attractions[k]["road_access"] != "yes"]
+        if off_road:
+            errors.append(f"{where}: road edge touches {off_road[0][1]}, which has no road access")
             return
         try:
             minutes, km = float(row["minutes"]), float(row["km"])
@@ -290,6 +416,8 @@ def load_and_validate(data_dir, strict=False):
             errors.append(f"{row['_where']}: an intercity edge must join two different cities")
             continue
         add_edge(row, (row["from_city"], row["from_slug"]), (row["to_city"], row["to_slug"]), "intercity")
+    for (a, b), parts in segments.items():          # one edge per non-road link, with the totals
+        edges.append((a, b, sum(p["minutes"] for p in parts), round(sum(p["km"] for p in parts), 2), "access", "access"))
 
     credits = {}
     for row in read_csv(data_dir, "image_credits.csv", required=False):
@@ -298,29 +426,28 @@ def load_and_validate(data_dir, strict=False):
         else:
             warnings.append(f"{row['_where']}: image {row['image_path']} not found (placeholder used)")
 
-    warnings.extend(_connectivity_warnings(cities, places, edges))
+    warnings.extend(_connectivity_warnings(cities, places, edges, attractions))
     if strict and warnings:
         errors.extend(f"(strict) {w}" for w in warnings)
     if errors:
         raise SeedError(errors)
 
-    return {"categories": categories, "cities": cities, "places": places,
-            "attractions": attractions, "edges": edges, "credits": credits, "warnings": warnings}
+    return {"categories": categories, "cities": cities, "places": places, "attractions": attractions,
+            "edges": edges, "segments": segments, "credits": credits, "warnings": warnings}
 
 
-def _connectivity_warnings(cities, places, edges):
-    """Every road-accessible attraction should be reachable from, and able to return to, each start point."""
+def _connectivity_warnings(cities, places, edges, attractions):
+    """Every attraction with a known route should be reachable from, and able to return to, each stay area."""
     warnings = []
     for city in cities:
         nodes = [key for key in places if key[0] == city]
-        graph = build_graph(nodes, [(a, b, m) for a, b, m, _, _, scope in edges if a[0] == city and scope == "local"])
+        graph = build_graph(nodes, [(a, b, m) for a, b, m, _, _, scope in edges if a[0] == city and scope != "intercity"])
         backwards = reverse_graph(graph)
-        for start in (k for k in nodes if places[k]["kind"] == "start"):
+        for start in (k for k in nodes if places[k]["kind"] == "stay"):
             out_dist, _ = dijkstra(graph, start)
             back_dist, _ = dijkstra(backwards, start)
             for node in nodes:
-                place = places[node]
-                if place["kind"] != "attraction" or place["access"] == "no_road":
+                if node not in attractions or attractions[node]["access_timing"] == "unknown":
                     continue
                 if out_dist[node] == math.inf or back_dist[node] == math.inf:
                     warnings.append(f"{city}: {node[1]} cannot be reached from and back to {start[1]}")
@@ -363,11 +490,17 @@ def _write(conn, data, fingerprint):
         place_ids = {}
         for key, p in data["places"].items():
             cur = conn.execute(
-                """INSERT INTO places (city_id, slug, name, kind, lat, lng, coord_source, access, access_note)
+                """INSERT INTO places (city_id, slug, name, kind, lat, lng, coord_source, note, source_url)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (city_ids[key[0]], p["slug"], p["name"], p["kind"], p["lat"], p["lng"], p["coord_source"],
-                 p["access"], p.get("access_note") or None))
+                 p.get("note") or None, p.get("source_url") or None))
             place_ids[key] = cur.lastrowid
+            if p["kind"] == "stay":
+                conn.execute(
+                    """INSERT INTO stay_areas (place_id, direction, direction_note, osm_place, hotels_nearby,
+                                               distance_km, bearing) VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                    (cur.lastrowid, p["direction"], p.get("direction_note") or None, p.get("osm_place") or None,
+                     p.get("hotels_nearby"), p.get("distance_km"), p.get("bearing")))
 
         for key, a in data["attractions"].items():
             credit = data["credits"].get(key)
@@ -376,8 +509,11 @@ def _write(conn, data, fingerprint):
                                             pageviews_12m, visit_minutes, duration_source, fee_inr, fee_source,
                                             hours_source, description, description_source, image_path,
                                             image_credit, image_source_url, info_url, wikidata, place_type,
-                                            cuisine, vegetarian, in_team_catalog, data_status)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                                            cuisine, vegetarian, in_team_catalog, data_status,
+                                            access_type, road_access, access_point_id, access_modes, access_timing,
+                                            last_mile_m, access_note, access_source_url)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                           ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (place_ids[key], a["rating"], a["rating_source"], a["popularity"], a["popularity_source"],
                  a["pageviews_12m"], a["visit_minutes"], a["duration_source"], a["fee_inr"], a["fee_source"],
                  a["hours_source"], a["description"], a.get("description_source") or None,
@@ -386,7 +522,14 @@ def _write(conn, data, fingerprint):
                  credit["source_url"] if credit else None,
                  f"https://en.wikipedia.org/wiki/{a['wiki_title']}" if a.get("wiki_title") else None,
                  a.get("wikidata") or None, a.get("place_type") or None, a.get("cuisine") or None,
-                 a["vegetarian"], a["in_team_catalog"], a["data_status"]))
+                 a["vegetarian"], a["in_team_catalog"], a["data_status"],
+                 a["access_type"], a["road_access"], place_ids[a["access_point"]] if a["access_point"] else None,
+                 a["access_modes"], a["access_timing"], a["last_mile_m"], a["access_note"], a["access_source_url"]))
+            conn.executemany(
+                """INSERT INTO access_alternatives (place_id, label, modes, starts_from, minutes, status, note, source_url)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                [(place_ids[key], alt["label"], alt["modes"], alt.get("starts_from") or None, alt["minutes"],
+                  alt["status"], alt["note"], alt.get("source_url") or None) for alt in a["alternatives"]])
             conn.executemany(
                 "INSERT INTO attraction_categories (place_id, category_id) VALUES (?, ?)",
                 [(place_ids[key], category_ids[c]) for c in dict.fromkeys(a["categories"])])
@@ -398,6 +541,12 @@ def _write(conn, data, fingerprint):
         conn.executemany(
             "INSERT INTO travel_edges (from_id, to_id, minutes, km, source, scope) VALUES (?, ?, ?, ?, ?, ?)",
             [(place_ids[a], place_ids[b], m, km, src, scope) for a, b, m, km, src, scope in data["edges"]])
+        conn.executemany(
+            """INSERT INTO access_segments (from_id, to_id, seq, mode, minutes, km, depart_open, depart_close,
+                                            basis, note, source_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            [(place_ids[a], place_ids[b], p["seq"], p["mode"], p["minutes"], p["km"], p["depart_open"],
+              p["depart_close"], p["basis"], p["note"], p["source_url"])
+             for (a, b), parts in data["segments"].items() for p in parts])
 
 
 def seed_database(db_path, data_dir=None, strict=False, keep_backups=None):
@@ -434,7 +583,7 @@ def seed_database(db_path, data_dir=None, strict=False, keep_backups=None):
     return {
         "cities": len(data["cities"]),
         "attractions": len(data["attractions"]),
-        "start_points": sum(1 for p in data["places"].values() if p["kind"] == "start"),
+        "stay_areas": sum(1 for p in data["places"].values() if p["kind"] == "stay"),
         "edges": len(data["edges"]),
         "warnings": data["warnings"],
         "fingerprint": fingerprint,
@@ -479,7 +628,7 @@ def main(argv=None):
     for warning in summary["warnings"]:
         print(f"warning: {warning}")
     print(f"Built {args.db}: {summary['cities']} cities, {summary['attractions']} attractions, "
-          f"{summary['start_points']} start points, {summary['edges']} travel edges "
+          f"{summary['stay_areas']} stay areas, {summary['edges']} travel edges "
           f"(data {summary['fingerprint'][:12]}).")
     if summary["backup"]:
         print(f"Previous database saved to {summary['backup']}")

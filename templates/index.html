@@ -14,7 +14,7 @@
       <div class="col-lg-7 fade-up">
         <span class="eyebrow on-dark">Smart Itinerary Planner</span>
         <h1>Plan smarter days across <em>{{ counts.cities }} Indian destinations</em>.</h1>
-        <p class="lead mb-4">Tell us where, when and how you like to travel. We pick the places worth your time and budget,
+        <p class="lead mb-4">Tell us where, when and how you like to travel. We pick the places worth your time,
           add lunch and dinner, order the stops to cut travel and check every opening hour, so each day actually works.</p>
         <div class="d-flex flex-wrap gap-2">
           <a class="btn btn-brand btn-lg" href="{{ url_for('planner.plan') }}"><i class="bi bi-compass me-1"></i>Plan my trip</a>
@@ -24,7 +24,7 @@
       <div class="col-lg-5 col-xl-4 offset-xl-1">
         <form class="quick-plan fade-up" action="{{ url_for('planner.itinerary') }}" method="get" data-loading="Planning your trip…">
           <h2>Quick plan</h2>
-          <p class="text-muted small mb-3">Defaults: 09:00–19:00, lunch break, balanced pace, no budget limit.</p>
+          <p class="text-muted small mb-3">Defaults: 09:00–19:00, lunch break, balanced pace, suggested itinerary.</p>
           <div class="mb-3">
             <label class="form-label" for="qp-city">Destination</label>
             <select class="form-select" id="qp-city" name="city" required>
@@ -49,7 +49,7 @@
             </div>
           </div>
           <button class="btn btn-brand w-100" type="submit">Generate itinerary <i class="bi bi-arrow-right ms-1"></i></button>
-          <a class="d-block text-center small mt-3" href="{{ url_for('planner.plan') }}">More options: nearby cities, budget, interests, meals</a>
+          <a class="d-block text-center small mt-3" href="{{ url_for('planner.plan') }}">More options: nearby cities, itinerary mode, interests, meals</a>
         </form>
       </div>
     </div>
@@ -119,8 +119,8 @@
     </div>
     <div class="row g-4">
       {% set steps = [
-        ('Tell us your trip', 'A base city (plus nearby cities if you like), dates, daily hours, budget, interests, meals and pace.', 'Server-side validation'),
-        ('We pick the best stops', 'Each day, a 0/1 knapsack chooses the most valuable places — or the most places — that fit your time, meals and budget.', 'DP · Greedy · Max visits'),
+        ('Tell us your trip', 'A base city (plus nearby cities if you like), dates, daily hours, interests, meals, pace and itinerary mode.', 'Server-side validation'),
+        ('We pick the best stops', 'Each day, a 0/1 knapsack chooses the most valuable places — or the most places — that fit your time and meals.', 'DP · Greedy · Max visits'),
         ('We order them smartly', 'Dijkstra gives road times; Nearest Neighbour, 2-opt and a deadline-first insertion respect opening hours and meal windows.', 'Dijkstra · NN · 2-opt · Activity selection'),
         ('You get a day-by-day plan', 'Times, travel legs, lunch and dinner, costs and a map — plus a reason for every place left out and for any unused hours.', 'Independent validator'),
       ] %}
@@ -169,7 +169,7 @@
       <div class="col-md-6 col-lg-3">
         <div class="trust-item">
           <span class="trust-icon"><i class="bi bi-shield-check"></i></span>
-          <div><h3>Every plan is re-checked</h3><p>An independent validator recomputes each timeline: opening hours, meals, travel, budget and the ride back.</p></div>
+          <div><h3>Every plan is re-checked</h3><p>An independent validator recomputes each timeline: opening hours, meals, travel, access and the ride back.</p></div>
         </div>
       </div>
       <div class="col-md-6 col-lg-3">

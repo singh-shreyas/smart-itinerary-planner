@@ -29,10 +29,10 @@ import shutil
 import sqlite3
 from datetime import datetime
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
-REFERENCE_TABLES = {"meta", "cities", "places", "categories", "attractions", "attraction_categories",
-                    "opening_hours", "travel_edges"}
+REFERENCE_TABLES = {"meta", "cities", "places", "stay_areas", "categories", "attractions", "attraction_categories",
+                    "opening_hours", "travel_edges", "access_segments", "access_alternatives"}
 
 
 def dataset_fingerprint(data_dir):

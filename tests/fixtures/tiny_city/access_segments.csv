@@ -1,0 +1,7 @@
+city,from_slug,to_slug,seq,mode,minutes,km,depart_window,basis,note,source_url
+hillview,hill-trailhead,summit-shrine,1,trek,300,10,,estimate,Uphill trek.,
+hillview,summit-shrine,hill-trailhead,1,trek,200,10,,estimate,Downhill trek.,
+hillview,hill-jetty,ferry-isle,1,ferry,40,6,09:30-13:00,source,Ferry out: first 09:30 last 13:00.,
+hillview,hill-jetty,ferry-isle,2,walk,10,0.6,,estimate,Walk up from the landing.,
+hillview,ferry-isle,hill-jetty,1,walk,10,0.6,,estimate,Walk down to the landing.,
+hillview,ferry-isle,hill-jetty,2,ferry,40,6,,source,Ferry back.,

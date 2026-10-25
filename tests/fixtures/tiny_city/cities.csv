@@ -3,3 +3,5 @@ testville,Testville,Test State,10.0000,10.0000,A tiny city for tests,Hand-made f
 riverton,Riverton,Test State,10.0000,10.3650,A nearby river town,About 40 km east of Testville: multi-city tests.,,,Test Region,2
 westford,Westford,Test State,10.0000,9.3600,A town to the west,About 70 km west of Testville but about 110 km from Riverton: tests the pairwise rule.,,,Test Region,3
 farville,Farville,Test State,11.5000,10.0000,Too far away,About 167 km north: never eligible for a shared trip.,,,Test Region,4
+hillview,Hillview,Test State,14.0000,10.0000,Hills and water,Access tests: road / road + walk / trek / ferry / unknown.,,,Test Region,5
+gridville,Gridville,Test State,16.0000,10.0000,A grid of places,Mode tests: close / long / far / short-window places.,,,Test Region,6

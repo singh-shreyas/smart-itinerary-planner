@@ -6,15 +6,22 @@ Once per city (or group of nearby cities; cached, see city_data.py):
 
 Once per trip:
     score every attraction (rating or neutral prior, popularity, interest match)
-    trip-level rules: excluded by you / no road access / "only matching
-    interests" / food and shopping places only when you ask for them
+    trip-level rules: excluded by you / access that cannot be timed / "only
+    matching interests" / food and shopping places only when you ask for them
+
+Access: a trek, ferry or walk is part of the travel graph (city_data.py), so
+the trek to Kedarnath is inside the travel minutes of that stop's legs. It
+counts in the knapsack weight (cheapest exit), in the routing and in the
+timeline, so a place behind an 8-hour trek can never be treated like a
+30-minute stop. A place whose access has no known duration is never given a
+guessed one: it is left out with its own reason.
 
 For each day, in date order:
     1. FILTER    keep attractions not yet planned, open on this weekday,
-                 reachable from and back to the start, affordable on their own,
-                 and able to fit in the day on their own (meals included).
+                 reachable from and back to the start, and able to fit in the
+                 day on their own (meals included).
                  Every rejection is recorded with its reason.
-    2. SELECT    one 0/1 knapsack instance over (time, money), solved by the
+    2. SELECT    one 0/1 knapsack instance over the day's time, solved by the
                  chosen strategy:  dp (max total value, exact), greedy (value
                  density, fast), max_visits (max count then value, exact).
                  Each stop's time weight = visit + pace buffer + its cheapest
@@ -25,9 +32,9 @@ For each day, in date order:
     3. ROUTE     travel-first:  Nearest Neighbour -> 2-opt
                  window-first:  closing-time order + cheapest feasible insertion -> 2-opt
                  keep the feasible branch with less travel.
-    4. REPAIR    if no branch is feasible (or the day is over budget), the
-                 weakest selected stop (min-heap, by the strategy's own value
-                 per minute / per rupee) leaves today's pool and the same
+    4. REPAIR    if no branch is feasible, the weakest selected stop
+                 (min-heap, by the strategy's own value per estimated minute)
+                 leaves today's pool and the same
                  selector runs again. The pool shrinks, so the loop always ends.
     5. FILL      leftover candidates are inserted at their cheapest feasible
                  position while they still fit, so a longer day is really used.
@@ -35,6 +42,12 @@ For each day, in date order:
                  and on all of them together; the day keeps the best result by
                  the strategy's objective (so you do not zig-zag between cities).
     7. COMMIT    build the timeline (visits, meals, legs), explain unused time.
+
+Then the itinerary MODE spreads the chosen places over the trip
+(services/distribution.py): the places of the plan above -- or the places the
+traveller picked -- are re-assigned to days by Most Optimized (fewest days),
+Evenly Distributed (closest to an even split) or Suggested (comfortable days).
+A day keeps the route found above whenever its set of stops is unchanged.
 
 After all days, services/validator.py re-checks every constraint independently.
 
@@ -69,6 +82,7 @@ from algorithms.tour import tour_cost
 from algorithms.two_opt import two_opt
 from services import versioning
 from services.city_data import group_name
+from services.distribution import distribute, explain as explain_mode
 from services.models import DayPlan, Itinerary, Skipped
 from services.scheduler import DayContext, simulate
 from services.timeutil import WEEKDAY_LONG, WEEKDAY_SHORT, fmt_duration, fmt_hhmm
@@ -80,13 +94,10 @@ SELECTORS = {"dp": dp_select, "greedy": greedy_select, "max_visits": max_visits_
 @dataclass
 class KnapsackInstance:
     """The integer knapsack handed to the selector for one day."""
-    items: list                 # [Item(id, score, weight_units, cost_units)]
+    items: list                 # [Item(id, score, weight_units)]
     time_cap: int               # T, in time units
-    money_cap: int | None       # M, in money units (None = no budget)
     time_unit: int              # minutes per time unit
-    money_unit: int | None      # rupees per money unit
     weight_minutes: dict        # id -> estimated minutes (visit + buffer + cheapest exit)
-    cost_rupees: dict           # id -> fee (+ shopping spend, + transport lower bound if included)
     reserved: dict = field(default_factory=dict)   # minutes taken off the day before selection
 
 
@@ -125,8 +136,9 @@ def trip_context(city, trip):
         a = city.attractions[aid]
         if aid in excluded:
             blocked[aid] = ("excluded", "You excluded it from this trip.")
-        elif a.access == "no_road":
-            blocked[aid] = ("no_road", a.access_note or "No road access in our travel graph (reached on foot or by boat).")
+        elif not a.timed:
+            blocked[aid] = ("access_unknown", f"{a.access_note or 'How to reach it is not in our data.'} "
+                                              "Verify access locally before you go.")
         elif trip.interest_mode == "only" and trip.interests and not matches_interests(a.categories, trip.interests, parents):
             blocked[aid] = ("interest", "Doesn't match your interests (you chose only matching places).")
         elif a.is_food_or_shopping_only and not matches_interests(a.categories, opt_in_interests, parents):
@@ -138,7 +150,7 @@ def trip_context(city, trip):
         styles = set(trip.venue_styles)
         for aid in sorted(city.attractions):
             a = city.attractions[aid]
-            if not a.is_food or a.access == "no_road" or aid in excluded:
+            if not a.is_food or a.special_access or aid in excluded:
                 continue
             if trip.veg_only and a.vegetarian != "yes":
                 continue
@@ -157,7 +169,7 @@ def interest_notes(city, trip, tctx):
     names = {slug: c["name"] for slug, c in city.categories.items()}
     for interest in trip.interests:
         matching = [a for aid, a in city.attractions.items()
-                    if a.access == "road" and tctx.blocked.get(aid, ("",))[0] != "excluded"
+                    if a.timed and tctx.blocked.get(aid, ("",))[0] != "excluded"
                     and matches_interests(a.categories, [interest], tctx.parents)]
         label = names.get(interest, interest)
         if not matching:
@@ -183,17 +195,7 @@ def day_context(city, trip, day_date, tctx=None):
                       durations=tctx.durations if tctx else {})
 
 
-def round_trip_transport(city, start_id, aid, rate):
-    return rate * (city.km[start_id][aid] + city.km[aid][start_id])
-
-
-def own_cost(city, trip, aid):
-    """Entry fee plus the planned shopping spend (shopping places only)."""
-    a = city.attractions[aid]
-    return a.fee + (trip.shop_spend if a.is_shopping_only else 0)
-
-
-def filter_candidates(city, trip, ctx, unavailable, log, day_index, rate):
+def filter_candidates(city, trip, ctx, unavailable, log, day_index):
     """Attractions that could be visited today on their own. Rejections go into `log`."""
     start = ctx.start_id
     weekday = WEEKDAY_LONG[ctx.weekday]
@@ -208,21 +210,17 @@ def filter_candidates(city, trip, ctx, unavailable, log, day_index, rate):
         if not attraction.windows_on(ctx.weekday):
             log[aid].append((day_index, "closed", f"Closed on {weekday}"))
             continue
-        if trip.budget is not None:
-            transport = round_trip_transport(city, start, aid, rate) if trip.include_transport else 0
-            cost = own_cost(city, trip, aid)
-            if cost + transport > trip.budget:
-                extra = f" + ₹{transport:.0f} transport" if transport else ""
-                log[aid].append((day_index, "over_budget",
-                                 f"₹{cost} entry{' and shopping' if cost != attraction.fee else ''}{extra} "
-                                 f"is more than your ₹{trip.budget} daily budget"))
-                continue
         alone = simulate([aid], ctx)
         if not alone.feasible:
             meals = " and your meal breaks" if ctx.meals else ""
+            trip_parts = city.segments(start, aid) + city.segments(aid, start)
+            access = sum(p.minutes for p in trip_parts if not p.is_road)
+            modes = "/".join(dict.fromkeys(p.mode for p in trip_parts if not p.is_road))
+            extra = (f" (the round trip includes {fmt_duration(access)} by {modes}, "
+                     f"{fmt_duration(city.plan[start][aid] + city.plan[aid][start])} in all)") if access else ""
             log[aid].append((day_index, "does_not_fit",
                              f"Open {attraction.hours_label(ctx.weekday)} on {WEEKDAY_SHORT[ctx.weekday]}; "
-                             f"a {fmt_duration(ctx.duration(aid))} visit plus the round trip{meals} doesn't fit "
+                             f"a {fmt_duration(ctx.duration(aid))} visit plus the round trip{extra}{meals} doesn't fit "
                              f"{fmt_hhmm(trip.day_start)}–{fmt_hhmm(trip.day_end)}"))
             continue
         candidates.append(aid)
@@ -231,9 +229,9 @@ def filter_candidates(city, trip, ctx, unavailable, log, day_index, rate):
 
 # ------------------------------------------------------------------------------ step 2: select
 
-def knapsack_instance(city, trip, ctx, candidates, scores, rate):
-    """Turn today's candidates into an integer 2-D knapsack (time units x money units)."""
-    plan, km, start = city.plan, city.km, ctx.start_id
+def knapsack_instance(city, trip, ctx, candidates, scores):
+    """Turn today's candidates into an integer 0/1 knapsack over time units."""
+    plan, start = city.plan, ctx.start_id
     nodes = candidates + ([start] if start not in candidates else [])
     unit = config.DP_TIME_UNIT_MIN
 
@@ -253,27 +251,13 @@ def knapsack_instance(city, trip, ctx, candidates, scores, rate):
     reserved = {"first ride": first_ride, "ride home (extra)": return_extra, "meals": ctx.meal_minutes}
     time_cap = max(0, math.floor((ctx.day_end - ctx.day_start - sum(reserved.values())) / unit))
 
-    use_money = trip.budget is not None
-    transport_rate = rate if trip.include_transport else 0
-    money_unit = money_cap = None
-    if use_money:
-        money_unit = max(config.DP_MIN_MONEY_UNIT, math.ceil(trip.budget / config.DP_MAX_MONEY_CELLS))
-        first_km = min(km[start][i] for i in candidates)
-        money_cap = max(0, math.floor((trip.budget - transport_rate * first_km) / money_unit + 1e-9))
-
-    items, weight_minutes, cost_rupees = [], {}, {}
+    items, weight_minutes = [], {}
     for i in candidates:
         # Every route leaves each stop exactly once, so its cheapest exit is a lower bound on real travel.
         weight_minutes[i] = ctx.duration(i) + ctx.buffer + cheapest_exit(plan, i)
         weight = math.ceil(weight_minutes[i] / unit)                    # rounded UP
-        cost = 0
-        if use_money:
-            cost_rupees[i] = own_cost(city, trip, i) + transport_rate * cheapest_exit(km, i)
-            cost = math.ceil(cost_rupees[i] / money_unit - 1e-9)        # rounded UP
-        else:
-            cost_rupees[i] = own_cost(city, trip, i)
-        items.append(Item(id=i, score=scores[i], weight=weight, cost=cost))
-    return KnapsackInstance(items, time_cap, money_cap, unit, money_unit, weight_minutes, cost_rupees, reserved)
+        items.append(Item(id=i, score=scores[i], weight=weight))
+    return KnapsackInstance(items, time_cap, unit, weight_minutes, reserved)
 
 
 # ------------------------------------------------------------------------------ step 3: route
@@ -330,12 +314,12 @@ def objective_key(strategy, route, scores, travel):
 
 
 def weakest_key(strategy, aid, scores, per_unit):
-    """Repair key (min-heap): the stop giving the least of the strategy's objective per minute / rupee."""
+    """Repair key (min-heap): the stop giving the least of the strategy's objective per estimated minute."""
     worth = 1 if strategy == "max_visits" else scores[aid]
     return (worth / per_unit, scores[aid], aid)
 
 
-def fill_route(route, pool, ctx, scores, strategy, spend_ok):
+def fill_route(route, pool, ctx, scores, strategy):
     """Step 5: try every leftover candidate at its cheapest feasible position (deterministic order)."""
     start, dist = ctx.start_id, ctx.city.dist
 
@@ -350,7 +334,7 @@ def fill_route(route, pool, ctx, scores, strategy, spend_ok):
     added = []
     for aid in leftovers:
         inserted = cheapest_feasible_insertion(start, route, aid, dist, feasible)
-        if inserted is not None and spend_ok(inserted):
+        if inserted is not None:
             route = inserted
             added.append(aid)
     if added:
@@ -358,7 +342,7 @@ def fill_route(route, pool, ctx, scores, strategy, spend_ok):
     return route, added
 
 
-def solve_pool(city, trip, ctx, pool, scores, rate, spend_ok):
+def solve_pool(city, trip, ctx, pool, scores):
     """Select with the trip's strategy, route, repair, then fill. Returns a record dict."""
     selector = SELECTORS[trip.strategy]
     candidates = list(pool)
@@ -366,27 +350,25 @@ def solve_pool(city, trip, ctx, pool, scores, rate, spend_ok):
     first_instance = first_selection = None
     route, branch = [], ""
     while candidates:
-        instance = knapsack_instance(city, trip, ctx, candidates, scores, rate)
-        selection = selector(instance.items, instance.time_cap, instance.money_cap)
+        instance = knapsack_instance(city, trip, ctx, candidates, scores)
+        selection = selector(instance.items, instance.time_cap)
         if first_instance is None:
             first_instance, first_selection = instance, selection
         if not selection.chosen:
             break
         found = best_route(selection.chosen, ctx)
-        if found is not None and spend_ok(found[0]):
+        if found is not None:
             route, branch = found
             break
-        if found is None:       # timeline failed: weakest value per estimated minute leaves
-            heap = [weakest_key(trip.strategy, a, scores, instance.weight_minutes[a]) for a in selection.chosen]
-        else:                   # budget failed: weakest value per estimated rupee leaves
-            heap = [weakest_key(trip.strategy, a, scores, instance.cost_rupees[a] + 1) for a in selection.chosen]
+        # Timeline failed: the weakest value per estimated minute leaves.
+        heap = [weakest_key(trip.strategy, a, scores, instance.weight_minutes[a]) for a in selection.chosen]
         heapq.heapify(heap)                          # min-heap: weakest stop on top
         victim = heapq.heappop(heap)[-1]
         candidates.remove(victim)
         dropped.append(victim)
     added = []
     if config.FILL_STEP:
-        route, added = fill_route(route, pool, ctx, scores, trip.strategy, spend_ok)
+        route, added = fill_route(route, pool, ctx, scores, trip.strategy)
         if added and not branch:
             branch = "insertion"
     return {"route": route, "branch": branch, "instance": first_instance, "selection": first_selection,
@@ -395,20 +377,11 @@ def solve_pool(city, trip, ctx, pool, scores, rate, spend_ok):
 
 # ------------------------------------------------------------------------------ one day
 
-def plan_day(city, trip, tctx, day_index, day_date, used, log, rate, trace=None):
+def plan_day(city, trip, tctx, day_index, day_date, used, log, trace=None):
     ctx = day_context(city, trip, day_date, tctx)
     blocked = set(tctx.blocked)
-    candidates = filter_candidates(city, trip, ctx, used | blocked, log, day_index, rate)
+    candidates = filter_candidates(city, trip, ctx, used | blocked, log, day_index)
     scores = tctx.scores
-
-    def spend(route):
-        own = sum(own_cost(city, trip, a) for a in route)
-        # Transport is priced on the real timeline's km, so meal detours are paid for too.
-        transport = rate * simulate(route, ctx).travel_km if (trip.include_transport and route) else 0
-        return own + transport
-
-    def spend_ok(route):
-        return trip.budget is None or spend(route) <= trip.budget + 1e-9
 
     # Pools: everything together, plus (multi-city) each city on its own.
     pools = [("all", candidates)]
@@ -422,7 +395,7 @@ def plan_day(city, trip, tctx, day_index, day_date, used, log, rate, trace=None)
     for index, (label, pool) in enumerate(pools):
         if not pool:
             continue
-        record = solve_pool(city, trip, ctx, pool, scores, rate, spend_ok)
+        record = solve_pool(city, trip, ctx, pool, scores)
         travel = simulate(record["route"], ctx).travel_min if record["route"] else 0
         cities_used = len({city.city_of[a] for a in record["route"]})
         key = objective_key(trip.strategy, record["route"], scores, travel) + (cities_used, index)
@@ -436,13 +409,13 @@ def plan_day(city, trip, tctx, day_index, day_date, used, log, rate, trace=None)
     chosen = set(order)
     for aid in record["dropped"]:
         log[aid].append((day_index, "dropped",
-                         "Selected, then removed because the day's timeline or budget did not work out"))
+                         "Selected, then removed because the day's timeline did not work out"))
     for aid in candidates:
         if aid in chosen or aid in record["dropped"]:
             continue
         if aid in record["pool"]:
             log[aid].append((day_index, "not_selected",
-                             f"Other stops gave more value for the time and budget (score {scores[aid]})"))
+                             f"Other stops gave more value for the time (score {scores[aid]})"))
         else:
             log[aid].append((day_index, "not_selected", f"Day {day_index} was planned around {focus}"))
 
@@ -454,19 +427,19 @@ def plan_day(city, trip, tctx, day_index, day_date, used, log, rate, trace=None)
 
     if not order:
         reason, suggestions = explain_empty_day(city, trip, ctx, day_index, used | blocked,
-                                                set(tctx.blocked), log, bool(candidates), rate)
+                                                set(tctx.blocked), log, bool(candidates))
         return DayPlan(index=day_index, date=day_date, depart=trip.day_start, visits=[], return_leg=None,
-                       transport_rate=rate, empty_reason=reason, suggestions=suggestions,
-                       day_start=trip.day_start, day_end=trip.day_end, shop_spend=trip.shop_spend)
+                       empty_reason=reason, suggestions=suggestions,
+                       day_start=trip.day_start, day_end=trip.day_end)
 
     schedule = simulate(order, ctx, scores, detailed=True)
     day = DayPlan(index=day_index, date=day_date, depart=schedule.depart, visits=schedule.visits,
-                  return_leg=schedule.return_leg, transport_rate=rate, branch=record["branch"],
+                  return_leg=schedule.return_leg, branch=record["branch"],
                   meals=schedule.meals, timeline=schedule.timeline, day_start=trip.day_start,
-                  day_end=trip.day_end, shop_spend=trip.shop_spend,
+                  day_end=trip.day_end,
                   focus=focus if city.multi_city else "",
                   filled=record["filled"])
-    day.free_time_notes = explain_free_time(city, trip, ctx, day, candidates, order, spend_ok, log, day_index)
+    day.free_time_notes = explain_free_time(city, trip, ctx, day, candidates, order, log, day_index)
     return day
 
 
@@ -479,47 +452,135 @@ def route_focus(city, order):
 
 # ------------------------------------------------------------------------------ whole trip
 
-def plan_trip(city, trip, transport_rate, trace=None, validate=True):
+def plan_trip(city, trip, trace=None, validate=True):
     """Plan every day of the trip. Deterministic: the same trip always gives the same plan."""
     started = time.perf_counter()
     tctx = trip_context(city, trip)
-    used, days = set(), []
     log = defaultdict(list)                  # attraction id -> [(day, code, detail)]
+    dates = trip.dates()
+    contexts = {i: day_context(city, trip, d, tctx) for i, d in enumerate(dates)}
 
-    for index, day_date in enumerate(trip.dates(), start=1):
-        day = plan_day(city, trip, tctx, index, day_date, used, log, transport_rate, trace)
-        used.update(v.attraction.id for v in day.visits)
-        days.append(day)
+    # 1. What to visit: the traveller's own list, or the strategy's day-by-day plan.
+    picked = [city.attraction_by_slug(s).id for s in trip.places] if trip.places else None
+    pipeline, known, seed = [], {}, None
+    if picked is None:
+        used = set()
+        for index, day_date in enumerate(dates, start=1):
+            day = plan_day(city, trip, tctx, index, day_date, used, log, trace)
+            used.update(v.attraction.id for v in day.visits)
+            pipeline.append(day)
+        selected = [v.attraction.id for d in pipeline for v in d.visits]
+        known = {(i, tuple(v.attraction.id for v in d.visits)): ([v.attraction.id for v in d.visits], d.branch)
+                 for i, d in enumerate(pipeline) if d.visits}
+        seed = {v.attraction.id: i for i, d in enumerate(pipeline) for v in d.visits}
+        blocked = dict(tctx.blocked)
+    else:
+        # A place you pick is planned even if a filter would have left it out -- unless its
+        # access cannot be timed. Everything you did not pick is simply "not picked".
+        blocked = {a: r for a, r in tctx.blocked.items() if r[0] == "access_unknown" and a in picked}
+        selected = [a for a in picked if a not in blocked]
+
+    # 2. How to spread it: the itinerary mode.
+    dist = distribute(trip, contexts, selected, tctx.scores, best_route, known, seed)
+    days = []
+    for i, day_date in enumerate(dates):
+        order = dist.days[i]
+        same = picked is None and tuple(v.attraction.id for v in pipeline[i].visits) == tuple(order)
+        if same:
+            days.append(pipeline[i])
+        else:
+            days.append(build_day(city, trip, tctx, contexts[i], i + 1, day_date, order, dist.branches[i],
+                                  dist, len(selected), pipeline[i] if pipeline else None))
+    used = {v.attraction.id for d in days for v in d.visits}
+    for aid in dist.unplaced:
+        log[aid].append((0, "unscheduled", dist.reasons.get(aid, "could not be scheduled")))
+
+    if picked is not None:
+        chosen = set(picked)
+        for aid in city.attractions:
+            if aid not in chosen:
+                blocked.setdefault(aid, ("not_picked", "Not one of the places you picked."))
 
     itinerary = Itinerary(trip=trip, city_name=city.name, start_place=city.place(trip.start), days=days,
-                          skipped=explain_skipped(city, used, tctx.blocked, log),
+                          skipped=explain_skipped(city, used, blocked, log, days),
                           cities=[{"slug": c["slug"], "name": c["name"]} for c in city.cities],
                           estimated_links=list(city.estimated_links),
                           interest_notes=interest_notes(city, trip, tctx))
+    itinerary.selected = list(picked) if picked is not None else selected
+    itinerary.distribution = dist
+    itinerary.mode_notes = explain_mode(dist, days, len(itinerary.selected), trip.days, picked is not None)
     itinerary.runtime_ms = (time.perf_counter() - started) * 1000
     if validate:
         from services.validator import check_itinerary          # imported here: the validator is independent
-        itinerary.violations = check_itinerary(itinerary, city, transport_rate)
+        itinerary.violations = check_itinerary(itinerary, city)
     itinerary.versions = versioning.versions(city, itinerary)
     return itinerary
 
 
+def build_day(city, trip, tctx, ctx, index, day_date, order, branch, dist, selected_count, pipeline_day=None):
+    """A DayPlan for a day whose stops the itinerary mode chose."""
+    active = sum(1 for d in dist.days if d)
+    if not order:
+        if pipeline_day is not None and not pipeline_day.visits:      # nothing was plannable here before either
+            return pipeline_day
+        if dist.unplaced:
+            reason = "None of your remaining selected places can be scheduled on this day."
+        elif dist.mode == "optimized":
+            reason = (f"Free day: Most Optimized completes your {selected_count} places in {active} "
+                      f"day{'s' if active != 1 else ''}.")
+        elif dist.mode == "evenly":
+            reason = (f"Free day: {selected_count} places over {trip.days} days means one place on "
+                      f"{selected_count} of the days.") if selected_count < trip.days else \
+                     "Free day: no place could be scheduled here without breaking a constraint."
+        else:
+            reason = (f"Free day: the suggested plan uses {active} day{'s' if active != 1 else ''} "
+                      f"so that each one stays comfortable.")
+        return DayPlan(index=index, date=day_date, depart=trip.day_start, visits=[], return_leg=None,
+                       empty_reason=reason, day_start=trip.day_start, day_end=trip.day_end)
+    schedule = simulate(list(order), ctx, tctx.scores, detailed=True)
+    day = DayPlan(index=index, date=day_date, depart=schedule.depart, visits=schedule.visits,
+                  return_leg=schedule.return_leg, branch=branch, meals=schedule.meals, timeline=schedule.timeline,
+                  day_start=trip.day_start, day_end=trip.day_end,
+                  focus=route_focus(city, order) if city.multi_city else "")
+    free = day.free_after_min
+    if free >= config.EXPLAIN_FREE_MIN:
+        notes = [f"{fmt_duration(free)} free after {fmt_hhmm(day.end_time)}."]
+        notes.append({"evenly": "Evenly Distributed keeps each day to its share of the places, so this one is not filled up.",
+                      "suggested": "The suggested plan keeps days comfortable rather than filling every hour.",
+                      "optimized": "Your other places are on other days; none of them fits here as well."}[dist.mode])
+        day.free_time_notes = notes
+    return day
+
+
 # ------------------------------------------------------------------------------ explanations
 
-SKIP_PRIORITY = ["excluded", "no_road", "opt_in", "interest", "unreachable", "dropped", "not_selected",
-                 "does_not_fit", "over_budget", "closed"]
+SKIP_PRIORITY = ["excluded", "access_unknown", "not_picked", "unscheduled", "opt_in", "interest", "unreachable", "dropped", "not_selected",
+                 "does_not_fit", "closed"]
 
 
-def explain_skipped(city, used, blocked, log):
+def roomiest_day(days):
+    """The day with the most time left after its plan ends (for 'you could fit it here' hints)."""
+    spare = [(d.free_after_min if d.visits else d.window_min, -d.index, d) for d in days]
+    best = max(spare, default=None, key=lambda t: (t[0], t[1]))
+    return best[2] if best and best[0] >= 60 else None
+
+
+def explain_skipped(city, used, blocked, log, days=()):
     """One clear reason for every attraction that is not in the plan."""
     skipped = []
+    room = roomiest_day(days)
     for aid in sorted(city.attractions):
         if aid in used:
             continue
         attraction = city.attractions[aid]
         if aid in blocked:
             code, reason = blocked[aid]
-            skipped.append(Skipped(attraction, code, reason))
+            details = []
+            if code == "access_unknown" and room is not None:
+                free = room.free_after_min if room.visits else room.window_min
+                when = f"after {fmt_hhmm(room.end_time)}" if room.visits else "(no stops planned)"
+                details.append(f"Day {room.index} has {fmt_duration(free)} free {when} if you arrange it yourself")
+            skipped.append(Skipped(attraction, code, reason, details))
             continue
         entries = log.get(aid, [])
         codes = {code for _, code, _ in entries}
@@ -530,20 +591,22 @@ def explain_skipped(city, used, blocked, log):
                           key=WEEKDAY_LONG.index)
             reason = f"Closed on {', '.join(days)} — every day of your trip."
         elif code == "unreachable":
-            reason = "No road route to it in our travel graph."
-        elif code == "over_budget":
-            reason = "Costs more than your daily budget allows."
+            reason = "No route to it from your stay area in our travel graph."
         elif code == "does_not_fit":
             reason = "Its opening hours don't fit inside your daily time window."
+        elif code == "unscheduled":
+            reason = "You selected it, but it could not be scheduled: " + next(
+                d for _, c, d in entries if c == "unscheduled") + "."
+            details = [x for x in details if not x.startswith("Day 0")]
         elif code == "dropped":
-            reason = "Selected, but removed so the day's timeline and budget could work."
+            reason = "Selected, but removed so the day's timeline could work."
         else:
-            reason = "Other attractions gave more value for the time and budget you had."
+            reason = "Other attractions gave more value for the time you had."
         skipped.append(Skipped(attraction, code, reason, details))
     return skipped
 
 
-def explain_free_time(city, trip, ctx, day, candidates, order, spend_ok, log, day_index):
+def explain_free_time(city, trip, ctx, day, candidates, order, log, day_index):
     """Why does the day end early? Only said when at least EXPLAIN_FREE_MIN minutes are unused at the end."""
     free_end = day.free_after_min
     if free_end < config.EXPLAIN_FREE_MIN:
@@ -554,9 +617,6 @@ def explain_free_time(city, trip, ctx, day, candidates, order, spend_ok, log, da
         if aid in order:
             continue
         name = city.attractions[aid].name
-        if not spend_ok(order + [aid]):
-            reasons["budget"].append(name)
-            continue
         attempt = simulate(order + [aid], ctx)
         text = " ".join(attempt.violations)
         if "too late to fit" in text or "closed" in text:
@@ -568,7 +628,7 @@ def explain_free_time(city, trip, ctx, day, candidates, order, spend_ok, log, da
             reasons["time"].append(name)
     for aid, entries in log.items():
         for d, code, _ in entries:
-            if d == day_index and code in ("closed", "over_budget", "does_not_fit"):
+            if d == day_index and code in ("closed", "does_not_fit"):
                 reasons[code].append(city.attractions[aid].name)
 
     def listed(names, limit=3):
@@ -580,8 +640,6 @@ def explain_free_time(city, trip, ctx, day, candidates, order, spend_ok, log, da
         notes.append(f"Adding {listed(reasons['time'])} would bring you back after {fmt_hhmm(trip.day_end)}.")
     if reasons["meal"]:
         notes.append(f"{listed(reasons['meal'])} would clash with your meal breaks.")
-    if reasons["budget"] or reasons["over_budget"]:
-        notes.append(f"Over your daily budget: {listed(reasons['budget'] + reasons['over_budget'])}.")
     if reasons["closed"]:
         notes.append(f"Closed on {WEEKDAY_LONG[ctx.weekday]}: {listed(reasons['closed'])}.")
     if reasons["does_not_fit"]:
@@ -593,7 +651,7 @@ def explain_free_time(city, trip, ctx, day, candidates, order, spend_ok, log, da
     return notes
 
 
-def explain_empty_day(city, trip, ctx, day_index, unavailable, blocked, log, had_candidates, rate):
+def explain_empty_day(city, trip, ctx, day_index, unavailable, blocked, log, had_candidates):
     """Specific reason + one-click suggestions for a day with no stops."""
     weekday = WEEKDAY_LONG[ctx.weekday]
     remaining = [aid for aid in city.attractions if aid not in unavailable]
@@ -612,26 +670,18 @@ def explain_empty_day(city, trip, ctx, day_index, unavailable, blocked, log, had
 
     codes = [today[aid][0] for aid in remaining if today[aid]]
     if had_candidates:
-        reason = "The selected stops could not be scheduled around their opening hours, meals and your budget."
+        reason = "The selected stops could not be scheduled around their opening hours and meals."
     elif codes and all(c == "closed" for c in codes):
         reason = f"All {len(remaining)} remaining attractions are closed on {weekday}."
-    elif codes and all(c == "over_budget" for c in codes):
-        reason = f"A ₹{trip.budget} budget can't cover any remaining attraction on {weekday}."
     elif codes and all(c == "does_not_fit" for c in codes):
         reason = (f"None of the remaining attractions fit inside {fmt_hhmm(trip.day_start)}–"
                   f"{fmt_hhmm(trip.day_end)} on {weekday}.")
     else:
-        labels = {"closed": "closed on " + weekday, "over_budget": "over your budget",
+        labels = {"closed": "closed on " + weekday,
                   "does_not_fit": f"can't fit in {fmt_hhmm(trip.day_start)}–{fmt_hhmm(trip.day_end)}"}
-        parts = [f"{codes.count(c)} {labels[c]}" for c in ("closed", "over_budget", "does_not_fit") if c in codes]
+        parts = [f"{codes.count(c)} {labels[c]}" for c in ("closed", "does_not_fit") if c in codes]
         reason = f"Of the {len(remaining)} remaining attractions: " + "; ".join(parts) + "."
 
-    if "over_budget" in codes and trip.budget is not None:
-        blocked_costs = [own_cost(city, trip, a)
-                         + (round_trip_transport(city, ctx.start_id, a, rate) if trip.include_transport else 0)
-                         for a, c in today.items() if c and c[0] == "over_budget"]
-        new_budget = int(math.ceil(min(blocked_costs) / 10) * 10)
-        suggestions.append({"label": f"Raise budget to ₹{new_budget}", "query": trip.to_query(budget=new_budget)})
     if "does_not_fit" in codes or had_candidates:
         later = min(trip.day_end + 120, 23 * 60 + 59)
         if later > trip.day_end:

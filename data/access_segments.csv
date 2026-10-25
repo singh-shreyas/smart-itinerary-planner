@@ -1,0 +1,13 @@
+city,from_slug,to_slug,seq,mode,minutes,km,depart_window,basis,note,source_url
+mumbai,gateway-of-india,elephanta-caves,1,ferry,60,11,09:00-14:00,source,"Ferries from the Gateway of India take about an hour each way; first ferry 09:00, last 14:00 (Wikipedia). Timetables change: check before you go.",https://en.wikipedia.org/wiki/Elephanta_Island
+mumbai,gateway-of-india,elephanta-caves,2,walk,15,1.0,,estimate,"About 1 km up a steep path from the landing to Cave 1 (Wikipedia), timed at 4 km/h; the climb is not added.",https://en.wikipedia.org/wiki/Elephanta_Caves
+mumbai,elephanta-caves,gateway-of-india,1,walk,15,1.0,,estimate,"About 1 km down to the landing (Wikipedia), timed at 4 km/h.",https://en.wikipedia.org/wiki/Elephanta_Caves
+mumbai,elephanta-caves,gateway-of-india,2,ferry,60,11,,source,"About an hour back to the Gateway (Wikipedia). The time of the last return ferry is not in our sources: check it on the island.",https://en.wikipedia.org/wiki/Elephanta_Island
+katra,katra-trek-start,ardhkuwari-cave,1,trek,131,6,,estimate,"6 km and about 588 m of climb (Katra 875 m to Ardhkuwari 1463 m), timed by Naismith's rule: 5 km/h plus 1 hour per 600 m of ascent.",https://en.wikipedia.org/wiki/Ardhkuwari
+katra,ardhkuwari-cave,vaishno-devi-temple,1,trek,85,6,,estimate,"The second 6 km of the 12 km path, about 122 m of further climb (to 1585 m), timed by Naismith's rule.",https://en.wikipedia.org/wiki/Vaishno_Devi_Temple
+katra,vaishno-devi-temple,ardhkuwari-cave,1,trek,72,6,,estimate,"6 km downhill, timed at 5 km/h (Naismith's rule adds nothing for descent).",https://en.wikipedia.org/wiki/Vaishno_Devi_Temple
+katra,ardhkuwari-cave,katra-trek-start,1,trek,72,6,,estimate,"6 km downhill to Katra, timed at 5 km/h.",https://en.wikipedia.org/wiki/Ardhkuwari
+kedarnath,gaurikund-trek-start,kedarnath-temple,1,trek,480,17,,source,"Wikipedia: the 17 km uphill trek from Gaurikund generally takes 6 to 8 hours on foot; the planner uses the upper value, 8 hours.",https://en.wikipedia.org/wiki/Kedarnath_Temple
+kedarnath,kedarnath-temple,gaurikund-trek-start,1,trek,204,17,,estimate,"17 km downhill, timed at 5 km/h (Naismith's rule adds nothing for descent). No source gives the descent time.",https://en.wikipedia.org/wiki/Kedarnath_Temple
+kedarnath,kedarnath-temple,adi-shankaracharya-samadhi,1,walk,6,0.37,,estimate,"Just behind the temple: straight-line distance between the two listed points x 1.35, at 4 km/h.",https://en.wikipedia.org/wiki/Kedarnath_Temple
+kedarnath,adi-shankaracharya-samadhi,kedarnath-temple,1,walk,6,0.37,,estimate,"Straight-line distance between the two listed points x 1.35, at 4 km/h.",https://en.wikipedia.org/wiki/Kedarnath_Temple
