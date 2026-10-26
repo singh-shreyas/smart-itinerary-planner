@@ -34,12 +34,14 @@ def matches_interests(categories, interests, parents=None):
 
 
 def attraction_score(rating, popularity, categories, interests, weights, prior=None, parents=None):
+    
     """Return the integer score of one attraction.
 
     weights: (w_rating, w_popularity, w_interest)
     prior:   rating used when `rating` is None (no rating data)
     parents: {category: parent category} for the hierarchy
     """
+
     w_rating, w_popularity, w_interest = weights
     if rating is None:
         rating = prior if prior is not None else 0
