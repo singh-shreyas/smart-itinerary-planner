@@ -9,8 +9,8 @@ popularity  0..1, how popular the place is, already normalised.
 match       1 if any of the attraction's categories (or their parent
             categories) is among the user's interests, else 0.
 
-Why the score is an integer from 0 to 100
------------------------------------------
+Why the score is an integer from 0 to 100:
+
 Each of the three parts is first scaled to 0..1 (rating / 5, popularity,
 match). They are then combined with weights that sum to 1, so the weighted
 sum is also between 0 and 1. Multiplying by 100 and rounding gives an integer
@@ -18,14 +18,14 @@ from 0 to 100. Integer scores matter because the selection DP (knapsack-style)
 table can use the score directly as a value, with no floating-point issues.
 The weights are a documented design choice (see config.py), not a fact.
 
-Unrated places
---------------
+Unrated places:
+
 When no rating exists (rating is None), a neutral `prior` rating is used
 instead, so the place is neither rewarded nor punished for missing data. The
 place is still displayed as "not rated"; no rating is invented.
 
-Category hierarchy
-------------------
+Category hierarchy:
+
 Categories can have a parent (street-food -> food).
   - A place tagged "street-food" ALSO matches the broader interest "food".
   - A place tagged only "food" does NOT match the narrower interest
