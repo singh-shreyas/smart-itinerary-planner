@@ -2,10 +2,11 @@
 (function () {
   "use strict";
 
-  // Transparent navigation over the home hero becomes solid once the page scrolls.
+  // The sticky navigation gains a hairline and soft shadow once the page scrolls. A transparent variant
+  // (over a full-bleed photo) becomes solid at the same point.
   var nav = document.getElementById("site-nav");
-  if (nav && nav.classList.contains("is-transparent")) {
-    var update = function () { nav.classList.toggle("scrolled", window.scrollY > 24); };
+  if (nav) {
+    var update = function () { nav.classList.toggle("scrolled", window.scrollY > 8); };
     update();
     window.addEventListener("scroll", update, { passive: true });
     var menu = document.getElementById("nav-links");
@@ -15,19 +16,22 @@
     }
   }
 
-  // Forms that generate a plan show a spinner while the server works.
+  // Forms that generate a plan show a spinner on the button that was pressed (a form can have several,
+  // e.g. "Generate" and "Compare") and a thin progress bar at the top of the page while the server works.
   document.querySelectorAll("form[data-loading]").forEach(function (form) {
-    form.addEventListener("submit", function () {
-      var button = form.querySelector("button[type=submit]");
+    form.addEventListener("submit", function (event) {
+      var button = event.submitter && event.submitter.matches("button") ? event.submitter : form.querySelector("button[type=submit]");
+      document.body.classList.add("is-loading");
       if (!button) return;
       button.disabled = true;
       button.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>' +
-        (form.dataset.loading || "Working…");
+        (button.dataset.loading || form.dataset.loading || "Working…");
     });
   });
   // Re-enable buttons if the user navigates back to a cached page.
   window.addEventListener("pageshow", function (event) {
     if (!event.persisted) return;
+    document.body.classList.remove("is-loading");
     document.querySelectorAll("form[data-loading] button[type=submit]").forEach(function (b) {
       b.disabled = false;
       if (b.dataset.label) b.innerHTML = b.dataset.label;
@@ -97,6 +101,27 @@
     render();
     return { reset: function () { limit = size; render(); }, render: render };
   };
+
+  // Section tracking for in-page navigation (the planner's trip summary, the About page contents):
+  // the link of the section currently in view gets "is-current". Purely visual; links work without it.
+  document.querySelectorAll("[data-scrollspy]").forEach(function (box) {
+    var links = Array.prototype.filter.call(box.querySelectorAll('a[href^="#"]'), function (a) {
+      return a.getAttribute("href").length > 1 && document.getElementById(a.getAttribute("href").slice(1));
+    });
+    if (!links.length) return;
+    var pending = false;
+    function mark() {
+      pending = false;
+      var line = (nav ? nav.offsetHeight : 0) + 40, current = links[0];
+      links.forEach(function (a) {                       // the last section whose top has passed the line
+        if (document.getElementById(a.getAttribute("href").slice(1)).getBoundingClientRect().top <= line) current = a;
+      });
+      var href = current.getAttribute("href");          // several rows may point at one section
+      links.forEach(function (a) { a.classList.toggle("is-current", a.getAttribute("href") === href); });
+    }
+    window.addEventListener("scroll", function () { if (!pending) { pending = true; requestAnimationFrame(mark); } }, { passive: true });
+    mark();
+  });
 
   // Light / dark theme: switches instantly, remembered in this browser. If storage is blocked the
   // switch still works for this page (the site simply opens in light mode next time).

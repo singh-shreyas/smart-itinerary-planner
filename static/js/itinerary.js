@@ -84,7 +84,8 @@
     if (day.stops.length || moves) {
       points.push([finish.lat, finish.lng]);
       // Straight dashed segments in visit order -- deliberately NOT drawn as if they were roads.
-      L.polyline(points, { color: "#1F4D3A", weight: 3, opacity: 0.85, dashArray: "6 9" }).addTo(layer);
+      var route = getComputedStyle(document.documentElement).getPropertyValue("--route").trim() || "#1B4D43";
+      L.polyline(points, { color: route, weight: 3, opacity: 0.9, dashArray: "6 9", lineCap: "round" }).addTo(layer);
       map.fitBounds(L.latLngBounds(points).pad(0.18), { maxZoom: 14 });
     } else {
       map.setView([start.lat, start.lng], 13);
@@ -92,9 +93,11 @@
     if (label) label.textContent = t("Day {n}").replace("{n}", day.index);
   }
 
-  draw(1);
+  var current = 1;
+  draw(current);
   document.querySelectorAll('[data-bs-toggle="tab"][data-day]').forEach(function (tab) {
-    tab.addEventListener("shown.bs.tab", function () { draw(parseInt(tab.dataset.day, 10)); });
+    tab.addEventListener("shown.bs.tab", function () { current = parseInt(tab.dataset.day, 10); draw(current); });
   });
+  document.addEventListener("themechange", function () { draw(current); });     // route colour follows the theme
   window.addEventListener("load", function () { map.invalidateSize(); });
 })();

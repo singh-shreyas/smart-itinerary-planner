@@ -78,3 +78,14 @@
   {%- elif source == 'osm' -%}<sup class="est est-osm" title="{{ _('From OpenStreetMap') }}">{{ _('OSM') }}</sup>
   {%- endif -%}
 {%- endmacro %}
+
+{# Schematic of how an itinerary mode spreads places over a 4-day trip (bar = time out that day). It is a
+   picture of the rule, not data from a plan: Evenly = equal days, Suggested = days kept under the
+   comfortable share of the day (the dashed line, 70 % in config), Most Optimized = fewest, fuller days. #}
+{% macro mode_schematic(key, comfort_label='') -%}
+  {%- set bars = {'evenly': [58, 58, 54, 54], 'suggested': [62, 56, 60, 34], 'optimized': [94, 88, 0, 0]}.get(key, [50, 50, 50, 50]) -%}
+  <div class="mode-viz mode-viz-{{ key }}" aria-hidden="true">
+    {%- if key == 'suggested' %}<span class="mode-viz-line" data-label="{{ comfort_label }}"></span>{% endif -%}
+    {%- for h in bars %}<span class="mode-viz-day"><span class="mode-viz-bar {{ 'is-empty' if h == 0 }}" style="height: {{ h if h else 22 }}%"></span><small>{{ _('Day {n}', n=loop.index) }}</small></span>{% endfor -%}
+  </div>
+{%- endmacro %}
