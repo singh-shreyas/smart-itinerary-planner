@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ _('Smart Itinerary Planner') }}{% endblock %} · Smart Itinerary</title>
   <meta name="description" content="{% block description %}{{ _('Plan realistic day-by-day sightseeing itineraries for 50 Indian destinations, built on graph algorithms, dynamic programming and route optimisation.') }}{% endblock %}">
-  <meta name="theme-color" content="#14243A">
+  <meta name="theme-color" content="#F7F4EE" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0F1412" media="(prefers-color-scheme: dark)">
   <script>
     // Theme before the first paint (no flash): the saved choice, else light. Storage may be blocked: ignore that.
     (function () {
@@ -38,6 +39,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="{% block body_class %}{% endblock %}">
+  <div class="page-progress" aria-hidden="true"></div>
   <a class="visually-hidden-focusable" href="#main">{{ _('Skip to content') }}</a>
 
   {% set nav = [
@@ -80,7 +82,7 @@
             </li>
           {% endfor %}
           <li class="nav-item ms-lg-2">
-            <a class="btn btn-brand" href="{{ url_for('planner.plan') }}"><i class="bi bi-compass me-1"></i>{{ _('Plan a trip') }}</a>
+            <a class="btn btn-brand btn-sm px-3" href="{{ url_for('planner.plan') }}"><i class="bi bi-compass me-1"></i>{{ _('Plan a trip') }}</a>
           </li>
         </ul>
       </div>
