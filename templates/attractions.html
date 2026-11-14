@@ -2,6 +2,23 @@
 {% import "_macros.html" as ui %}
 {% block title %}{{ _('{city} attractions', city=current.name) if current else _('Attractions') }}{% endblock %}
 
+{% block top_actions %}
+    <form class="city-picker d-flex align-items-center gap-2" method="get" action="{{ url_for('main.attractions') }}">
+      <label class="visually-hidden" for="city-pick">{{ _('Destination') }}</label>
+      <div class="d-flex gap-2">
+        <select class="form-select form-select-sm" id="city-pick" style="min-width: 190px" name="city" data-autosubmit>
+          <option value="">{{ _('All destinations') }}</option>
+          {% for region, items in regions %}
+            <optgroup label="{{ _(region) }}">
+              {% for c in items %}<option value="{{ c.slug }}" {% if current and current.slug == c.slug %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+            </optgroup>
+          {% endfor %}
+        </select>
+        <button class="btn btn-sm btn-outline-brand js-hide" type="submit">{{ _('Show') }}</button>
+      </div>
+    </form>
+{% endblock %}
+
 {% block content %}
 <section class="page-header pb-4">
   <div class="container">
@@ -10,7 +27,7 @@
         {{ ui.image(current.hero_image, '', eager=True, width=1920, height=900) }}
         <div class="w-100 d-flex flex-wrap justify-content-between align-items-end gap-3">
           <div>
-            <span class="eyebrow on-dark">{{ current.state }}{% if current.region %} · {{ current.region }}{% endif %}</span>
+            <span class="eyebrow">{{ current.state }}{% if current.region %} · {{ current.region }}{% endif %}</span>
             <h1>{{ current.name }}</h1>
             <p>{{ current.tagline }} · {{ _('{n} attractions', n=current.attraction_count) }}</p>
           </div>
@@ -24,24 +41,10 @@
           <p>{{ ui.readiness_badge(readiness[current.slug]) }} {{ _('Only {n} of {total} attractions here can be planned; the others are reached on foot or by boat at times we cannot confirm.', n=readiness[current.slug].reachable, total=readiness[current.slug].total) }}</p></div>
       {% endif %}
     {% else %}
-      <span class="eyebrow">{{ _('Attractions') }}</span>
+      <span class="eyebrow"><i class="bi bi-pin-map"></i>{{ _('Explore') }}</span>
       <h1>{{ _('Every place we can plan') }}</h1>
       <p class="lead">{{ _('Search and filter {n} attractions across {cities} destinations. Open any card for opening hours, visit length and how to get there.', n=attractions|length, cities=cities|length) }}</p>
     {% endif %}
-    <form class="city-picker mt-4" method="get" action="{{ url_for('main.attractions') }}">
-      <label class="form-label small mb-1" for="city-pick">{{ _('Destination') }}</label>
-      <div class="d-flex gap-2">
-        <select class="form-select" id="city-pick" name="city" data-autosubmit>
-          <option value="">{{ _('All destinations') }}</option>
-          {% for region, items in regions %}
-            <optgroup label="{{ _(region) }}">
-              {% for c in items %}<option value="{{ c.slug }}" {% if current and current.slug == c.slug %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
-            </optgroup>
-          {% endfor %}
-        </select>
-        <button class="btn btn-outline-brand js-hide" type="submit">{{ _('Show') }}</button>
-      </div>
-    </form>
   </div>
 </section>
 
@@ -87,7 +90,7 @@
   </div>
 </div>
 
-<section class="py-4">
+<section>
   <div class="container">
     <div class="notice mb-4">
       <i class="bi bi-info-circle" aria-hidden="true"></i>
@@ -114,7 +117,7 @@
                 <span class="attr-city">{{ a.city_name }}</span>
                 {{ ui.rating(a.rating) }}
               </div>
-              <h3 class="mt-1"><button type="button" class="attr-open stretched-link" data-bs-toggle="modal" data-bs-target="#attr-modal"
+              <h3 class="mt-1"><button type="button" class="attr-open stretched-link" data-bs-toggle="offcanvas" data-bs-target="#attr-modal"
                   data-id="{{ a.id }}" aria-haspopup="dialog">{{ a.name }}<span class="visually-hidden">{{ _(': opening hours and details') }}</span></button></h3>
               <p class="attr-desc">{{ a.description }}</p>
               <div class="attr-facts">
@@ -142,43 +145,37 @@
   </div>
 </section>
 
-<div class="modal fade" id="attr-modal" tabindex="-1" aria-labelledby="attr-modal-title" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content attr-modal-content">
-      <div class="attr-modal-media">
-        <img id="attr-modal-img" src="" alt="" hidden>
-        {{ ui.image_fallback('', 'attr-modal-fallback') }}
-        <button type="button" class="btn-close bg-white rounded-circle p-2 position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="{{ _('Close') }}"></button>
-      </div>
-      <div class="modal-body p-4">
-        <span class="attr-city small-caps text-muted" id="attr-modal-city"></span>
-        <h2 class="h3 mb-2" id="attr-modal-title"></h2>
-        <p id="attr-modal-desc"></p>
-        <section class="mb-3" id="attr-modal-highlights-box">
-          <h3 class="h6 small-caps text-muted">{{ _('Highlights') }}</h3>
-          <div class="d-flex flex-wrap gap-2" id="attr-modal-chips"></div>
-        </section>
-        <div class="row g-4">
-          <div class="col-md-6">
-            <h3 class="h6 small-caps text-muted">{{ _('Plan your visit') }}</h3>
-            <ul class="breakdown" id="attr-modal-facts"></ul>
-          </div>
-          <div class="col-md-6" id="attr-modal-hours-box">
-            <h3 class="h6 small-caps text-muted">{{ _('Opening hours') }}</h3>
-            <table class="table table-soft table-sm mb-1"><tbody id="attr-modal-hours"></tbody></table>
-            <p class="small text-muted mb-0" id="attr-modal-hours-note" hidden>{{ _('Typical hours for this kind of place, not confirmed for it: please check before you go.') }}</p>
-          </div>
-        </div>
-        <section class="notice d-none mt-3 mb-0" id="attr-modal-access"><i class="bi bi-signpost-split" aria-hidden="true"></i>
-          <div><h3 class="h6 mb-1">{{ _('Getting there') }}</h3><p class="mb-1"></p><ul class="small mb-0"></ul></div></section>
-      </div>
-      <div class="modal-footer justify-content-between border-0 px-4 pb-4 pt-0">
-        <span class="small text-muted" id="attr-modal-credit"></span>
-        <div class="d-flex gap-2">
-          <a class="btn btn-outline-brand btn-sm" id="attr-modal-info" href="#" target="_blank" rel="noopener">{{ _('More about this place') }}</a>
-          <a class="btn btn-brand btn-sm" id="attr-modal-plan" href="#">{{ _('Plan a trip here') }}</a>
-        </div>
-      </div>
+<div class="offcanvas offcanvas-end drawer" tabindex="-1" id="attr-modal" aria-labelledby="attr-modal-title">
+  <div class="drawer-media">
+    <img id="attr-modal-img" src="" alt="" hidden>
+    {{ ui.image_fallback('', 'attr-modal-fallback') }}
+    <button type="button" class="btn btn-secondary btn-icon btn-sm drawer-close" data-bs-dismiss="offcanvas" aria-label="{{ _('Close') }}"><i class="bi bi-x-lg"></i></button>
+  </div>
+  <div class="offcanvas-body">
+    <span class="attr-city" id="attr-modal-city"></span>
+    <h2 class="mb-2 mt-1" id="attr-modal-title"></h2>
+    <p id="attr-modal-desc"></p>
+    <section class="mb-3" id="attr-modal-highlights-box">
+      <h3 class="small-caps">{{ _('Highlights') }}</h3>
+      <div class="d-flex flex-wrap gap-2" id="attr-modal-chips"></div>
+    </section>
+    <div class="facts-card mb-3">
+      <h3 class="small-caps">{{ _('Plan your visit') }}</h3>
+      <ul class="breakdown" id="attr-modal-facts"></ul>
+    </div>
+    <div class="facts-card" id="attr-modal-hours-box">
+      <h3 class="small-caps">{{ _('Opening hours') }}</h3>
+      <table class="table table-soft table-sm mb-1"><tbody id="attr-modal-hours"></tbody></table>
+      <p class="small text-muted mb-0" id="attr-modal-hours-note" hidden>{{ _('Typical hours for this kind of place, not confirmed for it: please check before you go.') }}</p>
+    </div>
+    <section class="notice d-none mt-3 mb-0" id="attr-modal-access"><i class="bi bi-signpost-split" aria-hidden="true"></i>
+      <div><h3 class="h6 mb-1">{{ _('Getting there') }}</h3><p class="mb-1"></p><ul class="small mb-0"></ul></div></section>
+  </div>
+  <div class="drawer-foot">
+    <span class="small text-muted" id="attr-modal-credit"></span>
+    <div class="d-flex gap-2">
+      <a class="btn btn-outline-brand btn-sm" id="attr-modal-info" href="#" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i>{{ _('More about this place') }}</a>
+      <a class="btn btn-brand btn-sm" id="attr-modal-plan" href="#"><i class="bi bi-compass"></i>{{ _('Plan a trip here') }}</a>
     </div>
   </div>
 </div>

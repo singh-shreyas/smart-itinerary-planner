@@ -3,14 +3,16 @@
 {% block title %}{{ _('Destinations') }}{% endblock %}
 
 {% block content %}
-<section class="page-header pb-4">
+<section class="page-header">
   <div class="container">
-    <span class="eyebrow">{{ _('Destinations') }}</span>
+    <span class="eyebrow"><i class="bi bi-map"></i>{{ _('Explore') }}</span>
     <h1>{{ _('{n} destinations across India', n=city_cards|length) }}</h1>
     <p class="lead">{{ _("Our team's Top-50 list of India's most visited destinations, in the list's order. {n} are fully plannable; the rest have fewer places with confirmed details, or sights reached only on foot or by boat — each card says which.", n=ready_count) }}</p>
   </div>
 </section>
 
+<div id="dest-tabs" data-section-tabs>
+<div id="planner-destinations" data-tab-label="{{ _('Planner destinations') }} ({{ city_cards|length }})" data-tab-icon="bi-map">
 <div class="filter-bar">
   <div class="container">
     <form class="row g-2 align-items-center" id="city-filter" role="search" onsubmit="return false">
@@ -39,7 +41,7 @@
   </div>
 </div>
 
-<section class="py-4">
+<section>
   <div class="container">
     <div class="row g-4" id="city-grid">
       {% for card in city_cards %}
@@ -102,13 +104,15 @@
   </div>
 </section>
 
+</div>
 {% if catalog %}
-<section class="section">
+<div id="catalog" data-tab-label="{{ _('Research catalog') }} ({{ catalog|length }})" data-tab-icon="bi-collection">
+<section class="section pt-4">
   <div class="container">
     <div class="row g-5 align-items-start">
       <div class="col-lg-4">
         <span class="eyebrow">{{ _('Our catalog') }}</span>
-        <h2 class="mt-3" style="font-size: clamp(1.7rem, 2.8vw, 2.2rem);">{{ _('{n} destinations to grow into', n=catalog|length) }}</h2>
+        <h2 class="mt-2">{{ _('{n} destinations to grow into', n=catalog|length) }}</h2>
         <p>{{ _("The team's research catalog covers {n} destinations across {states} states and union territories, with {places} named attractions. States are ordered by domestic tourist visits in 2024 (India Tourism Data Compendium 2025).", n=catalog|length, states=catalog_states, places="{:,}".format(catalog_attractions)) }}</p>
         <p>{{ _('The catalog has names only. A destination becomes plannable once its attractions get coordinates, hours, fees and road links — rows in the CSV files, with no algorithm changes.') }}</p>
         <div class="input-icon mt-4">
@@ -144,7 +148,9 @@
     </div>
   </div>
 </section>
+</div>
 {% endif %}
+</div>
 {% endblock %}
 
 {% block scripts %}

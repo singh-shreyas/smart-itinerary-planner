@@ -1,5 +1,6 @@
-// Route map for the itinerary page (Leaflet + OpenStreetMap tiles).
+// Route map for the itinerary workspace (Leaflet + OpenStreetMap tiles, darkened in CSS).
 // The itinerary is complete without it: if Leaflet or the tiles fail, a short note is shown instead.
+// Selecting a stop card focuses its marker, and selecting a marker highlights its card.
 (function () {
   "use strict";
   var t = window.I18N ? window.I18N.t : function (x) { return x; };
@@ -20,9 +21,9 @@
   try { data = JSON.parse(document.getElementById("map-data").textContent); } catch (e) { fail(); return; }
   if (!window.L) { fail(); return; }
 
-  var map, layer;
+  var map, layer, markers = {}, current = 1;
   try {
-    map = L.map(el, { scrollWheelZoom: false, zoomControl: true }).setView(data.center, 12);
+    map = L.map(el, { scrollWheelZoom: true, zoomControl: true, zoomSnap: 0.5 }).setView(data.center, 12);
     var tiles = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -52,15 +53,29 @@
 
   function pin(lat, lng, html, cls) {
     return L.marker([lat, lng], {
-      icon: L.divIcon({ className: "", html: '<div class="map-marker ' + cls + '">' + html + "</div>", iconSize: [30, 30], iconAnchor: [15, 15], popupAnchor: [0, -14] }),
-      keyboard: true
+      icon: L.divIcon({ className: "", html: '<div class="map-marker ' + cls + '">' + html + "</div>", iconSize: [28, 28], iconAnchor: [14, 14], popupAnchor: [0, -14] }),
+      keyboard: true, riseOnHover: true
     });
+  }
+
+  function cardsOf(day) { return document.querySelectorAll('.timeline[data-day="' + day + '"] .stop-card'); }
+  function highlight(n, scroll) {
+    cardsOf(current).forEach(function (c) { c.classList.toggle("is-active", String(c.dataset.stop) === String(n)); });
+    Object.keys(markers).forEach(function (k) {
+      var node = markers[k].getElement();
+      if (node && node.firstChild) node.firstChild.classList.toggle("is-active", String(k) === String(n));
+    });
+    if (scroll) {
+      var target = document.querySelector('.timeline[data-day="' + current + '"] .stop-card[data-stop="' + n + '"]');
+      if (target) target.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
   }
 
   function draw(dayIndex) {
     var day = data.days.filter(function (d) { return d.index === dayIndex; })[0] || data.days[0];
     if (!day) return;
     layer.clearLayers();
+    markers = {};
     // Each day starts at last night's stay and ends at tonight's (a different one on a travel day).
     var start = day.from || data.start, finish = day.to || data.start;
     var moves = start.lat !== finish.lat || start.lng !== finish.lng;
@@ -77,27 +92,53 @@
         pin(s.lat, s.lng, '<i class="bi bi-egg-fried"></i>', "is-meal")
           .bindPopup("<strong>" + esc(s.name) + "</strong><br>" + esc(s.time)).addTo(layer);
       } else {
-        pin(s.lat, s.lng, s.n, "").bindPopup("<strong>" + s.n + ". " + esc(s.name) + "</strong><br>" + esc(s.time) +
+        var m = pin(s.lat, s.lng, s.n, "").bindPopup("<strong>" + s.n + ". " + esc(s.name) + "</strong><br>" + esc(s.time) +
           (data.cities && data.cities.length ? "<br><span class='text-muted'>" + esc(s.city) + "</span>" : "")).addTo(layer);
+        m.on("click", function () { highlight(s.n, true); });
+        markers[s.n] = m;
       }
     });
     if (day.stops.length || moves) {
       points.push([finish.lat, finish.lng]);
       // Straight dashed segments in visit order -- deliberately NOT drawn as if they were roads.
-      var route = getComputedStyle(document.documentElement).getPropertyValue("--route").trim() || "#1B4D43";
-      L.polyline(points, { color: route, weight: 3, opacity: 0.9, dashArray: "6 9", lineCap: "round" }).addTo(layer);
-      map.fitBounds(L.latLngBounds(points).pad(0.18), { maxZoom: 14 });
+      var route = getComputedStyle(document.documentElement).getPropertyValue("--route").trim() || "#78DCC0";
+      L.polyline(points, { color: "#000", weight: 6, opacity: 0.35 }).addTo(layer);
+      L.polyline(points, { color: route, weight: 2.5, opacity: 0.95, dashArray: "6 8", lineCap: "round" }).addTo(layer);
+      map.fitBounds(L.latLngBounds(points).pad(0.2), { maxZoom: 14 });
     } else {
       map.setView([start.lat, start.lng], 13);
     }
     if (label) label.textContent = t("Day {n}").replace("{n}", day.index);
   }
 
-  var current = 1;
   draw(current);
   document.querySelectorAll('[data-bs-toggle="tab"][data-day]').forEach(function (tab) {
     tab.addEventListener("shown.bs.tab", function () { current = parseInt(tab.dataset.day, 10); draw(current); });
   });
-  document.addEventListener("themechange", function () { draw(current); });     // route colour follows the theme
+
+  // Stop cards -> marker. Links inside a card keep working normally.
+  document.querySelectorAll(".stop-card[data-stop]").forEach(function (cardEl) {
+    function focusStop(e) {
+      if (e.target.closest("a, button")) return;
+      var n = cardEl.dataset.stop, m = markers[n];
+      highlight(n, false);
+      if (m) { map.flyTo(m.getLatLng(), Math.max(map.getZoom(), 14), { duration: 0.6 }); m.openPopup(); }
+    }
+    cardEl.addEventListener("click", focusStop);
+    cardEl.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); focusStop(e); } });
+    cardEl.addEventListener("mouseenter", function () {
+      var m = markers[cardEl.dataset.stop];
+      if (m && m.getElement() && m.getElement().firstChild) m.getElement().firstChild.classList.add("is-active");
+    });
+    cardEl.addEventListener("mouseleave", function () {
+      if (cardEl.classList.contains("is-active")) return;
+      var m = markers[cardEl.dataset.stop];
+      if (m && m.getElement() && m.getElement().firstChild) m.getElement().firstChild.classList.remove("is-active");
+    });
+  });
+
+  // The map re-measures when its container changes size (sidebar collapse, tab bar layout, window).
   window.addEventListener("load", function () { map.invalidateSize(); });
+  window.addEventListener("resize", function () { map.invalidateSize(); });
+  document.addEventListener("themechange", function () { draw(current); });
 })();

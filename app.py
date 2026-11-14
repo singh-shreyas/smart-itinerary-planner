@@ -97,6 +97,7 @@ def _register_template_helpers(app):
             "PACES": config.PACES,
             "STRATEGIES": config.STRATEGIES,
             "STRATEGY_SHORT": config.STRATEGY_SHORT,
+            "STRATEGY_OBJECTIVES": config.STRATEGY_OBJECTIVES,
             "MODES": config.MODES,
             "ROUNDING": config.TRAVEL_ROUNDING_MIN,
             "MAX_DAYS": config.MAX_DAYS,

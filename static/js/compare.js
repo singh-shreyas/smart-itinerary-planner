@@ -46,7 +46,7 @@
   }
   function tooltip(unit) {
     return {
-      backgroundColor: "#15233A", titleColor: "#fff", bodyColor: "#F7F2E9", padding: 10, cornerRadius: 8,
+      backgroundColor: "#1C2829", titleColor: "#F2F5F4", bodyColor: "#C4CFCC", borderColor: "#344749", borderWidth: 1, padding: 10, cornerRadius: 8,
       boxPadding: 4, usePointStyle: true,
       callbacks: { label: function (ctx) { return " " + ctx.dataset.label + ": " + ctx.formattedValue + (unit || ""); } }
     };

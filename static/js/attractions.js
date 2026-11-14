@@ -77,7 +77,8 @@
   // that are typical estimates (not checked for this place) say so.
   var t = window.I18N ? window.I18N.t : function (x) { return x; };
   var modal = document.getElementById("attr-modal");
-  modal.addEventListener("show.bs.modal", function (event) {
+  modal.addEventListener("show.bs.offcanvas", function (event) {
+    if (!event.relatedTarget) return;
     var item = data[event.relatedTarget.dataset.id];
     if (!item) return;
     var img = document.getElementById("attr-modal-img");
