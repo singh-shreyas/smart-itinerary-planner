@@ -4,9 +4,9 @@
 {% block head_extra %}<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}">{% endblock %}
 
 {% block content %}
-<section class="page-header pb-3">
+<section class="page-header">
   <div class="container">
-    <span class="eyebrow">{{ _('Algorithm comparison') }}</span>
+    <span class="eyebrow eyebrow-violet"><i class="bi bi-cpu"></i>{{ _('Algorithm lab') }}</span>
     <h1>{{ _('Same trip, every algorithm') }}</h1>
     <p class="lead">{{ _('Every number on this page comes from running our implementations on the trip below, just now. Methods are only compared on identical input. A plan that breaks any constraint is never recommended.') }}</p>
   </div>
@@ -14,7 +14,7 @@
 
 <section>
   <div class="container">
-    <form class="card-soft card-pad-sm" method="get" action="{{ url_for('planner.compare') }}" data-loading="{{ _('Running every algorithm…') }}">
+    <form class="card-soft lab-config" method="get" action="{{ url_for('planner.compare') }}" data-loading="{{ _('Running every algorithm…') }}">
       <div class="row g-3 align-items-end">
         <div class="col-12 col-md-4 col-xl-3">
           <label class="form-label small" for="c-city">{{ _('Base city') }}</label>
@@ -70,7 +70,7 @@
 </section>
 
 {% if result %}
-{% set colors = {'dp': '#2a7a52', 'greedy': '#e8894a', 'max_visits': '#3f6fb6'} %}
+{% set colors = {'dp': '#5cb98a', 'greedy': '#f0a46f', 'max_visits': '#7aa2e0'} %}
 {% set rec = result.recommendation %}
 <section>
   <div class="container">
@@ -81,8 +81,9 @@
       · {{ _('data') }} #{{ result.versions.data }} · {{ _('settings') }} #{{ result.versions.settings }}
     </p>
 
+    <div id="lab-tabs" data-section-tabs>
     <!-- 1. Recommendation and scorecard -->
-    <div class="compare-section" id="scorecard">
+    <div class="compare-section" id="scorecard" data-tab-label="{{ _('Strategies') }}" data-tab-icon="bi-trophy">
       <span class="eyebrow">{{ _('1 · Whole itineraries') }}</span>
       <h2 class="mt-2">{{ _('Which selection strategy suits this trip?') }}</h2>
       <div class="shows">
@@ -185,7 +186,7 @@
     </div>
 
     <!-- 2. Why they differ -->
-    <div class="compare-section" id="modes">
+    <div class="compare-section" id="modes" data-tab-label="{{ _('Itinerary modes') }}" data-tab-icon="bi-distribute-horizontal">
       <span class="eyebrow">{{ _('1b · Itinerary modes') }}</span>
       <h2 class="mt-2">{{ _('The same places, spread three ways') }}</h2>
       <div class="shows">
@@ -218,7 +219,7 @@
       {% endif %}
     </div>
 
-    <div class="compare-section" id="objectives">
+    <div class="compare-section" id="objectives" data-tab-label="{{ _('Objectives') }}" data-tab-icon="bi-bullseye">
       <span class="eyebrow">{{ _('2 · Objectives') }}</span>
       <h2 class="mt-2">{{ _('What each strategy optimises — and why results differ or coincide') }}</h2>
       <div class="row g-3 mb-4">
@@ -250,7 +251,7 @@
     </div>
 
     <!-- 3. Selection -->
-    <div class="compare-section" id="selection">
+    <div class="compare-section" id="selection" data-tab-label="{{ _('Selection per day') }}" data-tab-icon="bi-grid-3x3">
       <span class="eyebrow">{{ _('3 · Selection only') }}</span>
       <h2 class="mt-2">{{ _("The three selectors on each day's identical knapsack") }}</h2>
       <div class="shows">
@@ -286,7 +287,7 @@
     </div>
 
     <!-- 4. Routing -->
-    <div class="compare-section" id="routing">
+    <div class="compare-section" id="routing" data-tab-label="{{ _('Routing') }}" data-tab-icon="bi-bezier2">
       <span class="eyebrow">{{ _('4 · Routing (separate from selection)') }}</span>
       <h2 class="mt-2">{{ _('Nearest Neighbour, 2-opt and the exact optimum') }}</h2>
       <div class="shows">
@@ -349,7 +350,7 @@
             <div id="compare-map" class="route-map" style="height: 320px;" aria-label="{{ _('Map comparing the NN and 2-opt routes') }}"></div>
             <div class="map-fallback"><i class="bi bi-map fs-3 d-block mb-2"></i>{{ _('Map unavailable; the tables above hold every number.') }}</div>
             <div class="map-legend">
-              <span><span class="swatch" style="background: #e8894a"></span>{{ _('Nearest Neighbour order ·') }} <span class="swatch ms-2" style="background: #2a7a52"></span>{{ _('After 2-opt') }}</span>
+              <span><span class="swatch" style="background: #f0a46f"></span>{{ _('Nearest Neighbour order ·') }} <span class="swatch ms-2" style="background: #5cb98a"></span>{{ _('After 2-opt') }}</span>
               <span>{{ _('Straight lines in visit order, not road paths.') }}</span>
             </div>
           </div>
@@ -362,7 +363,7 @@
 
     <!-- 5. Dijkstra -->
     {% set dj = result.dijkstra %}
-    <div class="compare-section" id="dijkstra">
+    <div class="compare-section" id="dijkstra" data-tab-label="{{ _('Dijkstra check') }}" data-tab-icon="bi-signpost-split">
       <span class="eyebrow">{{ _('5 · Shortest paths') }}</span>
       <h2 class="mt-2">{{ _('Our Dijkstra vs NetworkX') }}</h2>
       <div class="shows">
@@ -401,7 +402,7 @@
     </div>
 
     <!-- 6. Benchmarks -->
-    <div class="compare-section" id="benchmarks">
+    <div class="compare-section" id="benchmarks" data-tab-label="{{ _('Scaling') }}" data-tab-icon="bi-graph-up">
       <span class="eyebrow">{{ _('6 · Scaling') }}</span>
       <h2 class="mt-2">{{ _('How running time grows with input size') }}</h2>
       {% set bm = result.benchmarks %}
@@ -463,6 +464,7 @@
         <div class="card-soft empty-state"><div class="empty-icon"><i class="bi bi-graph-up"></i></div><h3>{{ _('No benchmark file yet') }}</h3>
           <p class="mb-0">{{ _('Run {command} to measure runtime scaling on seeded instances. The charts appear here afterwards.', command='python scripts/benchmark.py') }}</p></div>
       {% endif %}
+    </div>
     </div>
   </div>
 </section>

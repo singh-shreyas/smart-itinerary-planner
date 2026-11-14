@@ -4,378 +4,413 @@
 
 {% block content %}
 {% set opts = city_options.get(values.city) %}
-<section class="planner-header">
-  <div class="container">
-    <span class="eyebrow">{{ _('Trip planner') }}</span>
+{% set current_city = (regions|map(attribute=1)|sum(start=[])|selectattr('slug', 'equalto', values.city)|first) if values.city else none %}
+{% set steps = [
+  ('step-destination', 'bi-geo-alt', _('Where'), _('Destination & stays')),
+  ('step-dates', 'bi-calendar3', _('When'), _('Dates & daily hours')),
+  ('step-mode', 'bi-distribute-horizontal', _('What & how'), _('Places & itinerary mode')),
+  ('step-style', 'bi-sliders', _('Preferences'), _('Interests, pace & meals')),
+  ('step-advanced', 'bi-cpu', _('Engine'), _('Algorithm & exclusions')),
+] %}
+
+<div class="view-head">
+  <div>
+    <span class="eyebrow"><i class="bi bi-compass"></i>{{ _('Trip planner') }}</span>
     <h1>{{ _('Design your trip') }}</h1>
-    <p class="lead">{{ _('Every field has a sensible default. Choose a base city (and nearby cities if you like), your days and interests, then generate a day-by-day plan or run every algorithm on the same trip.') }}</p>
+    <p>{{ _('Every field has a sensible default. Choose a base city (and nearby cities if you like), your days and interests, then generate a day-by-day plan or run every algorithm on the same trip.') }}</p>
   </div>
-</section>
+</div>
 
-<section>
-  <div class="container">
-    {% if errors %}
-      <div class="notice notice-danger is-shake mb-4" role="alert">
-        <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
-        <p><strong>Please fix {{ errors|length }} field{{ 's' if errors|length > 1 }} below.</strong> {{ _('Your other choices have been kept.') }}</p>
-      </div>
-    {% endif %}
+{% if errors %}
+  <div class="notice notice-danger is-shake mb-3" role="alert">
+    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+    <p><strong>Please fix {{ errors|length }} field{{ 's' if errors|length > 1 }} below.</strong> {{ _('Your other choices have been kept.') }}</p>
+  </div>
+{% endif %}
 
-    <form id="trip-form" action="{{ url_for('planner.itinerary') }}" method="get" novalidate data-loading="{{ _('Planning your trip…') }}">
-      <div class="row g-4">
-        <div class="col-lg-8">
-          <div class="plan-steps">
+<form id="trip-form" action="{{ url_for('planner.itinerary') }}" method="get" novalidate data-loading="{{ _('Planning your trip…') }}">
+  <div class="planner-grid">
 
-            <section class="card-soft plan-step form-section" id="step-destination" aria-labelledby="h-destination">
-              <div class="plan-step-head"><span class="step-badge">1</span><div>
-                <h2 id="h-destination">{{ _('Destination') }}</h2>
-                <p>{{ _('Your base city, and the area of it you stay in: every day starts and ends there, so all travel times are worked out from that area.') }}</p></div></div>
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label class="form-label" for="city">{{ _('Base city') }}</label>
-                  <select class="form-select {{ ui.invalid(errors, 'city') }}" id="city" name="city" required aria-describedby="city-help city-error">
-                    {% for region, items in regions %}
-                      <optgroup label="{{ _(region) }}">
-                        {% for c in items %}
-                          {% set r = readiness[c.slug] %}
-                          <option value="{{ c.slug }}" {% if c.slug == values.city %}selected{% endif %}>{{ c.name }}, {{ c.state }}{% if r.status != 'ready' %} — {{ _('limited data') if r.status == 'limited' else _('not plannable by road') }}{% endif %}</option>
-                        {% endfor %}
-                      </optgroup>
-                    {% endfor %}
-                  </select>
-                  <div class="form-text" id="city-help" data-readiness>
-                    {% if opts %}{{ _('{n} of {total} attractions can be planned from here.', n=opts.readiness.reachable, total=opts.readiness.total) }}{% endif %}
-                  </div>
-                  {{ ui.field_error(errors, 'city') }}
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label" for="start">{{ _('Starting stay (first night)') }}</label>
-                  <select class="form-select {{ ui.invalid(errors, 'start') }}" id="start" name="start" aria-describedby="stay-note start-error">
-                    {% if opts %}
-                      {% for p in opts.stays %}<option value="{{ p.slug }}" {% if p.slug == values.start %}selected{% endif %} data-note="{{ p.note or '' }}">{{ p.label }}</option>{% endfor %}
-                    {% endif %}
-                  </select>
-                  <div class="form-text" id="stay-note" aria-live="polite">
-                    {% set chosen = (opts.stays|selectattr('slug', 'equalto', values.start)|list or opts.stays[:1]) if opts else [] %}
-                    {% if chosen and chosen[0].note %}* {{ chosen[0].note }}{% else %}{{ _('Five neighbourhoods, one in each part of the city, from OpenStreetMap.') }}{% endif %}
-                  </div>
-                  {{ ui.field_error(errors, 'start') }}
-                </div>
-                <div class="col-12">
-                  <fieldset class="nearby-box" aria-describedby="nearby-help">
-                    <legend class="form-label mb-1"><i class="bi bi-signpost-2 me-1"></i>{{ _('Add nearby cities') }} <span class="chip ms-1">{{ _('Optional') }}</span></legend>
-                    <p class="form-text mt-0" id="nearby-help">{{ _('Every pair of cities in a trip must be within {km} km of each other in a straight line (up to {n} extra cities). The road time between cities is part of the plan.', km=multi_city_km, n=max_extra) }}</p>
-                    <div id="nearby-list" class="nearby-list">
-                      {% if opts and opts.nearby %}
-                        {% for n in opts.nearby %}
-                          <label class="nearby-item">
-                            <input class="form-check-input" type="checkbox" name="also" value="{{ n.slug }}" {% if n.slug in values.also %}checked{% endif %}>
-                            <span><strong>{{ n.name }}</strong>
-                              <small>{{ n.km|round|int }} {{ _('km straight line') }}{% if n.road_km %} · {{ n.road_km|round|int }} {{ _('km by road') }}{% endif %}</small></span>
-                          </label>
-                        {% endfor %}
-                      {% else %}
-                        <p class="small text-muted mb-0">{{ _('No other destination is within 100 km of {city}.', city=opts.name if opts else _('this city')) }}</p>
-                      {% endif %}
-                    </div>
-                    <p class="small text-muted mb-0 mt-2" id="nearby-note" aria-live="polite"></p>
-                    {{ ui.field_error(errors, 'also') }}
-                    <div class="overnight-box mt-3 {{ 'd-none' if not values.also }}" id="overnight-box">
-                      <span class="form-label d-block" id="overnight-label">{{ _('Overnight stays') }}</span>
-                      <div class="row g-2" role="radiogroup" aria-labelledby="overnight-label">
-                        <div class="col-md-6"><div class="choice-card choice-card-sm">
-                          <input type="radio" name="overnight" id="overnight-move" value="move" {% if values.overnight != 'base' %}checked{% endif %}>
-                          <label for="overnight-move"><i class="bi bi-signpost-split choice-icon"></i><strong>{{ _('My stay moves with me') }}</strong>
-                            <span>{{ _('Sleep in each city in turn and finish where you choose: one-way or a round trip.') }}</span></label></div></div>
-                        <div class="col-md-6"><div class="choice-card choice-card-sm">
-                          <input type="radio" name="overnight" id="overnight-base" value="base" {% if values.overnight == 'base' %}checked{% endif %}>
-                          <label for="overnight-base"><i class="bi bi-house-door choice-icon"></i><strong>{{ _('One base, day trips') }}</strong>
-                            <span>{{ _('Return to your starting stay every night and visit the other cities as day trips.') }}</span></label></div></div>
-                      </div>
-                      {{ ui.field_error(errors, 'overnight') }}
-                    </div>
-                  </fieldset>
-                </div>
-                <div class="col-md-6" id="end-box">
-                  <label class="form-label" for="end">{{ _('Ending stay (last night)') }}</label>
-                  <select class="form-select {{ ui.invalid(errors, 'end') }}" id="end" name="end" aria-describedby="end-help end-error" data-selected="{{ values.end }}">
-                    <option value="">{{ _('Same as the starting stay') }}</option>
-                    {% if opts %}
-                      <optgroup label="{{ opts.name }}">
-                        {% for p in opts.stays %}<option value="{{ p.slug }}" {% if p.slug == values.end %}selected{% endif %}>{{ p.label }}</option>{% endfor %}
-                      </optgroup>
-                      {% for slug in values.also %}{% set o = city_options.get(slug) %}{% if o %}
-                        <optgroup label="{{ o.name }}">
-                          {% for p in o.stays %}<option value="{{ p.slug }}" {% if p.slug == values.end %}selected{% endif %}>{{ p.label }}</option>{% endfor %}
-                        </optgroup>
-                      {% endif %}{% endfor %}
-                    {% endif %}
-                  </select>
-                  <div class="form-text" id="end-help">{{ _('Where the trip finishes. A different city makes it a one-way trip; the same stay makes it a round trip.') }}</div>
-                  {{ ui.field_error(errors, 'end') }}
-                </div>
-              </div>
-            </section>
+    <section class="panel wizard" aria-label="{{ _('Trip planner') }}">
+      <ol class="stepper" aria-label="{{ _('Steps') }}">
+        {% for id, icon, label, sub in steps %}
+          <li data-step-index="{{ loop.index0 }}"><button type="button" data-goto="{{ id }}" aria-controls="{{ id }}">
+            <span class="step-no">{{ loop.index }}</span>
+            <span class="step-text"><span>{{ label }}</span><small>{{ sub }}</small></span>
+          </button></li>
+        {% endfor %}
+      </ol>
+      <div class="wizard-progress" aria-hidden="true"><span id="wizard-progress"></span></div>
 
-            <section class="card-soft plan-step form-section" id="step-dates" aria-labelledby="h-dates">
-              <div class="plan-step-head"><span class="step-badge">2</span><div>
-                <h2 id="h-dates">{{ _('Dates and daily time') }}</h2>
-                <p>{{ _('Opening hours depend on the weekday, so the date matters. A longer day lets the planner fit more, where places are still open.') }}</p></div></div>
-              <div class="row g-3">
-                <div class="col-12">{{ ui.date_range(values, errors) }}</div>
-                <div class="col-6 col-md-3">
-                  <label class="form-label" for="day_start">{{ _('Day starts') }}</label>
-                  <input class="form-control {{ ui.invalid(errors, 'day_start') }}" type="time" id="day_start" name="day_start" value="{{ values.day_start }}" required>
-                  {{ ui.field_error(errors, 'day_start') }}
-                </div>
-                <div class="col-6 col-md-3">
-                  <label class="form-label" for="day_end">{{ _('Back by') }}</label>
-                  <input class="form-control {{ ui.invalid(errors, 'day_end') }}" type="time" id="day_end" name="day_end" value="{{ values.day_end }}" required>
-                </div>
-                <div class="col-12">{{ ui.field_error(errors, 'day_end') }}
-                  <div class="form-text">{{ _('The plan includes the ride back to your start point, and any meal breaks, before this time.') }}</div>
-                </div>
-              </div>
-            </section>
-
-            <section class="card-soft plan-step form-section" id="step-mode" aria-labelledby="h-mode">
-              <div class="plan-step-head"><span class="step-badge">3</span><div>
-                <h2 id="h-mode">{{ _('Places and itinerary mode') }}</h2>
-                <p>{{ _('Choose what to see, then how to spread it over the days of your trip. The same places can give very different trips.') }}</p></div></div>
-              <span class="sub-label" id="choose-label">{{ _('Places to visit') }}</span>
-              <div class="segmented mb-2" role="radiogroup" aria-labelledby="choose-label">
-                <input type="radio" name="choose" id="choose-auto" value="auto" {% if values.choose != 'pick' %}checked{% endif %}>
-                <label for="choose-auto">{{ _('Let the planner choose') }}</label>
-                <input type="radio" name="choose" id="choose-pick" value="pick" {% if values.choose == 'pick' %}checked{% endif %}>
-                <label for="choose-pick">{{ _("I'll pick the places") }}</label>
-              </div>
-              <p class="form-text mt-0" id="choose-help" data-auto="{{ _('The planner picks the most valuable places that fit your days (see “Advanced” for how).') }}"
-                 data-pick="{{ _('Tick the places you want to see. The itinerary mode below decides which day each one goes on.') }}">{{ _('Tick the places you want to see. The itinerary mode below decides which day each one goes on.') if values.choose == 'pick' else _('The planner picks the most valuable places that fit your days (see “Advanced” for how).') }}</p>
-              <div class="pick-box {{ 'd-none' if values.choose != 'pick' }}" id="pick-box">
-                <div class="pick-toolbar">
-                  <div class="input-icon pick-filter">
-                    <i class="bi bi-search" aria-hidden="true"></i>
-                    <input class="form-control form-control-sm" type="search" id="pick-filter" placeholder="{{ _('Filter places by name') }}"
-                           aria-label="{{ _('Filter the list of places') }}" autocomplete="off">
-                  </div>
-                  <button type="button" class="btn btn-outline-brand btn-sm" id="pick-all" aria-describedby="pick-all-help">
-                    <i class="bi bi-check2-all me-1" aria-hidden="true"></i><span>{{ _('Select all') }}</span></button>
-                  <span class="small pick-count" aria-live="polite"><strong id="pick-count">{{ values.places|length }}</strong>
-                    <span id="pick-count-label">{{ _('place selected') if values.places|length == 1 else _('places selected') }}</span></span>
-                </div>
-                <p class="form-text mt-1 mb-2" id="pick-all-help">{{ _("“Select all” selects every place in your trip's cities that matches the filter, not just the ones on screen. Places whose access time is unknown cannot be selected.") }}</p>
-                <div class="exclude-list" id="pick-list" role="group" aria-label="{{ _('Places to visit') }}">
-                  {% if opts %}
-                    {% for a in opts.attractions %}
-                      <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="places" value="{{ a.slug }}" id="pk-{{ a.slug }}" {% if a.slug in values.places %}checked{% endif %} {% if not a.timed %}disabled{% endif %}>
-                        <label class="form-check-label d-flex justify-content-between gap-2" for="pk-{{ a.slug }}"><span>{{ a.name }}{% if a.access %} <span class="chip chip-xs {{ 'chip-warning' if not a.timed }}">{{ a.access }}{{ ' · not timed' if not a.timed }}</span>{% endif %}</span><span class="text-muted small">{{ a.visit|duration }}</span></label>
-                      </div>
-                    {% endfor %}
-                  {% endif %}
-                </div>
-                {{ ui.field_error(errors, 'places') }}
-              </div>
-
-              <div class="plan-divider"></div>
-              <span class="sub-label" id="mode-pick-label">{{ _('How should the days be spread?') }}</span>
-              <div class="row g-3" role="radiogroup" aria-labelledby="mode-pick-label">
-                {% for key, m in MODES.items() %}
-                  <div class="col-md-4">
-                    <div class="choice-card">
-                      <input type="radio" name="mode" id="itmode-{{ key }}" value="{{ key }}" {% if values.mode == key %}checked{% endif %}>
-                      <label for="itmode-{{ key }}"><i class="bi {{ m.icon }} choice-icon"></i><strong>{{ _(m.label) }}</strong><span>{{ _(m.text) }}</span>{{ ui.mode_schematic(key) }}</label>
-                    </div>
-                  </div>
-                {% endfor %}
-              </div>
-              {{ ui.field_error(errors, 'mode') }}
-            </section>
-
-            <section class="card-soft plan-step form-section" id="step-interests" aria-labelledby="h-interests">
-              <div class="plan-step-head"><span class="step-badge">4</span><div>
-                <h2 id="h-interests">{{ _('Interests') }}</h2>
-                <p>{{ _('Pick as many as you like. Matching places score higher. Food and shopping places are only planned when you pick a food or shopping interest.') }}</p></div></div>
-              {% for group, items in category_groups %}
-                <div class="interest-group">
-                  <h3 class="interest-group-title">{{ _(group) }}</h3>
-                  <div class="d-flex flex-wrap gap-2">
-                    {% for c in items %}
-                      <span class="chip-toggle">
-                        <input type="checkbox" name="interests" id="int-{{ c.slug }}" value="{{ c.slug }}" {% if c.slug in values.interests %}checked{% endif %}>
-                        <label for="int-{{ c.slug }}"><i class="bi {{ c.icon }}"></i>{{ _(c.name) }}</label>
-                      </span>
-                    {% endfor %}
-                  </div>
-                </div>
-              {% endfor %}
-              <div class="plan-divider"></div>
-              <div>
-                <span class="sub-label" id="mode-label">{{ _('How strictly?') }}</span>
-                <div class="segmented" role="radiogroup" aria-labelledby="mode-label">
-                  {% for key, label in interest_modes.items() %}
-                    <input type="radio" name="interest_mode" id="mode-{{ key }}" value="{{ key }}" {% if values.interest_mode == key %}checked{% endif %}>
-                    <label for="mode-{{ key }}">{{ _(label) }}</label>
+      {# ── 1 · Where ─────────────────────────────────────────────── #}
+      <section class="wiz-step form-section" id="step-destination" aria-labelledby="h-destination">
+        <div class="wiz-head"><span class="wiz-icon"><i class="bi bi-geo-alt"></i></span><div>
+          <span class="kicker">{{ _('Step {n} of {total}', n=1, total=5) }}</span>
+          <h2 id="h-destination" tabindex="-1">{{ _('Destination') }}</h2>
+          <p>{{ _('Your base city, and the area of it you stay in: every day starts and ends there, so all travel times are worked out from that area.') }}</p></div></div>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label" for="city">{{ _('Base city') }}</label>
+            <select class="form-select {{ ui.invalid(errors, 'city') }}" id="city" name="city" required aria-describedby="city-help city-error">
+              {% for region, items in regions %}
+                <optgroup label="{{ _(region) }}">
+                  {% for c in items %}
+                    {% set r = readiness[c.slug] %}
+                    <option value="{{ c.slug }}" {% if c.slug == values.city %}selected{% endif %}>{{ c.name }}, {{ c.state }}{% if r.status != 'ready' %} — {{ _('limited data') if r.status == 'limited' else _('not plannable by road') }}{% endif %}</option>
                   {% endfor %}
-                </div>
-                <div class="form-text">{{ _('“Only matching places” leaves out everything that matches none of your interests.') }}</div>
+                </optgroup>
+              {% endfor %}
+            </select>
+            <div class="form-text" id="city-help" data-readiness>
+              {% if opts %}{{ _('{n} of {total} attractions can be planned from here.', n=opts.readiness.reachable, total=opts.readiness.total) }}{% endif %}
+            </div>
+            {{ ui.field_error(errors, 'city') }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="start">{{ _('Starting stay (first night)') }}</label>
+            <select class="form-select {{ ui.invalid(errors, 'start') }}" id="start" name="start" aria-describedby="stay-note start-error">
+              {% if opts %}
+                {% for p in opts.stays %}<option value="{{ p.slug }}" {% if p.slug == values.start %}selected{% endif %} data-note="{{ p.note or '' }}">{{ p.label }}</option>{% endfor %}
+              {% endif %}
+            </select>
+            <div class="form-text" id="stay-note" aria-live="polite">
+              {% set chosen = (opts.stays|selectattr('slug', 'equalto', values.start)|list or opts.stays[:1]) if opts else [] %}
+              {% if chosen and chosen[0].note %}* {{ chosen[0].note }}{% else %}{{ _('Five neighbourhoods, one in each part of the city, from OpenStreetMap.') }}{% endif %}
+            </div>
+            {{ ui.field_error(errors, 'start') }}
+          </div>
+          <div class="col-12">
+            <fieldset class="nearby-box" aria-describedby="nearby-help">
+              <legend class="form-label mb-1"><i class="bi bi-signpost-2"></i>{{ _('Add nearby cities') }} <span class="chip chip-xs ms-1">{{ _('Optional') }}</span></legend>
+              <p class="form-text mt-0" id="nearby-help">{{ _('Every pair of cities in a trip must be within {km} km of each other in a straight line (up to {n} extra cities). The road time between cities is part of the plan.', km=multi_city_km, n=max_extra) }}</p>
+              <div id="nearby-list" class="nearby-list">
+                {% if opts and opts.nearby %}
+                  {% for n in opts.nearby %}
+                    <label class="nearby-item">
+                      <input class="form-check-input" type="checkbox" name="also" value="{{ n.slug }}" {% if n.slug in values.also %}checked{% endif %}>
+                      <span><strong>{{ n.name }}</strong>
+                        <small>{{ n.km|round|int }} {{ _('km straight line') }}{% if n.road_km %} · {{ n.road_km|round|int }} {{ _('km by road') }}{% endif %}</small></span>
+                    </label>
+                  {% endfor %}
+                {% else %}
+                  <p class="small text-muted mb-0">{{ _('No other destination is within 100 km of {city}.', city=opts.name if opts else _('this city')) }}</p>
+                {% endif %}
               </div>
-              {{ ui.field_error(errors, 'interests') }}{{ ui.field_error(errors, 'interest_mode') }}
-            </section>
-
-            <section class="card-soft plan-step form-section" id="step-meals" aria-labelledby="h-meals">
-              <div class="plan-step-head"><span class="step-badge">5</span><div>
-                <h2 id="h-meals">{{ _('Meals, food and shopping') }}</h2>
-                <p>{{ _('Lunch and dinner are planned as their own breaks. A meal is only added when you are out during its window.') }}</p></div></div>
-              <div class="row g-3">
-                {% for kind, icon in [('lunch', 'bi-sun'), ('dinner', 'bi-moon-stars')] %}
-                  <div class="col-md-6">
-                    <div class="meal-card">
-                      <div class="form-check form-switch mb-2">
-                        <input type="hidden" name="{{ kind }}" value="off">
-                        <input class="form-check-input" type="checkbox" role="switch" id="{{ kind }}" name="{{ kind }}" value="on" {% if values[kind] == 'on' %}checked{% endif %} data-toggles="{{ kind }}-fields">
-                        <label class="form-check-label fw-semibold" for="{{ kind }}"><i class="bi {{ icon }} me-1"></i>{{ _('Lunch break') if kind == 'lunch' else _('Dinner break') }}</label>
-                      </div>
-                      <div class="row g-2" id="{{ kind }}-fields">
-                        <div class="col-4">
-                          <label class="form-label small" for="{{ kind }}_from">{{ _('From') }}</label>
-                          <input class="form-control form-control-sm" type="time" id="{{ kind }}_from" name="{{ kind }}_from" value="{{ values[kind ~ '_from'] }}">
-                        </div>
-                        <div class="col-4">
-                          <label class="form-label small" for="{{ kind }}_to">{{ _('Until') }}</label>
-                          <input class="form-control form-control-sm" type="time" id="{{ kind }}_to" name="{{ kind }}_to" value="{{ values[kind ~ '_to'] }}">
-                        </div>
-                        <div class="col-4">
-                          <label class="form-label small" for="{{ kind }}_min">{{ _('Length') }}</label>
-                          <select class="form-select form-select-sm" id="{{ kind }}_min" name="{{ kind }}_min">
-                            {% for m in meal_durations %}<option value="{{ m }}" {% if values[kind ~ '_min']|string == m|string %}selected{% endif %}>{{ _('{m} min', m=m) }}</option>{% endfor %}
-                          </select>
-                        </div>
-                      </div>
-                      {{ ui.field_error(errors, kind) }}
-                    </div>
-                  </div>
-                {% endfor %}
-                <div class="col-12">
-                  <div class="form-check form-switch">
-                    <input type="hidden" name="venues" value="off">
-                    <input class="form-check-input" type="checkbox" role="switch" id="venues" name="venues" value="on" {% if values.venues == 'on' %}checked{% endif %}>
-                    <label class="form-check-label" for="venues">{{ _('Send meals to a listed food place when one is within a short detour') }}</label>
-                  </div>
-                  <div class="form-text">{{ _('Otherwise the break is taken where you are, and no restaurant is claimed.') }}</div>
+              <p class="small text-muted mb-0 mt-2" id="nearby-note" aria-live="polite"></p>
+              {{ ui.field_error(errors, 'also') }}
+              <div class="overnight-box mt-3 {{ 'd-none' if not values.also }}" id="overnight-box">
+                <span class="form-label d-block" id="overnight-label">{{ _('Overnight stays') }}</span>
+                <div class="row g-2" role="radiogroup" aria-labelledby="overnight-label">
+                  <div class="col-md-6"><div class="choice-card choice-card-sm">
+                    <input type="radio" name="overnight" id="overnight-move" value="move" {% if values.overnight != 'base' %}checked{% endif %}>
+                    <label for="overnight-move"><i class="bi bi-signpost-split choice-icon"></i><strong>{{ _('My stay moves with me') }}</strong>
+                      <span>{{ _('Sleep in each city in turn and finish where you choose: one-way or a round trip.') }}</span></label></div></div>
+                  <div class="col-md-6"><div class="choice-card choice-card-sm">
+                    <input type="radio" name="overnight" id="overnight-base" value="base" {% if values.overnight == 'base' %}checked{% endif %}>
+                    <label for="overnight-base"><i class="bi bi-house-door choice-icon"></i><strong>{{ _('One base, day trips') }}</strong>
+                      <span>{{ _('Return to your starting stay every night and visit the other cities as day trips.') }}</span></label></div></div>
                 </div>
-                <div class="col-12">
-                  <span class="form-label d-block small">{{ _('Preferred kind of meal place') }}</span>
-                  <div class="d-flex flex-wrap gap-2">
-                    {% for key, label in venue_styles.items() %}
-                      <span class="chip-toggle chip-toggle-sm">
-                        <input type="checkbox" name="venue_style" id="vs-{{ key }}" value="{{ key }}" {% if key in values.venue_style %}checked{% endif %}>
-                        <label for="vs-{{ key }}">{{ _(label) }}</label>
-                      </span>
-                    {% endfor %}
-                    <span class="chip-toggle chip-toggle-sm">
-                      <input type="checkbox" name="veg" id="veg" value="on" {% if values.veg %}checked{% endif %}>
-                      <label for="veg"><i class="bi bi-flower2"></i>{{ _('Vegetarian places only') }}</label>
-                    </span>
-                  </div>
-                  <div class="form-text">{{ _('Vegetarian means the source explicitly says so; places with unknown menus are not used.') }}</div>
-                  {{ ui.field_error(errors, 'venue_style') }}
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label small" for="shop_min">{{ _('Time at each shopping stop') }}</label>
-                  <select class="form-select" id="shop_min" name="shop_min">
-                    <option value="">{{ _('Typical for the place') }}</option>
-                    {% for m in shop_minutes %}<option value="{{ m }}" {% if values.shop_min|string == m|string %}selected{% endif %}>{{ m|duration }}</option>{% endfor %}
-                  </select>
-                  {{ ui.field_error(errors, 'shop_min') }}
-                </div>
-                <div class="col-md-6 d-flex align-items-end"><div class="form-text">{{ _('Shopping stops are planned only with a shopping interest (markets, malls, handicrafts or fashion).') }}</div></div>
+                {{ ui.field_error(errors, 'overnight') }}
               </div>
-            </section>
-
-            <section class="card-soft plan-step form-section" id="step-pace" aria-labelledby="h-pace">
-              <div class="plan-step-head"><span class="step-badge">6</span><div>
-                <h2 id="h-pace">{{ _('Pace') }}</h2>
-                <p>{{ _('Pace adds breathing room after every visit for rest, photos and finding your way.') }}</p></div></div>
-              <div class="row g-3">
-                {% set icons = {'relaxed': 'bi-cup-hot', 'balanced': 'bi-sun', 'packed': 'bi-lightning-charge'} %}
-                {% for key, p in PACES.items() %}
-                  <div class="col-md-4">
-                    <div class="choice-card">
-                      <input type="radio" name="pace" id="pace-{{ key }}" value="{{ key }}" {% if values.pace == key %}checked{% endif %}>
-                      <label for="pace-{{ key }}"><i class="bi {{ icons[key] }} choice-icon"></i><strong>{{ _(p.label) }}</strong><span>{{ _(p.hint) }}</span></label>
-                    </div>
-                  </div>
-                {% endfor %}
-              </div>
-              {{ ui.field_error(errors, 'pace') }}
-            </section>
-
-            <section class="card-soft plan-step form-section" id="step-advanced" aria-labelledby="h-advanced">
-              <details class="plan-advanced" {% if errors.get('strategy') or errors.get('exclude') or values.exclude or values.strategy != 'dp' %}open{% endif %}>
-                <summary><div class="plan-step-head"><span class="step-badge">7</span><div>
-                  <span class="step-kicker">{{ _('Optional') }}</span>
-                  <h2 id="h-advanced">{{ _('Advanced: algorithm and exclusions') }}</h2>
-                  <p>{{ _('Used when the planner chooses the places: how it decides which ones fit each day.') }}</p></div></div></summary>
-                <div>
-                  <span class="sub-label">{{ _('Selection strategy') }}</span>
-                  <div class="row g-3 mb-4">
-                    {% set strategy_icons = {'dp': 'bi-grid-3x3', 'greedy': 'bi-lightning-charge', 'max_visits': 'bi-list-ol'} %}
-                    {% for key, label in STRATEGIES.items() %}
-                      <div class="col-md-4">
-                        <div class="choice-card">
-                          <input type="radio" name="strategy" id="strategy-{{ key }}" value="{{ key }}" {% if values.strategy == key %}checked{% endif %}>
-                          <label for="strategy-{{ key }}"><i class="bi {{ strategy_icons[key] }} choice-icon"></i><strong>{{ _(label) }}</strong><span>{{ _(objectives[key]) if objectives is defined else '' }}</span></label>
-                        </div>
-                      </div>
-                    {% endfor %}
-                  </div>
-                  {{ ui.field_error(errors, 'strategy') }}
-                  <span class="sub-label" id="exclude-label">{{ _('Skip these attractions') }}</span>
-                  <div class="exclude-list" id="exclude-list" role="group" aria-labelledby="exclude-label">
-                    {% if opts %}
-                      {% for a in opts.attractions %}
-                        <div class="form-check">
-                          <input class="form-check-input" type="checkbox" name="exclude" value="{{ a.slug }}" id="ex-{{ a.slug }}" {% if a.slug in values.exclude %}checked{% endif %}>
-                          <label class="form-check-label d-flex justify-content-between gap-2" for="ex-{{ a.slug }}"><span>{{ a.name }}</span><span class="text-muted small">{{ a.visit|duration }}</span></label>
-                        </div>
-                      {% endfor %}
-                    {% endif %}
-                  </div>
-                  {{ ui.field_error(errors, 'exclude') }}
-                </div>
-              </details>
-            </section>
-
+            </fieldset>
+          </div>
+          <div class="col-md-6" id="end-box">
+            <label class="form-label" for="end">{{ _('Ending stay (last night)') }}</label>
+            <select class="form-select {{ ui.invalid(errors, 'end') }}" id="end" name="end" aria-describedby="end-help end-error" data-selected="{{ values.end }}">
+              <option value="">{{ _('Same as the starting stay') }}</option>
+              {% if opts %}
+                <optgroup label="{{ opts.name }}">
+                  {% for p in opts.stays %}<option value="{{ p.slug }}" {% if p.slug == values.end %}selected{% endif %}>{{ p.label }}</option>{% endfor %}
+                </optgroup>
+                {% for slug in values.also %}{% set o = city_options.get(slug) %}{% if o %}
+                  <optgroup label="{{ o.name }}">
+                    {% for p in o.stays %}<option value="{{ p.slug }}" {% if p.slug == values.end %}selected{% endif %}>{{ p.label }}</option>{% endfor %}
+                  </optgroup>
+                {% endif %}{% endfor %}
+              {% endif %}
+            </select>
+            <div class="form-text" id="end-help">{{ _('Where the trip finishes. A different city makes it a one-way trip; the same stay makes it a round trip.') }}</div>
+            {{ ui.field_error(errors, 'end') }}
           </div>
         </div>
+      </section>
 
-        <div class="col-lg-4">
-          <aside class="card-soft summary-card" aria-label="{{ _('Trip summary') }}">
-            <h2 class="mb-3">{{ _('Your trip') }}</h2>
-            <ul class="summary-list mb-4" id="trip-summary" data-scrollspy>
-              <li><a href="#step-destination"><i class="bi bi-geo-alt"></i><div><strong>{{ _('Destination') }}</strong><span data-summary="city">{{ opts.name if opts else '—' }}</span></div></a></li>
-              <li><a href="#step-dates"><i class="bi bi-calendar3"></i><div><strong>{{ _('Dates') }}</strong><span data-summary="dates">{{ (_('{n} day', n=values.days) if values.days|string == '1' else _('{n} days', n=values.days)) if values.days else '' }} · {{ values.start_date }} – {{ values.end_date }}</span></div></a></li>
-              <li><a href="#step-dates"><i class="bi bi-clock"></i><div><strong>{{ _('Each day') }}</strong><span data-summary="hours">{{ values.day_start }}–{{ values.day_end }}</span></div></a></li>
-              <li><a href="#step-mode"><i class="bi bi-distribute-horizontal"></i><div><strong>{{ _('Itinerary') }}</strong><span data-summary="mode">{{ _(MODES.get(values.mode, MODES['suggested']).label) }} · {{ (_('{n} place picked', n=values.places|length) if values.places|length == 1 else _('{n} places picked', n=values.places|length)) if values.choose == 'pick' else _('planner chooses places') }}</span></div></a></li>
-              <li><a href="#step-meals"><i class="bi bi-egg-fried"></i><div><strong>{{ _('Meals') }}</strong><span data-summary="meals">{{ _('Lunch and dinner breaks') }}</span></div></a></li>
-              <li><a href="#step-pace"><i class="bi bi-sliders"></i><div><strong>{{ _('Style') }}</strong><span data-summary="style">{{ _(PACES.get(values.pace, PACES['balanced']).label) }} {{ _('pace') }}</span></div></a></li>
-            </ul>
-            <button class="btn btn-brand btn-lg w-100" type="submit"><i class="bi bi-magic me-1"></i>{{ _('Generate itinerary') }}</button>
-            <button class="btn btn-outline-brand w-100 mt-2" type="submit" formaction="{{ url_for('planner.compare') }}" data-loading="{{ _('Running every algorithm…') }}"><i class="bi bi-bar-chart-line me-1"></i>{{ _('Compare algorithms on this trip') }}</button>
-            <p class="summary-foot"><i class="bi bi-arrow-repeat" aria-hidden="true"></i><span>{{ _('Plans are reproducible: the same choices on the same data always give the same itinerary, and the result URL can be shared.') }}</span></p>
-          </aside>
+      {# ── 2 · When ──────────────────────────────────────────────── #}
+      <section class="wiz-step form-section" id="step-dates" aria-labelledby="h-dates">
+        <div class="wiz-head"><span class="wiz-icon"><i class="bi bi-calendar3"></i></span><div>
+          <span class="kicker">{{ _('Step {n} of {total}', n=2, total=5) }}</span>
+          <h2 id="h-dates" tabindex="-1">{{ _('Dates and daily time') }}</h2>
+          <p>{{ _('Opening hours depend on the weekday, so the date matters. A longer day lets the planner fit more, where places are still open.') }}</p></div></div>
+        <div class="group">
+          <span class="sub-label"><i class="bi bi-calendar-range me-1"></i>{{ _('Travel dates') }}</span>
+          {{ ui.date_range(values, errors) }}
+        </div>
+        <div class="group">
+          <span class="sub-label"><i class="bi bi-clock me-1"></i>{{ _('Your daily window') }}</span>
+          <div class="row g-3">
+            <div class="col-6 col-md-4">
+              <label class="form-label" for="day_start">{{ _('Day starts') }}</label>
+              <input class="form-control {{ ui.invalid(errors, 'day_start') }}" type="time" id="day_start" name="day_start" value="{{ values.day_start }}" required>
+              {{ ui.field_error(errors, 'day_start') }}
+            </div>
+            <div class="col-6 col-md-4">
+              <label class="form-label" for="day_end">{{ _('Back by') }}</label>
+              <input class="form-control {{ ui.invalid(errors, 'day_end') }}" type="time" id="day_end" name="day_end" value="{{ values.day_end }}" required>
+            </div>
+            <div class="col-12">{{ ui.field_error(errors, 'day_end') }}
+              <div class="form-text mt-0">{{ _('The plan includes the ride back to your start point, and any meal breaks, before this time.') }}</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {# ── 3 · What & how ────────────────────────────────────────── #}
+      <section class="wiz-step form-section" id="step-mode" aria-labelledby="h-mode">
+        <div class="wiz-head"><span class="wiz-icon"><i class="bi bi-distribute-horizontal"></i></span><div>
+          <span class="kicker">{{ _('Step {n} of {total}', n=3, total=5) }}</span>
+          <h2 id="h-mode" tabindex="-1">{{ _('Places and itinerary mode') }}</h2>
+          <p>{{ _('Choose what to see, then how to spread it over the days of your trip. The same places can give very different trips.') }}</p></div></div>
+        <span class="sub-label" id="choose-label">{{ _('Places to visit') }}</span>
+        <div class="segmented mb-2" role="radiogroup" aria-labelledby="choose-label">
+          <input type="radio" name="choose" id="choose-auto" value="auto" {% if values.choose != 'pick' %}checked{% endif %}>
+          <label for="choose-auto"><i class="bi bi-magic"></i>{{ _('Let the planner choose') }}</label>
+          <input type="radio" name="choose" id="choose-pick" value="pick" {% if values.choose == 'pick' %}checked{% endif %}>
+          <label for="choose-pick"><i class="bi bi-hand-index"></i>{{ _("I'll pick the places") }}</label>
+        </div>
+        <p class="form-text mt-0" id="choose-help" data-auto="{{ _('The planner picks the most valuable places that fit your days (see “Advanced” for how).') }}"
+           data-pick="{{ _('Tick the places you want to see. The itinerary mode below decides which day each one goes on.') }}">{{ _('Tick the places you want to see. The itinerary mode below decides which day each one goes on.') if values.choose == 'pick' else _('The planner picks the most valuable places that fit your days (see “Advanced” for how).') }}</p>
+        <div class="pick-box {{ 'd-none' if values.choose != 'pick' }}" id="pick-box">
+          <div class="pick-toolbar">
+            <div class="input-icon pick-filter">
+              <i class="bi bi-search" aria-hidden="true"></i>
+              <input class="form-control form-control-sm" type="search" id="pick-filter" placeholder="{{ _('Filter places by name') }}"
+                     aria-label="{{ _('Filter the list of places') }}" autocomplete="off">
+            </div>
+            <button type="button" class="btn btn-outline-brand btn-sm" id="pick-all" aria-describedby="pick-all-help">
+              <i class="bi bi-check2-all" aria-hidden="true"></i><span>{{ _('Select all') }}</span></button>
+            <span class="small pick-count" aria-live="polite"><strong id="pick-count">{{ values.places|length }}</strong>
+              <span id="pick-count-label">{{ _('place selected') if values.places|length == 1 else _('places selected') }}</span></span>
+          </div>
+          <p class="form-text mt-1 mb-2" id="pick-all-help">{{ _("“Select all” selects every place in your trip's cities that matches the filter, not just the ones on screen. Places whose access time is unknown cannot be selected.") }}</p>
+          <div class="exclude-list" id="pick-list" role="group" aria-label="{{ _('Places to visit') }}">
+            {% if opts %}
+              {% for a in opts.attractions %}
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="places" value="{{ a.slug }}" id="pk-{{ a.slug }}" {% if a.slug in values.places %}checked{% endif %} {% if not a.timed %}disabled{% endif %}>
+                  <label class="form-check-label d-flex justify-content-between gap-2" for="pk-{{ a.slug }}"><span>{{ a.name }}{% if a.access %} <span class="chip chip-xs {{ 'chip-warning' if not a.timed }}">{{ a.access }}{{ ' · not timed' if not a.timed }}</span>{% endif %}</span><span class="text-muted small">{{ a.visit|duration }}</span></label>
+                </div>
+              {% endfor %}
+            {% endif %}
+          </div>
+          {{ ui.field_error(errors, 'places') }}
+        </div>
+
+        <div class="divider"></div>
+        <span class="sub-label" id="mode-pick-label">{{ _('How should the days be spread?') }}</span>
+        <div class="row g-3" role="radiogroup" aria-labelledby="mode-pick-label">
+          {% for key, m in MODES.items() %}
+            <div class="col-md-4">
+              <div class="choice-card">
+                <input type="radio" name="mode" id="itmode-{{ key }}" value="{{ key }}" {% if values.mode == key %}checked{% endif %}>
+                <label for="itmode-{{ key }}"><i class="bi {{ m.icon }} choice-icon"></i><strong>{{ _(m.label) }}</strong><span>{{ _(m.text) }}</span>{{ ui.mode_schematic(key) }}</label>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        {{ ui.field_error(errors, 'mode') }}
+      </section>
+
+      {# ── 4 · Preferences ───────────────────────────────────────── #}
+      <section class="wiz-step form-section" id="step-style" aria-labelledby="h-style">
+        <div class="wiz-head"><span class="wiz-icon"><i class="bi bi-sliders"></i></span><div>
+          <span class="kicker">{{ _('Step {n} of {total}', n=4, total=5) }}</span>
+          <h2 id="h-style" tabindex="-1">{{ _('Interests, pace and meals') }}</h2>
+          <p>{{ _('Pick as many as you like. Matching places score higher. Food and shopping places are only planned when you pick a food or shopping interest.') }}</p></div></div>
+
+        <div class="group" id="step-interests">
+          <span class="sub-label"><i class="bi bi-heart me-1"></i>{{ _('Interests') }}</span>
+          {% for group, items in category_groups %}
+            <div class="interest-group">
+              <h3 class="interest-group-title">{{ _(group) }}</h3>
+              <div class="d-flex flex-wrap gap-2">
+                {% for c in items %}
+                  <span class="chip-toggle">
+                    <input type="checkbox" name="interests" id="int-{{ c.slug }}" value="{{ c.slug }}" {% if c.slug in values.interests %}checked{% endif %}>
+                    <label for="int-{{ c.slug }}"><i class="bi {{ c.icon }}"></i>{{ _(c.name) }}</label>
+                  </span>
+                {% endfor %}
+              </div>
+            </div>
+          {% endfor %}
+          <div class="divider" style="margin: 16px 0"></div>
+          <span class="sub-label" id="mode-label">{{ _('How strictly?') }}</span>
+          <div class="segmented" role="radiogroup" aria-labelledby="mode-label">
+            {% for key, label in interest_modes.items() %}
+              <input type="radio" name="interest_mode" id="mode-{{ key }}" value="{{ key }}" {% if values.interest_mode == key %}checked{% endif %}>
+              <label for="mode-{{ key }}">{{ _(label) }}</label>
+            {% endfor %}
+          </div>
+          <div class="form-text">{{ _('“Only matching places” leaves out everything that matches none of your interests.') }}</div>
+          {{ ui.field_error(errors, 'interests') }}{{ ui.field_error(errors, 'interest_mode') }}
+        </div>
+
+        <div class="group" id="step-pace">
+          <span class="sub-label"><i class="bi bi-speedometer2 me-1"></i>{{ _('Pace') }} <span class="text-muted fw-normal">· {{ _('Pace adds breathing room after every visit for rest, photos and finding your way.') }}</span></span>
+          <div class="row g-2">
+            {% set icons = {'relaxed': 'bi-cup-hot', 'balanced': 'bi-sun', 'packed': 'bi-lightning-charge'} %}
+            {% for key, p in PACES.items() %}
+              <div class="col-md-4">
+                <div class="choice-card choice-card-sm">
+                  <input type="radio" name="pace" id="pace-{{ key }}" value="{{ key }}" {% if values.pace == key %}checked{% endif %}>
+                  <label for="pace-{{ key }}"><i class="bi {{ icons[key] }} choice-icon"></i><strong>{{ _(p.label) }}</strong><span>{{ _(p.hint) }}</span></label>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+          {{ ui.field_error(errors, 'pace') }}
+        </div>
+
+        <div class="group" id="step-meals">
+          <span class="sub-label"><i class="bi bi-egg-fried me-1"></i>{{ _('Meals, food and shopping') }} <span class="text-muted fw-normal">· {{ _('Lunch and dinner are planned as their own breaks. A meal is only added when you are out during its window.') }}</span></span>
+          <div class="row g-3">
+            {% for kind, icon in [('lunch', 'bi-sun'), ('dinner', 'bi-moon-stars')] %}
+              <div class="col-md-6">
+                <div class="meal-card" style="background: var(--surface)">
+                  <div class="form-check form-switch mb-2">
+                    <input type="hidden" name="{{ kind }}" value="off">
+                    <input class="form-check-input" type="checkbox" role="switch" id="{{ kind }}" name="{{ kind }}" value="on" {% if values[kind] == 'on' %}checked{% endif %} data-toggles="{{ kind }}-fields">
+                    <label class="form-check-label fw-semibold" for="{{ kind }}"><i class="bi {{ icon }} me-1"></i>{{ _('Lunch break') if kind == 'lunch' else _('Dinner break') }}</label>
+                  </div>
+                  <div class="row g-2" id="{{ kind }}-fields">
+                    <div class="col-4">
+                      <label class="form-label small" for="{{ kind }}_from">{{ _('From') }}</label>
+                      <input class="form-control form-control-sm" type="time" id="{{ kind }}_from" name="{{ kind }}_from" value="{{ values[kind ~ '_from'] }}">
+                    </div>
+                    <div class="col-4">
+                      <label class="form-label small" for="{{ kind }}_to">{{ _('Until') }}</label>
+                      <input class="form-control form-control-sm" type="time" id="{{ kind }}_to" name="{{ kind }}_to" value="{{ values[kind ~ '_to'] }}">
+                    </div>
+                    <div class="col-4">
+                      <label class="form-label small" for="{{ kind }}_min">{{ _('Length') }}</label>
+                      <select class="form-select form-select-sm" id="{{ kind }}_min" name="{{ kind }}_min">
+                        {% for m in meal_durations %}<option value="{{ m }}" {% if values[kind ~ '_min']|string == m|string %}selected{% endif %}>{{ _('{m} min', m=m) }}</option>{% endfor %}
+                      </select>
+                    </div>
+                  </div>
+                  {{ ui.field_error(errors, kind) }}
+                </div>
+              </div>
+            {% endfor %}
+            <div class="col-12">
+              <div class="form-check form-switch">
+                <input type="hidden" name="venues" value="off">
+                <input class="form-check-input" type="checkbox" role="switch" id="venues" name="venues" value="on" {% if values.venues == 'on' %}checked{% endif %}>
+                <label class="form-check-label" for="venues">{{ _('Send meals to a listed food place when one is within a short detour') }}</label>
+              </div>
+              <div class="form-text">{{ _('Otherwise the break is taken where you are, and no restaurant is claimed.') }}</div>
+            </div>
+            <div class="col-12">
+              <span class="form-label d-block small">{{ _('Preferred kind of meal place') }}</span>
+              <div class="d-flex flex-wrap gap-2">
+                {% for key, label in venue_styles.items() %}
+                  <span class="chip-toggle chip-toggle-sm">
+                    <input type="checkbox" name="venue_style" id="vs-{{ key }}" value="{{ key }}" {% if key in values.venue_style %}checked{% endif %}>
+                    <label for="vs-{{ key }}">{{ _(label) }}</label>
+                  </span>
+                {% endfor %}
+                <span class="chip-toggle chip-toggle-sm">
+                  <input type="checkbox" name="veg" id="veg" value="on" {% if values.veg %}checked{% endif %}>
+                  <label for="veg"><i class="bi bi-flower2"></i>{{ _('Vegetarian places only') }}</label>
+                </span>
+              </div>
+              <div class="form-text">{{ _('Vegetarian means the source explicitly says so; places with unknown menus are not used.') }}</div>
+              {{ ui.field_error(errors, 'venue_style') }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small" for="shop_min">{{ _('Time at each shopping stop') }}</label>
+              <select class="form-select" id="shop_min" name="shop_min">
+                <option value="">{{ _('Typical for the place') }}</option>
+                {% for m in shop_minutes %}<option value="{{ m }}" {% if values.shop_min|string == m|string %}selected{% endif %}>{{ m|duration }}</option>{% endfor %}
+              </select>
+              {{ ui.field_error(errors, 'shop_min') }}
+            </div>
+            <div class="col-md-6 d-flex align-items-end"><div class="form-text">{{ _('Shopping stops are planned only with a shopping interest (markets, malls, handicrafts or fashion).') }}</div></div>
+          </div>
+        </div>
+      </section>
+
+      {# ── 5 · Engine ────────────────────────────────────────────── #}
+      <section class="wiz-step form-section" id="step-advanced" aria-labelledby="h-advanced">
+        <div class="wiz-head"><span class="wiz-icon is-violet"><i class="bi bi-cpu"></i></span><div>
+          <span class="kicker">{{ _('Step {n} of {total}', n=5, total=5) }} · {{ _('Optional') }}</span>
+          <h2 id="h-advanced" tabindex="-1">{{ _('Advanced: algorithm and exclusions') }}</h2>
+          <p>{{ _('Used when the planner chooses the places: how it decides which ones fit each day.') }}</p></div></div>
+        <span class="sub-label">{{ _('Selection strategy') }}</span>
+        <div class="row g-3 mb-4">
+          {% set strategy_icons = {'dp': 'bi-grid-3x3', 'greedy': 'bi-lightning-charge', 'max_visits': 'bi-list-ol'} %}
+          {% for key, label in STRATEGIES.items() %}
+            <div class="col-md-4">
+              <div class="choice-card">
+                <input type="radio" name="strategy" id="strategy-{{ key }}" value="{{ key }}" {% if values.strategy == key %}checked{% endif %}>
+                <label for="strategy-{{ key }}"><i class="bi {{ strategy_icons[key] }} choice-icon"></i><strong>{{ _(label) }}</strong><span>{{ _(objectives[key]) if objectives is defined else '' }}</span></label>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        {{ ui.field_error(errors, 'strategy') }}
+        <span class="sub-label" id="exclude-label">{{ _('Skip these attractions') }}</span>
+        <div class="exclude-list" id="exclude-list" role="group" aria-labelledby="exclude-label">
+          {% if opts %}
+            {% for a in opts.attractions %}
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="exclude" value="{{ a.slug }}" id="ex-{{ a.slug }}" {% if a.slug in values.exclude %}checked{% endif %}>
+                <label class="form-check-label d-flex justify-content-between gap-2" for="ex-{{ a.slug }}"><span>{{ a.name }}</span><span class="text-muted small">{{ a.visit|duration }}</span></label>
+              </div>
+            {% endfor %}
+          {% endif %}
+        </div>
+        {{ ui.field_error(errors, 'exclude') }}
+      </section>
+
+      <div class="wiz-foot">
+        <button type="button" class="btn btn-ghost" data-wiz="prev"><i class="bi bi-arrow-left"></i>{{ _('Back') }}</button>
+        <span class="hint" data-wiz-hint>{{ _('You can generate at any step: the rest keep their defaults.') }}</span>
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-outline-brand" data-wiz-generate-secondary><i class="bi bi-lightning-charge"></i>{{ _('Generate now') }}</button>
+          <button type="button" class="btn btn-brand" data-wiz="next">{{ _('Next') }}<i class="bi bi-arrow-right"></i></button>
+          <button type="submit" class="btn btn-brand" data-wiz-generate hidden><i class="bi bi-magic"></i>{{ _('Generate itinerary') }}</button>
         </div>
       </div>
-      <div class="plan-mobile-bar d-lg-none">
-        <button class="btn btn-brand btn-lg w-100" type="submit"><i class="bi bi-magic me-1"></i>{{ _('Generate itinerary') }}</button>
+    </section>
+
+    {# ── Trip brief ──────────────────────────────────────────────── #}
+    <aside class="panel brief" aria-label="{{ _('Trip summary') }}">
+      <div class="brief-media">
+        {% if current_city and current_city.hero_image %}<img id="brief-img" src="{{ url_for('static', filename=current_city.hero_image) }}" alt="" data-fallback>{% else %}<img id="brief-img" alt="" hidden>{% endif %}
+        <div class="brief-city"><small>{{ _('Trip brief') }}</small><strong id="brief-city">{{ opts.name if opts else '—' }}</strong></div>
       </div>
-    </form>
+      <div class="panel-body">
+        <ul class="summary-list mb-3" id="trip-summary">
+          <li><a href="#step-destination"><i class="bi bi-geo-alt"></i><div><strong>{{ _('Destination') }}</strong><span data-summary="city">{{ opts.name if opts else '—' }}</span></div></a></li>
+          <li><a href="#step-dates"><i class="bi bi-calendar3"></i><div><strong>{{ _('Dates') }}</strong><span data-summary="dates">{{ (_('{n} day', n=values.days) if values.days|string == '1' else _('{n} days', n=values.days)) if values.days else '' }} · {{ values.start_date }} – {{ values.end_date }}</span></div></a></li>
+          <li><a href="#step-dates"><i class="bi bi-clock"></i><div><strong>{{ _('Each day') }}</strong><span data-summary="hours">{{ values.day_start }}–{{ values.day_end }}</span></div></a></li>
+          <li><a href="#step-mode"><i class="bi bi-distribute-horizontal"></i><div><strong>{{ _('Itinerary') }}</strong><span data-summary="mode">{{ _(MODES.get(values.mode, MODES['suggested']).label) }} · {{ (_('{n} place picked', n=values.places|length) if values.places|length == 1 else _('{n} places picked', n=values.places|length)) if values.choose == 'pick' else _('planner chooses places') }}</span></div></a></li>
+          <li><a href="#step-style"><i class="bi bi-sliders"></i><div><strong>{{ _('Style') }}</strong><span data-summary="style">{{ _(PACES.get(values.pace, PACES['balanced']).label) }} {{ _('pace') }}</span></div></a></li>
+          <li><a href="#step-style"><i class="bi bi-egg-fried"></i><div><strong>{{ _('Meals') }}</strong><span data-summary="meals">{{ _('Lunch and dinner breaks') }}</span></div></a></li>
+          <li><a href="#step-advanced"><i class="bi bi-cpu"></i><div><strong>{{ _('Selection') }}</strong><span data-summary-strategy>{{ _(STRATEGIES.get(values.strategy, STRATEGIES['dp'])) }}</span></div></a></li>
+        </ul>
+        <button class="btn btn-brand btn-lg w-100" type="submit"><i class="bi bi-magic"></i>{{ _('Generate itinerary') }}</button>
+        <button class="btn btn-outline-brand w-100 mt-2" type="submit" formaction="{{ url_for('planner.compare') }}" data-loading="{{ _('Running every algorithm…') }}"><i class="bi bi-cpu"></i>{{ _('Compare algorithms on this trip') }}</button>
+        <p class="summary-foot"><i class="bi bi-arrow-repeat" aria-hidden="true"></i><span>{{ _('Plans are reproducible: the same choices on the same data always give the same itinerary, and the result URL can be shared.') }}</span></p>
+      </div>
+    </aside>
   </div>
-</section>
+</form>
 <script id="city-options" type="application/json">{{ city_options|tojson }}</script>
+<script id="city-images" type="application/json">{ {% for region, items in regions %}{% for c in items %}{{ c.slug|tojson }}: {{ (url_for('static', filename=c.hero_image) if c.hero_image else '')|tojson }}{{ ',' if not (loop.last) }}{% endfor %}{{ ',' if not loop.last }}{% endfor %} }</script>
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/planner.js') }}"></script>
+<script src="{{ url_for('static', filename='js/wizard.js') }}"></script>
 {% endblock %}
