@@ -88,21 +88,103 @@
 
   <footer class="app-footer">
     <div class="footer-inner">
-      <div>
-        <p><strong class="text-body">Smart Itinerary Planner</strong> · {{ _('ADA project by Priyanshi Gupta & Shreyas Singh, B.Tech CSE (Section B), Faculty of Technology, University of Delhi') }}</p>
-        <p class="mt-1">{{ _('Map data') }} &copy; <a href="https://www.openstreetmap.org/copyright" rel="noopener">{{ _('OpenStreetMap contributors') }}</a>, {{ _('map tiles') }} &copy; <a href="https://www.esri.com/" rel="noopener">Esri</a>
-          · {{ _('Routing') }} <a href="https://project-osrm.org/" rel="noopener">{{ _('OSRM') }}</a>
-          · {{ _('Photos') }} <a href="{{ url_for('main.about') }}#credits">{{ _('Wikimedia Commons') }}</a>
-          · <a href="{{ url_for('main.about') }}#data">{{ _('Hours, fees and visit lengths are labelled estimates unless a source is shown.') }}</a></p>
+      <div class="footer-main-grid">
+        {# ── Column 1: Brand Introduction ───────────────────────────────── #}
+        <div class="footer-brand-col">
+          <a class="brand footer-brand" href="{{ url_for('main.index') }}" aria-label="{{ _('Smart Itinerary home') }}">
+            <span class="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="18" r="2.3" fill="currentColor" stroke="none"/><circle cx="18.5" cy="6" r="2.3" fill="currentColor" stroke="none"/><path d="M8.5 18H14a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h5.5"/></svg>
+            </span>
+            <span class="brand-name">{{ _('Smart Itinerary') }}<small>{{ _('Travel optimisation') }}</small></span>
+          </a>
+          <p class="footer-tagline">{{ _('Travel better. Discover more.') }}</p>
+          <p class="footer-desc">{{ _('Intelligent day-by-day sightseeing itineraries across Indian destinations, powered by graph algorithms, route optimization, and curated open travel data.') }}</p>
+          {% if footer.city_count %}
+          <div class="footer-badges">
+            <span class="footer-badge footer-meta-badge"><i class="bi bi-geo-alt me-1" aria-hidden="true"></i>{{ footer.city_count }} {{ _('destinations') }} · {{ footer.attraction_count }} {{ _('places') }}</span>
+          </div>
+          {% endif %}
+        </div>
+
+        {# ── Column 2: Explore ──────────────────────────────────────────── #}
+        <div class="footer-col">
+          <h3 class="footer-heading">{{ _('Explore') }}</h3>
+          <nav aria-label="{{ _('Explore links') }}">
+            <ul class="footer-links">
+              <li><a href="{{ url_for('main.index') }}">{{ _('Home') }}</a></li>
+              <li><a href="{{ url_for('planner.plan') }}">{{ _('Plan a trip') }}</a></li>
+              <li><a href="{{ url_for('main.cities') }}">{{ _('Destinations') }}</a></li>
+              <li><a href="{{ url_for('main.attractions') }}">{{ _('Attractions') }}</a></li>
+            </ul>
+          </nav>
+        </div>
+
+        {# ── Column 3: Discover ─────────────────────────────────────────── #}
+        <div class="footer-col">
+          <h3 class="footer-heading">{{ _('Discover') }}</h3>
+          <nav aria-label="{{ _('Discover links') }}">
+            <ul class="footer-links">
+              <li><a href="{{ url_for('planner.compare') }}">{{ _('Algorithm lab') }}</a></li>
+              <li><a href="{{ url_for('main.about') }}">{{ _('How it works') }}</a></li>
+              <li><a href="{{ url_for('main.about') }}#data">{{ _('Data & sources') }}</a></li>
+              <li><a href="{{ url_for('main.about') }}#credits">{{ _('Photo credits') }}</a></li>
+            </ul>
+          </nav>
+        </div>
+
+        {# ── Column 4: Technologies ─────────────────────────────────────── #}
+        <div class="footer-col">
+          <h3 class="footer-heading">{{ _('Technologies') }}</h3>
+          <div class="footer-badges" aria-label="{{ _('Technologies used') }}">
+            <span class="footer-badge">Python</span>
+            <span class="footer-badge">Flask</span>
+            <span class="footer-badge">SQLite</span>
+            <span class="footer-badge">NetworkX</span>
+            <span class="footer-badge">Jinja2</span>
+            <span class="footer-badge">Leaflet</span>
+            <span class="footer-badge">Chart.js</span>
+            <span class="footer-badge">Bootstrap 5</span>
+            <span class="footer-badge">Vanilla JS</span>
+          </div>
+        </div>
+
+        {# ── Column 5: Maps, Data & Attribution ─────────────────────────── #}
+        <div class="footer-col">
+          <h3 class="footer-heading">{{ _('Attribution') }}</h3>
+          <ul class="footer-links footer-attr-links">
+            <li>{{ _('Map data') }} &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">{{ _('OpenStreetMap contributors') }}</a></li>
+            <li>{{ _('Map tiles') }} &copy; <a href="https://www.esri.com/" target="_blank" rel="noopener noreferrer">{{ _('Esri') }}</a></li>
+            <li>{{ _('Routing') }} <a href="https://project-osrm.org/" target="_blank" rel="noopener noreferrer">{{ _('OSRM') }}</a></li>
+            <li>{{ _('Photos') }} <a href="https://commons.wikimedia.org/" target="_blank" rel="noopener noreferrer">{{ _('Wikimedia Commons') }}</a></li>
+          </ul>
+        </div>
       </div>
-      {% if footer.city_count %}
-      <div class="footer-stats" aria-label="{{ _('Dataset in numbers') }}">
-        <span><strong>{{ footer.city_count }}</strong>{{ _('cities') }}</span>
-        <span><strong>{{ footer.attraction_count }}</strong>{{ _('places') }}</span>
-        <span><strong>{{ footer.edge_count|num }}</strong>{{ _('road links') }}</span>
-        <a href="{{ url_for('api.health') }}">{{ _('API status') }}</a>
+
+      {# ── Mid row: Disclaimer & Credits ────────────────────────────────── #}
+      <div class="footer-mid-row">
+        <div class="footer-card footer-disclaimer">
+          <i class="bi bi-info-circle footer-card-icon" aria-hidden="true"></i>
+          <div>
+            <strong>{{ _('Travel Notice') }}</strong>
+            <p>{{ _('Travel information, opening hours, entry fees, and suggested visit durations may be estimates and should be verified with official sources before visiting.') }}</p>
+          </div>
+        </div>
+        <div class="footer-card footer-credits">
+          <i class="bi bi-mortarboard footer-card-icon" aria-hidden="true"></i>
+          <div>
+            <strong>{{ _('Created by Priyanshi Gupta and Shreyas Singh') }}</strong>
+            <p>{{ _('B.Tech CSE, Faculty of Technology, University of Delhi') }}</p>
+          </div>
+        </div>
       </div>
-      {% endif %}
+
+      {# ── Bottom bar: Copyright & Back to Top ──────────────────────────── #}
+      <div class="footer-bottom">
+        <p class="footer-copy">&copy; {{ today.year }} {{ _('Smart Itinerary Planner. All rights reserved.') }}</p>
+        <a href="#" class="footer-back-to-top" aria-label="{{ _('Back to top') }}">
+          {{ _('Back to top') }} <i class="bi bi-arrow-up" aria-hidden="true"></i>
+        </a>
+      </div>
     </div>
   </footer>
 
