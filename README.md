@@ -14,7 +14,7 @@ Team: **Priyanshi Gupta** and **Shreyas Singh**.
 Project documents (slides, viva handbook, technical documentation, user workflow) are in [`docs/`](docs/README.md).
 
 Stack (as in our synopsis): **Python · Flask · SQLite · HTML/CSS/JavaScript · Bootstrap 5 · Jinja2**, with
-**NetworkX used only to cross-check** our Dijkstra. Maps use **Leaflet + OpenStreetMap** (free, no API key). No paid API is used.
+**NetworkX used only to cross-check** our Dijkstra. Maps use **Leaflet** with OpenStreetMap data and Esri map tiles labelled in English (free, no API key). No paid API is used.
 
 ---
 
