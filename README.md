@@ -69,7 +69,7 @@ cities whose answers can be worked out on paper) and from `data/`; they never to
 |---|---|
 | `test_dijkstra.py` | hand-worked shortest paths, unreachable nodes, directed edges, the 10-minute planning table, **equality with NetworkX** |
 | `test_selection.py` | the greedy trap, **DP = brute force** on 200 instances, DP ≥ Greedy, limits, merge sort, score formula |
-| `test_strategies.py` | value-vs-count and greedy-trap instances where the three strategies differ, a case where they coincide, **Max visits = brute-force count** on 150 instances, each selector best at its own objective on identical instances, scorecard normalisation, **infeasible plans never recommended**, honest ties |
+| `test_strategies.py` | value-vs-count and greedy-trap instances where DP and Greedy differ, a case where they coincide, DP never below Greedy on its own objective on identical instances, scorecard normalisation, **infeasible plans never recommended**, honest ties |
 | `test_routing.py` | Nearest Neighbour, 2-opt never worse than NN, Held–Karp = brute force, feasible insertion |
 | `test_activity_selection.py` | textbook activity selection, closed weekdays, split hours, last entry, ride back by day end |
 | `test_meals.py` | when a meal is needed, lunch inside its window, meal at a nearby listed food place (as its own travel leg), generic break when suggestions are off, meals near the base after returning, a long visit never swallows lunch, meal time reserved in the knapsack, the validator catches broken meals |
@@ -95,7 +95,7 @@ python scripts/benchmark.py --quick    # fewer seeds
 Seeded synthetic instances (`random.Random(seed)`) measure how runtime grows with input size; a sweep of 648 real-data
 trips (the 12 highest-ranked plannable cities × 3 start days × 1–3 days × 2 paces × 3 interest settings, with lunch)
 counts how often each strategy ends up ahead. Latest run: DP's itinerary scored higher than Greedy's in 106 trips, Greedy's
-in 10, equal in 532; Max visits planned more stops than DP in 7 and fewer in 11 (selection-level guarantees do not
+in 10, equal in 532 (selection-level guarantees do not
 survive routing, meals, repair and the itinerary mode's re-spreading). A third experiment calibrates Suggested mode: 60 real-city trips (the
 10 highest-ranked ready cities × the 3, 4, 6 or 8 most popular places × 3 or 5 days). With the chosen cost of 60 minutes per extra
 day, Suggested used more days than Most Optimized in 66.7% of them (about 1 extra day, the longest day about 4 hours
@@ -129,7 +129,7 @@ Trip parameters: `city` (base city), `also` (nearby cities, comma-separated), `s
 (repeatable), `interest_mode` (prefer/only), `lunch`/`dinner` (on/off) with `lunch_from`, `lunch_to`, `lunch_min` (and the
 same for dinner), `venues` (on/off), `venue_style` (street-food, cafe-bakery, casual, fine-dining, local-specialty),
 `veg=on`, `shop_min`, `pace` (relaxed/balanced/packed), `start` (a stay area of the base city; default its central area),
-`strategy` (dp/greedy/max_visits), `exclude`. Missing optional values get sensible defaults (lunch and dinner on). Old
+`strategy` (dp/greedy), `exclude`. Missing optional values get sensible defaults (lunch and dinner on). Old
 links that still carry `budget`, `transport` or `shop_spend` work; those values are ignored.
 
 ---
@@ -146,7 +146,6 @@ library is used. NetworkX appears only in `services/crosscheck.py`.
 | Merge sort + priority queues | `sorting.py`, `heapq` | Ordering by score / closing time; heap inside Dijkstra; weakest-stop removal in repair | O(n log n) | O(n) |
 | Greedy selection | `greedy.py` | Strategy: best value per minute first | O(n log n) | O(n) |
 | Dynamic programming (0/1 knapsack) | `dynamic_programming.py` | Default strategy: **maximum total value** within the day's minutes | O(n·T) | O(n·T) |
-| Max visits (DP on the count) | `max_visits.py` | Strategy: **maximum number of places**, ties by value — the same DP with values `B + score` | O(n·T) | O(n·T) |
 | Day partition (construct + local search) | `day_partition.py` | **Itinerary modes**: assign the chosen places to days (best fit / first-fit decreasing, then relocate and swap moves); quotient-and-remainder targets | O(passes · (N·D + N²)) day evaluations, each routed once | O(distinct days) |
 | Nearest Neighbour | `nearest_neighbor.py` | First route: always go to the closest unvisited stop | O(k²) | O(k) |
 | 2-opt local search | `two_opt.py` | Improve a route by reversing segments; optional feasibility check | O(k³) per pass | O(k) |
@@ -162,7 +161,7 @@ library is used. NetworkX appears only in `services/crosscheck.py`.
    from every place → raw travel table → **planning table** = each shortest time rounded **up** to 10 minutes.
 2. **Once per trip:** score each place, `round(100 × (0.5·rating/5 + 0.3·popularity + 0.2·interest_match))` (unrated places
    use a neutral 4.0 prior); apply trip rules (excluded, access that cannot be timed, food/shopping only when asked for, "only matching interests").
-3. **For each day, in date order:** filter → **select** (one knapsack instance; DP, Greedy or Max visits) → **route** (travel-first
+3. **For each day, in date order:** filter → **select** (one knapsack instance; DP or Greedy) → **route** (travel-first
    NN → 2-opt, or window-first insertion → 2-opt) → **check** (`scheduler.py` simulates the day, meals included) → **repair**
    (weakest stop leaves, select again) → **fill** (leftovers inserted where they still fit). Multi-city: this runs for each city
    alone and for all together, and the day keeps the best by the strategy's objective.
@@ -173,7 +172,7 @@ library is used. NetworkX appears only in `services/crosscheck.py`.
 **Knapsack capacity.** Each stop's weight is `visit + pace buffer + cheapest way out` (a lower bound on real travel); the
 capacity is the day minus the shortest first ride, the unavoidable extra of the ride home and the meal breaks. So no set that
 truly fits is ever thrown away. **What is optimal.** The full problem (multi-day orienteering with time windows) is NP-hard.
-DP and Max visits are exact for each day's rounded knapsack model; 2-opt is a local optimum; Held–Karp is exact for travel only.
+DP is exact for each day's rounded knapsack model; 2-opt is a local optimum; Held–Karp is exact for travel only.
 
 ### The three strategies (requirement: meaningfully different objectives)
 
@@ -181,11 +180,10 @@ DP and Max visits are exact for each day's rounded knapsack model; 2-opt is a lo
 |---|---|---|
 | DP | maximum total value score | exact for the knapsack model |
 | Greedy | value per minute, taken in order | fast heuristic, can miss better combinations |
-| Max visits | maximum number of places, then maximum value | exact for the knapsack model |
 
 They share candidates, weights, capacity, routing, meals, repair and validation, so differences come only from the
 objective. Live demos on `/compare`: the greedy trap (Greedy 90 vs DP 120) and value vs count (DP picks a valuable 2-hour place +
-one short one; Max visits picks three short ones). On real data they often coincide — most newer cities have 4–8 plannable places,
+one short one). On real data they often coincide — most newer cities have 4–8 plannable places,
 which all fit — and the page says so instead of inventing differences.
 
 ### The three itinerary modes (what to see vs how to spread it)
@@ -316,7 +314,7 @@ browser ──► Flask routes ──► services ──► algorithms (pure fun
 ```
 ADA PROJECT FINAL/
 ├── app.py  config.py  requirements.txt  pytest.ini  .gitignore  README.md
-├── algorithms/      graph, dijkstra, sorting, scoring, knapsack_types, greedy, dynamic_programming, max_visits,
+├── algorithms/      graph, dijkstra, sorting, scoring, knapsack_types, greedy, dynamic_programming,
 │                    nearest_neighbor, two_opt, activity_selection, insertion, held_karp, tour, day_partition
 ├── services/        models, trip_request, city_data (city groups, access links), multicity, scheduler (meals, ferries),
 │                    itinerary_generator, distribution (itinerary modes), validator, scorecard, comparison, versioning,
@@ -342,7 +340,6 @@ ADA PROJECT FINAL/
 * **Why Dijkstra if we have coordinates?** We store only local road links; Dijkstra composes them (and intercity links) into shortest travel times. Coordinates give straight lines, not roads.
 * **Why round travel up to 10 minutes?** Road times are estimates; rounding up means a plan that fits on paper does not fail because a ride took 14 minutes. The whole path is rounded, not each link, so composing links does not inflate it.
 * **Where is travel time in the knapsack?** Each stop's weight includes its cheapest way out (a lower bound); the capacity also removes the shortest first ride, the unavoidable extra of the ride home and the meals.
-* **How is Max visits different from DP?** Same DP, different values: `B + score` with `B = Σ scores + 1` makes one extra place worth more than any score difference — count first, value second.
 * **Show the strategies differing.** Greedy trap (90 vs 120) and value vs count (2 valuable stops vs 3 ordinary ones), both run live on `/compare`.
 * **Is DP's itinerary always better?** No. On the identical knapsack it is guaranteed; on whole itineraries routing, meals, repair and multi-day effects can reverse it — in our 648-trip sweep DP was ahead in 106, Greedy in 10, equal in 532.
 * **Why does a longer day sometimes change nothing?** Because everything still open is already planned; the day summary lists the closing times. The tests check that stops never decrease as the day grows.

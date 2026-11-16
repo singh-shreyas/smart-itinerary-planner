@@ -20,7 +20,7 @@
           <a href="#pipeline">{{ _('The pipeline') }}</a>
           <a href="#algorithms">{{ _('The algorithms') }}</a>
           <a href="#model">{{ _('Scoring and the knapsack') }}</a>
-          <a href="#strategies">{{ _('Three strategies') }}</a>
+          <a href="#strategies">{{ _('Two selection strategies') }}</a>
           <a href="#modes">{{ _('Three itinerary modes') }}</a>
           <a href="#access">{{ _('Access: treks and ferries') }}</a>
           <a href="#stays">{{ _('Where you stay') }}</a>
@@ -95,18 +95,18 @@
           <div class="card-soft card-pad">
             <p><strong>{{ _('Where is travel time in the knapsack?') }}</strong> {{ _("Travel depends on the order, which is decided after selection. So each stop's weight is visit + pace buffer + cheapest trip out of it, and the capacity is the day length minus the shortest first ride, the unavoidable extra of the ride home (beyond the last stop's cheapest exit) and the meal breaks. Every route leaves each stop exactly once, so these weights can only under-estimate the real day: the knapsack never throws away a set that truly fits. The scheduler then checks the real timeline, and repair fixes optimism.") }}</p>
             <p><strong>{{ _('Discretisation.') }}</strong> {{ _('Weights are rounded up to {n}-minute units and the capacity down. Every strategy receives the identical integer instance.', n=cfg.DP_TIME_UNIT_MIN) }}</p>
-            <p class="mb-0"><strong>{{ _('What "optimal" means here.') }}</strong> {{ _('DP (and Max visits) are exact for this rounded knapsack model on each day. 2-opt reaches a local optimum. Held–Karp is exact for travel only, ignores opening hours, and is used on the comparison page as a lower bound. None of this makes the whole multi-day itinerary provably optimal.') }}</p>
+            <p class="mb-0"><strong>{{ _('What "optimal" means here.') }}</strong> {{ _('DP is exact for this rounded knapsack model on each day. 2-opt reaches a local optimum. Held–Karp is exact for travel only, ignores opening hours, and is used on the comparison page as a lower bound. None of this makes the whole multi-day itinerary provably optimal.') }}</p>
           </div>
         </section>
 
         <section id="strategies" class="mb-5">
-          <h2 class="h2">{{ _('Three strategies, three objectives') }}</h2>
+          <h2 class="h2">{{ _('Two selection strategies') }}</h2>
           <div class="row g-3">
             {% for key, label in cfg.STRATEGIES.items() %}
-              <div class="col-md-4"><div class="card-soft card-pad-sm h-100"><h3 class="h6">{{ _(label) }}</h3><p class="small mb-0">{{ _(cfg.STRATEGY_OBJECTIVES[key]) }}</p></div></div>
+              <div class="col-md-6"><div class="card-soft card-pad-sm h-100"><h3 class="h6">{{ _(label) }}</h3><p class="small mb-0">{{ _(cfg.STRATEGY_OBJECTIVES[key]) }}</p></div></div>
             {% endfor %}
           </div>
-          <p class="mt-3">{{ _('They use the same candidates, weights, costs, capacities, routing, meals, repair and validation, so differences come only from the objective. Max visits gives every place the value B + score with B = Σ scores + 1: one extra place always outweighs any difference in score, so the DP maximises the count first and the value second.') }}</p>
+          <p class="mt-3">{{ _('They use the same candidates, weights, costs, capacities, routing, meals, repair and validation, so differences come only from the selection method. Dynamic programming is the planner\'s default; Greedy is the baseline it is measured against in the Algorithm lab.') }}</p>
         </section>
 
         <section id="modes" class="mb-5">
@@ -178,7 +178,7 @@
         <section id="scoring" class="mb-5">
           <h2 class="h2">{{ _('How the comparison page scores strategies') }}</h2>
           {% set weight_names = {'value': _('value'), 'coverage': _('coverage'), 'travel': _('travel'), 'utilisation': _('utilisation')} %}
-          <p>{{ _('Raw metrics come from the actual plans. Each is normalised against the best strategy on the same trip (100 = best of the three), then weighted:') }}
+          <p>{{ _('Raw metrics come from the actual plans. Each is normalised against the best strategy on the same trip (100 = the better strategy), then weighted:') }}
             {% for k, w in cfg.SCORECARD_WEIGHTS.items() %}{{ (100 * w)|round|int }}% {{ weight_names.get(k, k) }}{{ ', ' if not loop.last else '.' }}{% endfor %}
             {{ _('There is no cost component: this is a travel-optimisation system, and an earlier “budget” option, which the planner could not honestly optimise, has been removed. Its 10% went half to travel efficiency and half to value. Feasibility is a gate — a plan with any constraint violation is never recommended — and runtime is reported but not scored. Ties are reported as ties, and identical timelines as identical.') }}</p>
         </section>
@@ -196,8 +196,8 @@
             {% set layers = [
               (_('Browser'), _('Jinja2 templates + Bootstrap 5 + small scripts for filters, the live trip summary, Leaflet maps and Chart.js charts. Every page works without JavaScript; scripts only enhance.')),
               (_('Flask routes'), _('routes/main_routes.py, itinerary_routes.py, api_routes.py: parse and validate the query string, call one service, render a template or return JSON.')),
-              (_('Services'), _('Trip validation, city-group cache (graph + Dijkstra tables), scheduler with meals, itinerary pipeline, validator, scorecard, comparison runner, fingerprints, interface languages.')),
-              (_('Algorithms'), _('Graph, Dijkstra, merge sort, greedy, dynamic programming, max visits, nearest neighbour, 2-opt, activity selection, insertion, Held–Karp.')),
+              (_('Services'), _('Trip validation, city-group cache (graph + Dijkstra tables), scheduler with meals, itinerary pipeline, validator, scorecard, comparison runner, fingerprints.')),
+              (_('Algorithms'), _('Graph, Dijkstra, merge sort, greedy, dynamic programming, nearest neighbour, 2-opt, activity selection, insertion, Held–Karp.')),
               (_('Database'), _('schema.sql, queries.py (all SQL, ? parameters), seed_data.py (CSV → SQLite with validation) and migrations.py (versioning, backups, user tables kept).')),
             ] %}
             {% for tag, text in layers %}
@@ -263,7 +263,6 @@
             <li><i class="bi bi-dot"></i>{{ _('Stay areas are OpenStreetMap neighbourhood points; the “places to stay nearby” count depends on OSM coverage, which is thin in small towns.') }}</li>
             <li><i class="bi bi-dot"></i>{{ _('Food and shopping coverage depends on Wikipedia and is thin in small towns.') }}</li>
             <li><i class="bi bi-dot"></i>{{ _('Map lines are straight segments in visit order, not road geometry.') }}</li>
-            <li><i class="bi bi-dot"></i>{{ _('Names of places, city descriptions and Wikipedia text are shown as they are in the data, in English, in every interface language.') }}</li>
           </ul>
         </section>
 
@@ -273,7 +272,7 @@
             <div class="col-md-6"><div class="card-soft card-pad-sm"><strong>Priyanshi Gupta</strong><div class="small text-muted">{{ _('B.Tech CSE, Section B · Faculty of Technology, University of Delhi') }}</div></div></div>
             <div class="col-md-6"><div class="card-soft card-pad-sm"><strong>Shreyas Singh</strong><div class="small text-muted">{{ _('B.Tech CSE, Section B · Faculty of Technology, University of Delhi') }}</div></div></div>
           </div>
-          <p class="small">{{ _('Built with Python, Flask, SQLite, Jinja2, Bootstrap 5, Bootstrap Icons, Leaflet, Chart.js and NetworkX (cross-check only). Map tiles © OpenStreetMap contributors. Routing data © OpenStreetMap contributors (ODbL), computed with OSRM. Descriptions from Wikipedia (CC BY-SA) where marked; Wikidata (CC0). Fonts: Fraunces and Inter (SIL Open Font License), with Noto Sans Devanagari, Gujarati and Tamil for Indian scripts.') }}</p>
+          <p class="small">{{ _('Built with Python, Flask, SQLite, Jinja2, Bootstrap 5, Bootstrap Icons, Leaflet, Chart.js and NetworkX (cross-check only). Map tiles © Esri (World Street Map). Routing data © OpenStreetMap contributors (ODbL), computed with OSRM. Descriptions from Wikipedia (CC BY-SA) where marked; Wikidata (CC0). Fonts: Fraunces and Inter (SIL Open Font License).') }}</p>
           <details id="credits">
             <summary class="fw-semibold">{{ _('Photo credits ({photos} attraction photos + {banners} city banners, Wikimedia Commons)', photos=credits|selectattr('image')|list|length, banners=cities|selectattr('hero_credit')|list|length) }}</summary>
             <div class="card-soft overflow-auto mt-3" style="max-height: 420px;">

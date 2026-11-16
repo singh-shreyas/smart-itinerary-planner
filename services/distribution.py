@@ -3,7 +3,7 @@
 What to visit and how to spread it are separate questions:
 
     what   the places you picked, or -- if you let the planner choose -- the
-           set the day-by-day selection strategy (DP / Greedy / Max visits) found
+           set the day-by-day selection strategy (DP / Greedy) found
     how    the itinerary mode, which ranks every feasible day assignment of that
            set with its own objective:
 

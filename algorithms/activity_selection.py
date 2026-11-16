@@ -13,8 +13,7 @@
 Why (2) is only a heuristic: the textbook proof assumes fixed intervals with no
 gaps between them. Our visits can start anywhere inside an opening window and
 need travel time between places, so the optimality guarantee does not carry
-over. (The "max visits" strategy therefore uses an exact knapsack DP on the
-count instead -- see max_visits.py.)
+over. (Selection therefore uses the knapsack algorithms instead.)
 """
 
 from algorithms.sorting import merge_sort

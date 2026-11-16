@@ -12,7 +12,6 @@ from werkzeug.datastructures import MultiDict
 from algorithms.dynamic_programming import dp_select
 from algorithms.greedy import greedy_select
 from algorithms.knapsack_types import Item
-from algorithms.max_visits import max_visits_select
 from conftest import DINNER, LUNCH, ROOT, make_trip
 from database import migrations
 from routes.helpers import itinerary_to_dict
@@ -27,7 +26,7 @@ def plan_dict(city, trip):
     return data
 
 
-@pytest.mark.parametrize("strategy", ["dp", "greedy", "max_visits"])
+@pytest.mark.parametrize("strategy", ["dp", "greedy"])
 def test_same_trip_twice_gives_the_same_plan(tiny_area, strategy):
     area = tiny_area("testville", "riverton")
     trip = make_trip(extra_cities=("riverton",), strategy=strategy, days=3, day_end=21 * 60, lunch=LUNCH,
@@ -60,7 +59,7 @@ print(plan_trip(area, trip).versions["plan"])
 """
 
 
-@pytest.mark.parametrize("strategy", ["dp", "max_visits"])
+@pytest.mark.parametrize("strategy", ["dp", "greedy"])
 def test_plan_does_not_depend_on_python_hash_randomisation(tiny_db, strategy):
     """Set iteration order changes with PYTHONHASHSEED; the plan must not."""
     outputs = set()
@@ -72,7 +71,7 @@ def test_plan_does_not_depend_on_python_hash_randomisation(tiny_db, strategy):
     assert len(outputs) == 1, outputs
 
 
-@pytest.mark.parametrize("select", [dp_select, greedy_select, max_visits_select])
+@pytest.mark.parametrize("select", [dp_select, greedy_select])
 def test_ties_are_broken_by_the_smaller_id(select):
     """Two identical places, room for one: the earlier row in the dataset (smaller id) wins, every time."""
     items = [Item(7, 50, 5), Item(9, 50, 5)]

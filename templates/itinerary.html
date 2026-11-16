@@ -3,12 +3,6 @@
 {% block title %}{{ _('{n}-day {city} itinerary', n=trip.days, city=city.name) }}{% endblock %}
 {% block head_extra %}<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}">{% endblock %}
 {% block view_class %}view-flush{% endblock %}
-{% block crumbs %}<a href="{{ url_for('planner.plan', **trip.to_query()) }}">{{ _('Plan a trip') }}</a><i class="bi bi-chevron-right sep" aria-hidden="true"></i><span class="current">{{ _('{n}-day {city} itinerary', n=trip.days, city=city.name) }}</span>{% endblock %}
-{% block top_actions %}
-  <button class="btn btn-sm btn-ghost d-none d-md-inline-flex" type="button" onclick="window.print()"><i class="bi bi-printer"></i>{{ _('Print') }}</button>
-  <a class="btn btn-sm btn-outline-brand d-none d-md-inline-flex" href="{{ url_for('planner.compare', **trip.to_query()) }}" data-loading-link><i class="bi bi-cpu"></i>{{ _('Compare algorithms') }}</a>
-  <a class="btn btn-sm btn-brand" href="{{ url_for('planner.plan', **trip.to_query()) }}"><i class="bi bi-pencil-square"></i><span class="d-none d-sm-inline">{{ _('Change preferences') }}</span></a>
-{% endblock %}
 
 {% set mode_icons = {'road': 'bi-car-front', 'walk': 'bi-person-walking', 'trek': 'bi-signpost-split', 'ferry': 'bi-water', 'boat': 'bi-water', 'ropeway': 'bi-cable-car'} %}
 {% macro leg_row(leg, label=None) -%}
@@ -83,17 +77,10 @@
           {% endfor %}
         </nav>
       </div>
-      {% if not trip.places %}
-      <div class="ctrl">
-        <span class="ctrl-label" id="strategy-label">{{ _('Selection:') }}</span>
-        <nav class="segmented" aria-labelledby="strategy-label">
-          {% for key, label in STRATEGIES.items() %}
-            <a href="{{ url_for('planner.itinerary', **trip.to_query(strategy=key)) }}" class="{{ 'active' if trip.strategy == key }}" data-loading-link
-               {% if trip.strategy == key %}aria-current="true"{% endif %} title="{{ _(label) }}">{{ _(STRATEGY_SHORT[key]) }}</a>
-          {% endfor %}
-        </nav>
+      <div class="itin-actions">
+        <button class="btn btn-sm btn-ghost d-none d-md-inline-flex" type="button" onclick="window.print()"><i class="bi bi-printer"></i>{{ _('Print') }}</button>
+        <a class="btn btn-sm btn-brand" href="{{ url_for('planner.plan', **trip.to_query()) }}"><i class="bi bi-pencil-square"></i>{{ _('Change preferences') }}</a>
       </div>
-      {% endif %}
     </div>
   </header>
 
@@ -442,6 +429,12 @@
               {% else %}
                 <strong>{{ _(STRATEGIES[trip.strategy]) }}</strong>
                 <p>{{ _(STRATEGY_OBJECTIVES[trip.strategy]) }}</p>
+                <nav class="segmented mt-2 no-print" aria-label="{{ _('Selection strategy') }}">
+                  {% for key, label in STRATEGIES.items() %}
+                    <a href="{{ url_for('planner.itinerary', **trip.to_query(strategy=key)) }}#pane-engine" class="{{ 'active' if trip.strategy == key }}" data-loading-link
+                       {% if trip.strategy == key %}aria-current="true"{% endif %} title="{{ _(label) }}">{{ _(STRATEGY_SHORT[key]) }}</a>
+                  {% endfor %}
+                </nav>
               {% endif %}
             </div>
           </div>

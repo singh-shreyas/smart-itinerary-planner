@@ -1,74 +1,142 @@
 {% extends "base.html" %}
 {% import "_macros.html" as ui %}
-{% block title %}{{ _('Overview') }}{% endblock %}
+{% block title %}{{ _('Intelligent trip planning') }}{% endblock %}
 {% block head_extra %}<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}">{% endblock %}
-{% block crumbs %}<span class="current">{{ _('Overview') }}</span>{% endblock %}
-{% block top_actions %}<a class="btn btn-sm btn-outline-brand d-none d-md-inline-flex" href="{{ url_for('planner.compare') }}"><i class="bi bi-cpu"></i>{{ _('Algorithm lab') }}</a>{% endblock %}
 
 {% macro cx(key) -%}{{ (algorithms|selectattr('key', 'equalto', key)|first or {}).get('time', '') }}{%- endmacro %}
 
 {% block content %}
-{% set hero = (cities|selectattr('slug', 'equalto', 'jaipur')|first) or (cities|first) %}
 {% set quickstarts = [
   ('jaipur', _('Jaipur, 3 days'), {'city': 'jaipur', 'days': 3, 'start_date': quick_dates.start_date}),
-  ('delhi', _('Delhi weekend, history lover'), {'city': 'delhi', 'days': 2, 'start_date': quick_dates.start_date, 'interests': 'history'}),
   ('agra', 'Agra + Mathura + Vrindavan', {'city': 'agra', 'also': 'mathura,vrindavan', 'days': 3, 'start_date': quick_dates.start_date}),
   ('varanasi', _('Varanasi in one day, history'), {'city': 'varanasi', 'days': 1, 'start_date': quick_dates.start_date, 'interests': 'history'}),
+  ('delhi', _('Delhi weekend, history lover'), {'city': 'delhi', 'days': 2, 'start_date': quick_dates.start_date, 'interests': 'history'}),
 ] %}
 
-<div class="dash">
-
-  {# ── Hero + quick plan ──────────────────────────────────────────────── #}
-  <section class="panel hero-panel span-8 fade-up" aria-labelledby="hero-title">
-    <div class="hero-media">{% if hero %}{{ ui.image(hero.hero_image, '', eager=True, width=1400, height=900) }}{% endif %}</div>
-    {% if hero and hero.hero_credit %}<div class="hero-credit">{{ hero.name }} · <a href="{{ hero.hero_source_url }}" rel="noopener">{{ hero.hero_credit }}</a></div>{% endif %}
-    <div>
-      <span class="eyebrow"><i class="bi bi-cpu"></i>{{ _('Algorithm-driven travel optimisation') }}</span>
-      <h1 id="hero-title">{{ _('Plan smarter days across') }} <em>{{ _('{n} Indian destinations', n=counts.cities) }}</em></h1>
-      <p class="lead">{{ _('Tell us where, when and how you like to travel. We pick the places worth your time, add lunch and dinner, order the stops to cut travel and check every opening hour, so each day actually works.') }}</p>
-    </div>
-    <div>
-      <form class="quickbar" action="{{ url_for('planner.itinerary') }}" method="get" data-loading="{{ _('Planning your trip…') }}" aria-label="{{ _('Quick plan') }}">
+{# ── Hero ─────────────────────────────────────────────────────────────── #}
+<section class="hero" aria-labelledby="hero-title">
+  <div class="hero-copy fade-up">
+    <span class="eyebrow"><i class="bi bi-stars"></i>{{ _('Trip planning, optimised') }}</span>
+    <h1 id="hero-title">{{ _('Days that actually work, across') }} <em>{{ _('{n} Indian destinations', n=counts.cities) }}</em></h1>
+    <p class="lead">{{ _('Tell us where, when and how you like to travel. We pick the places worth your time, add lunch and dinner, order the stops to cut travel and check every opening hour.') }}</p>
+    <form class="quickbar" action="{{ url_for('planner.itinerary') }}" method="get" data-loading="{{ _('Planning your trip…') }}" aria-label="{{ _('Quick plan') }}">
+      <div class="qb-field">
+        <label for="qp-city"><i class="bi bi-geo-alt"></i>{{ _('Destination') }}</label>
+        <select class="form-select" id="qp-city" name="city" required>
+          {% for region, items in regions %}
+            <optgroup label="{{ _(region) }}">
+              {% for c in items if readiness[c.slug].status != 'not_ready' %}<option value="{{ c.slug }}" {% if c.slug == 'delhi' %}selected{% endif %}>{{ c.name }}, {{ c.state }}</option>{% endfor %}
+            </optgroup>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="qb-dates" data-date-range data-max-days="{{ MAX_DAYS }}">
         <div class="qb-field">
-          <label for="qp-city"><i class="bi bi-geo-alt"></i>{{ _('Destination') }}</label>
-          <select class="form-select" id="qp-city" name="city" required>
-            {% for region, items in regions %}
-              <optgroup label="{{ _(region) }}">
-                {% for c in items if readiness[c.slug].status != 'not_ready' %}<option value="{{ c.slug }}" {% if c.slug == 'delhi' %}selected{% endif %}>{{ c.name }}, {{ c.state }}</option>{% endfor %}
-              </optgroup>
-            {% endfor %}
-          </select>
+          <label for="qp-start_date"><i class="bi bi-calendar3"></i>{{ _('Start date') }}</label>
+          <input class="form-control" type="date" id="qp-start_date" name="start_date" value="{{ quick_dates.start_date }}" required data-range-start aria-describedby="qp-duration">
         </div>
-        <div class="qb-dates" data-date-range data-max-days="{{ MAX_DAYS }}">
-          <div class="qb-field">
-            <label for="qp-start_date"><i class="bi bi-calendar3"></i>{{ _('Start date') }}</label>
-            <input class="form-control" type="date" id="qp-start_date" name="start_date" value="{{ quick_dates.start_date }}" required data-range-start aria-describedby="qp-duration">
-          </div>
-          <div class="qb-field">
-            <label for="qp-end_date"><i class="bi bi-calendar3-range"></i>{{ _('End date') }}</label>
-            <input class="form-control" type="date" id="qp-end_date" name="end_date" value="{{ quick_dates.end_date }}" min="{{ quick_dates.start_date }}" required data-range-end aria-describedby="qp-duration">
-          </div>
-          <span hidden><span id="qp-duration" data-range-output></span></span>
+        <div class="qb-field">
+          <label for="qp-end_date"><i class="bi bi-calendar3-range"></i>{{ _('End date') }}</label>
+          <input class="form-control" type="date" id="qp-end_date" name="end_date" value="{{ quick_dates.end_date }}" min="{{ quick_dates.start_date }}" required data-range-end aria-describedby="qp-duration">
         </div>
-        <button class="btn btn-brand" type="submit"><i class="bi bi-lightning-charge-fill"></i>{{ _('Generate itinerary') }}</button>
-      </form>
-      <div class="hero-foot">
-        <span><i class="bi bi-sliders me-1"></i>{{ _('Defaults: 09:00–19:00, lunch break, balanced pace, suggested itinerary.') }}</span>
-        <a class="link-arrow" href="{{ url_for('planner.plan') }}">{{ _('Open the full planner') }} <i class="bi bi-arrow-right"></i></a>
+        <span hidden><span id="qp-duration" data-range-output></span></span>
+      </div>
+      <button class="btn btn-brand" type="submit"><i class="bi bi-magic"></i>{{ _('Generate itinerary') }}</button>
+    </form>
+    <div class="hero-foot">
+      <span>{{ _('Defaults: 09:00–19:00, lunch break, balanced pace, suggested itinerary.') }}</span>
+      <a class="link-arrow" href="{{ url_for('planner.plan') }}">{{ _('Open the full planner') }} <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <dl class="hero-stats">
+      <div><dt>{{ counts.cities }}</dt><dd>{{ _('destinations') }}</dd></div>
+      <div><dt>{{ counts.attractions|num }}</dt><dd>{{ _('attractions') }}</dd></div>
+      <div><dt>{{ counts.edges|num }}</dt><dd>{{ _('road links') }}</dd></div>
+      <div><dt>{{ ready_count }}</dt><dd>{{ _('ready to plan') }}</dd></div>
+    </dl>
+  </div>
+
+  <div class="hero-mosaic fade-up-2" aria-label="{{ _('Ready-made trips') }}">
+    {% for slug, label, q in quickstarts[:3] %}
+      {% set c = cities|selectattr('slug', 'equalto', slug)|first %}
+      <a class="mosaic-tile mosaic-{{ loop.index }}" href="{{ url_for('planner.itinerary', **q) }}" data-loading-link>
+        {% if c %}{{ ui.image(c.hero_image, c.name, eager=True, width=900, height=900) }}{% endif %}
+        <span class="mosaic-body">
+          <small>{{ _('{n} day', n=q.days) if q.days == 1 else _('{n} days', n=q.days) }} · {{ _('ready-made trip') }}</small>
+          <strong>{{ label }}</strong>
+          <span class="mosaic-go">{{ _('See the itinerary') }} <i class="bi bi-arrow-right"></i></span>
+        </span>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+
+{# ── Itinerary modes ─────────────────────────────────────────────────── #}
+<section class="home-section" aria-labelledby="modes-title">
+  <div class="section-head">
+    <div><span class="eyebrow">{{ _('Three planning modes') }}</span>
+      <h2 id="modes-title">{{ _('The same places, three different trips') }}</h2></div>
+    <p>{{ _('What to see and how to spread it are separate questions. Each mode spreads your places over the days by its own rule; the bars show the rule for a 4-day trip.') }}</p>
+  </div>
+  {% set rules = {
+    'evenly': _('Each day gets about the same number of places.'),
+    'suggested': _('Days stay under a comfortable length, with as little travel as possible.'),
+    'optimized': _('Everything fits into the fewest days; the rest stay free.'),
+  } %}
+  <div class="mode-cards">
+    {% for key, m in MODES.items() %}
+      <a class="mode-card mode-card-{{ key }}" href="{{ url_for('planner.plan', mode=key) }}#step-mode">
+        <span class="mode-card-icon"><i class="bi {{ m.icon }}"></i></span>
+        <h3>{{ _(m.label) }}{% if key == 'suggested' %}<span class="chip chip-xs chip-success ms-2">{{ _('Default') }}</span>{% endif %}</h3>
+        <p>{{ _(m.text) }}</p>
+        {{ ui.mode_schematic(key, _('comfortable')) }}
+        <span class="rule"><i class="bi bi-arrow-return-right me-1"></i>{{ rules[key] }}</span>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+
+{# ── Featured destinations ───────────────────────────────────────────── #}
+<section class="home-section" aria-labelledby="dest-title">
+  <div class="section-head">
+    <div><span class="eyebrow">{{ _('Destinations') }}</span>
+      <h2 id="dest-title">{{ _('Popular places to start') }}</h2></div>
+    <a class="link-arrow" href="{{ url_for('main.cities') }}">{{ _('All {n} destinations', n=counts.cities) }} <i class="bi bi-arrow-right"></i></a>
+  </div>
+  <div class="strip">
+    {% for c in featured %}
+      <a class="dest-tile" href="{{ url_for('main.attractions', city=c.slug) }}">
+        {{ ui.image(c.hero_image, c.name ~ ' — ' ~ c.tagline, width=480, height=600) }}
+        {% if c.top_rank %}<span class="chip chip-light chip-xs">#{{ c.top_rank }}</span>{% endif %}
+        <span class="dest-tile-body"><small>{{ c.state }}</small><strong>{{ c.name }}</strong><span>{{ _('{n} attractions', n=c.attraction_count) }}</span></span>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+
+{# ── Network map + recent itineraries ────────────────────────────────── #}
+<section class="home-section home-split">
+  <div class="panel" aria-labelledby="net-title">
+    <div class="panel-head">
+      <h2 id="net-title"><i class="bi bi-globe-asia-australia"></i>{{ _('Every destination on the map') }}</h2>
+      <span class="small text-muted d-none d-sm-inline">{{ _('Select a city to plan or explore') }}</span>
+    </div>
+    <div class="net-map">
+      <div id="net-map" style="position:absolute; inset:0" aria-label="{{ _('Map of every destination; select one for details') }}"></div>
+      <div class="net-legend">
+        <span><i style="background: var(--accent)"></i>{{ _('Ready to plan') }} ({{ ready_count }})</span>
+        <span><i style="background: var(--amber)"></i>{{ _('Limited data') }}</span>
+        <span><i style="background: var(--faint)"></i>{{ _('Not plannable by road') }}</span>
       </div>
     </div>
-  </section>
-
-  {# ── Recent itineraries / quick starts ─────────────────────────────── #}
-  <section class="panel span-4 fade-up-2" aria-labelledby="recent-title">
+  </div>
+  <div class="panel" aria-labelledby="recent-title">
     <div class="panel-head">
-      <h2 id="recent-title"><i class="bi bi-clock-history"></i>{{ _('Recent itineraries') }}</h2>
+      <h2 id="recent-title"><i class="bi bi-clock-history"></i>{{ _('Your recent itineraries') }}</h2>
       <a class="btn btn-sm btn-ghost" href="{{ url_for('planner.plan') }}"><i class="bi bi-plus-lg"></i>{{ _('New') }}</a>
     </div>
-    <ul class="recent-list" data-recent-list="dashboard" data-limit="5"></ul>
+    <ul class="recent-list" data-recent-list="dashboard" data-limit="6"></ul>
     <div data-recent-empty="dashboard">
       <p class="small text-muted px-3 pt-3 mb-0">{{ _('No itineraries yet in this browser. Each one is reproducible from its link, so it can always be reopened. Start with one of these real plans:') }}</p>
-      <div class="label-caps quickstart-label">{{ _('Quick starts') }}</div>
       <ul class="recent-list">
         {% for slug, label, q in quickstarts %}
           {% set c = cities|selectattr('slug', 'equalto', slug)|first %}
@@ -79,108 +147,44 @@
         {% endfor %}
       </ul>
     </div>
-  </section>
+  </div>
+</section>
 
-  {# ── Destination network map ───────────────────────────────────────── #}
-  <section class="panel span-7 fade-up-2" aria-labelledby="net-title" style="min-height: 440px">
-    <div class="panel-head">
-      <h2 id="net-title"><i class="bi bi-globe-asia-australia"></i>{{ _('Destination network') }}</h2>
-      <div class="stat-inline d-none d-sm-flex">
-        <span><strong>{{ counts.cities }}</strong>{{ _('cities') }}</span>
-        <span><strong>{{ counts.attractions|num }}</strong>{{ _('attractions') }}</span>
-        <span><strong>{{ counts.edges|num }}</strong>{{ _('road links') }}</span>
-      </div>
+{# ── Optimisation engine ─────────────────────────────────────────────── #}
+<section class="home-section" aria-labelledby="engine-title">
+  <div class="section-head">
+    <div><span class="eyebrow eyebrow-violet">{{ _('Under the hood') }}</span>
+      <h2 id="engine-title">{{ _('Six steps turn a wish list into a timetable') }}</h2></div>
+    <p>{{ _('Each step is a classic algorithm we implemented ourselves, and every plan is re-checked by an independent validator.') }}
+      <a class="link-arrow ms-1" href="{{ url_for('main.about') }}#pipeline">{{ _('How it works') }} <i class="bi bi-arrow-right"></i></a></p>
+  </div>
+  {% set engine = [
+    ('bi-signpost-split', _('Road network'), _('All-pairs travel times on the road graph of every place and stay area.'), ['Dijkstra', _('binary heap')], cx('dijkstra')),
+    ('bi-stars', _('Score and filter'), _('Value = 0.5 rating + 0.3 popularity + 0.2 interest match; closed or unreachable places drop out.'), [_('weighted score'), _('merge sort')], cx('sorting')),
+    ('bi-grid-3x3', _('Choose places per day'), _('A 0/1 knapsack over the hours of each day: dynamic programming, with greedy as the baseline.'), ['DP', 'Greedy'], cx('dp')),
+    ('bi-bezier2', _('Order the route'), _('Shortest tour that still respects opening hours and meal windows.'), [_('Nearest Neighbour'), '2-opt', _('closing-time insertion')], cx('two_opt')),
+    ('bi-node-plus', _('Repair, fill and spread'), _('A day that cannot be scheduled loses its weakest stop (min-heap) and is re-planned; spare time is filled; the mode spreads places over days.'), [_('min-heap repair'), _('feasible insertion')], cx('insertion')),
+    ('bi-shield-check', _('Independent validation'), _("Every timeline is recomputed from scratch: opening hours, meals, travel, access and every night's stay."), [_('validator')], _('every plan')),
+  ] %}
+  <ol class="engine-grid">
+    {% for icon, title, text, chips, complexity in engine %}
+      <li class="engine-card">
+        <div class="engine-card-top"><span class="engine-no">{{ '%02d'|format(loop.index) }}</span><span class="engine-dot"><i class="bi {{ icon }}"></i></span></div>
+        <h3>{{ title }}</h3>
+        <p>{{ text }}</p>
+        <div class="algo-chips">{% for c in chips %}<span class="algo-chip">{{ c }}</span>{% endfor %}<span class="complexity ms-auto">{{ complexity }}</span></div>
+      </li>
+    {% endfor %}
+  </ol>
+  <div class="cta-band mt-4">
+    <div><h2>{{ _('See the algorithms compete on a real trip') }}</h2>
+      <p>{{ _('The Algorithm lab runs DP against Greedy, and Nearest Neighbour against 2-opt and the exact optimum, on identical input.') }}</p></div>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-outline-brand" href="{{ url_for('planner.compare') }}" data-loading-link><i class="bi bi-cpu"></i>{{ _('Open the Algorithm lab') }}</a>
+      <a class="btn btn-brand" href="{{ url_for('planner.plan') }}"><i class="bi bi-compass"></i>{{ _('Start planning') }}</a>
     </div>
-    <div class="net-map">
-      <div id="net-map" style="position:absolute; inset:0" aria-label="{{ _('Map of every destination; select one for details') }}"></div>
-      <div class="net-legend">
-        <span><i style="background: var(--accent)"></i>{{ _('Ready to plan') }} ({{ ready_count }})</span>
-        <span><i style="background: var(--amber)"></i>{{ _('Limited data') }}</span>
-        <span><i style="background: var(--faint)"></i>{{ _('Not plannable by road') }}</span>
-      </div>
-    </div>
-  </section>
-
-  {# ── Optimisation engine ────────────────────────────────────────────── #}
-  <section class="panel span-5 fade-up-3" aria-labelledby="engine-title">
-    <div class="panel-head">
-      <h2 id="engine-title"><i class="bi bi-cpu"></i>{{ _('The optimisation engine') }}</h2>
-      <a class="link-arrow" href="{{ url_for('main.about') }}#pipeline">{{ _('How it works') }} <i class="bi bi-arrow-right"></i></a>
-    </div>
-    <div class="panel-body">
-      <ol class="engine">
-        <li><span class="engine-dot"><i class="bi bi-signpost-split"></i></span>
-          <div><strong>{{ _('Road network') }}</strong><span>{{ _('All-pairs travel times on the road graph of every place and stay area.') }}</span>
-            <div class="algo-chips"><span class="algo-chip">Dijkstra</span><span class="algo-chip">{{ _('binary heap') }}</span></div></div>
-          <span class="complexity">{{ cx('dijkstra') }}</span></li>
-        <li><span class="engine-dot"><i class="bi bi-stars"></i></span>
-          <div><strong>{{ _('Score and filter') }}</strong><span>{{ _('Value = 0.5 rating + 0.3 popularity + 0.2 interest match; closed or unreachable places drop out.') }}</span>
-            <div class="algo-chips"><span class="algo-chip">{{ _('weighted score') }}</span><span class="algo-chip">{{ _('merge sort') }}</span></div></div>
-          <span class="complexity">{{ cx('sorting') }}</span></li>
-        <li><span class="engine-dot"><i class="bi bi-grid-3x3"></i></span>
-          <div><strong>{{ _('Choose places per day') }}</strong><span>{{ _('A 0/1 knapsack over the hours of each day, solved three ways.') }}</span>
-            <div class="algo-chips"><span class="algo-chip">DP</span><span class="algo-chip">Greedy</span><span class="algo-chip">Max visits</span></div></div>
-          <span class="complexity">{{ cx('dp') }}</span></li>
-        <li><span class="engine-dot"><i class="bi bi-bezier2"></i></span>
-          <div><strong>{{ _('Order the route') }}</strong><span>{{ _('Shortest tour that still respects opening hours and meal windows.') }}</span>
-            <div class="algo-chips"><span class="algo-chip">{{ _('Nearest Neighbour') }}</span><span class="algo-chip">2-opt</span><span class="algo-chip">{{ _('closing-time insertion') }}</span></div></div>
-          <span class="complexity">{{ cx('two_opt') }}</span></li>
-        <li><span class="engine-dot"><i class="bi bi-node-plus"></i></span>
-          <div><strong>{{ _('Repair, fill and spread') }}</strong><span>{{ _('If a day cannot be scheduled, its weakest stop (lowest value per minute) leaves via a min-heap and the day is re-planned; spare time is filled, and the mode spreads places over the days.') }}</span>
-            <div class="algo-chips"><span class="algo-chip">{{ _('min-heap repair') }}</span><span class="algo-chip">{{ _('feasible insertion') }}</span><span class="algo-chip">{{ _('local search') }}</span></div></div>
-          <span class="complexity">{{ cx('insertion') }}</span></li>
-        <li><span class="engine-dot" style="color: var(--accent-2)"><i class="bi bi-shield-check"></i></span>
-          <div><strong>{{ _('Independent validation') }}</strong><span>{{ _('Every timeline is recomputed from scratch: opening hours, meals, travel, access and every night\'s stay.') }}</span></div>
-          <span class="complexity">{{ _('every plan') }}</span></li>
-      </ol>
-    </div>
-  </section>
-
-  {# ── Itinerary modes ────────────────────────────────────────────────── #}
-  <section class="panel span-5" aria-labelledby="modes-title">
-    <div class="panel-head">
-      <h2 id="modes-title"><i class="bi bi-distribute-horizontal"></i>{{ _('Three itinerary modes') }}</h2>
-      <span class="small text-muted">{{ _('rule for a 4-day trip') }}</span>
-    </div>
-    <div class="panel-body mode-tabs">
-      {% set rules = {
-        'evenly': _('Each day gets about the same number of places.'),
-        'suggested': _('Days stay under a comfortable length, with as little travel as possible.'),
-        'optimized': _('Everything fits into the fewest days; the rest stay free.'),
-      } %}
-      {% for key, m in MODES.items() %}<input type="radio" name="mode-tour" id="mt-{{ key }}" {% if key == 'suggested' %}checked{% endif %}>{% endfor %}
-      <div class="segmented" role="presentation">
-        {% for key, m in MODES.items() %}<label for="mt-{{ key }}"><i class="bi {{ m.icon }}"></i>{{ _(m.label) }}</label>{% endfor %}
-      </div>
-      <div class="mode-panes">
-        {% for key, m in MODES.items() %}
-          <div class="mode-pane mp-{{ key }}">
-            {{ ui.mode_schematic(key, _('comfortable')) }}
-            <p>{{ _(m.text) }}</p>
-            <div class="rule"><i class="bi bi-arrow-return-right me-1"></i>{{ rules[key] }}</div>
-          </div>
-        {% endfor %}
-      </div>
-    </div>
-  </section>
-
-  {# ── Featured destinations ──────────────────────────────────────────── #}
-  <section class="panel span-7" aria-labelledby="dest-title">
-    <div class="panel-head">
-      <h2 id="dest-title"><i class="bi bi-map"></i>{{ _('Popular places to start') }}</h2>
-      <a class="link-arrow" href="{{ url_for('main.cities') }}">{{ _('All {n} destinations', n=counts.cities) }} <i class="bi bi-arrow-right"></i></a>
-    </div>
-    <div class="strip">
-      {% for c in featured %}
-        <a class="dest-tile" href="{{ url_for('main.attractions', city=c.slug) }}">
-          {{ ui.image(c.hero_image, c.name ~ ' — ' ~ c.tagline, width=480, height=600) }}
-          {% if c.top_rank %}<span class="chip chip-light chip-xs">#{{ c.top_rank }}</span>{% endif %}
-          <span class="dest-tile-body"><small>{{ c.state }}</small><strong>{{ c.name }}</strong><span>{{ _('{n} attractions', n=c.attraction_count) }}</span></span>
-        </a>
-      {% endfor %}
-    </div>
-  </section>
-</div>
+  </div>
+</section>
 
 <script id="city-points" type="application/json">[{% for c in cities %}{"slug": {{ c.slug|tojson }}, "name": {{ c.name|tojson }}, "state": {{ c.state|tojson }}, "lat": {{ c.center_lat }}, "lng": {{ c.center_lng }}, "n": {{ c.attraction_count or 0 }}, "status": {{ readiness[c.slug].status|tojson }}, "explore": {{ url_for('main.attractions', city=c.slug)|tojson }}, "plan": {{ url_for('planner.plan', city=c.slug)|tojson }}}{{ ',' if not loop.last }}{% endfor %}]</script>
 <script id="overview-texts" type="application/json">{{ {'attractions': _('attractions'), 'plan': _('Plan a trip'), 'explore': _('Explore'), 'ready': _('Ready to plan'), 'limited': _('Limited data'), 'not_ready': _('Not plannable by road')}|tojson }}</script>

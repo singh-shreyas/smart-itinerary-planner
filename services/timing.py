@@ -8,8 +8,9 @@ report one.
 import time
 
 
-def median_ms(function, repeats=5):
-    function()
+def median_ms(function, repeats=5, warm_up=True):
+    if warm_up:
+        function()
     samples = []
     for _ in range(max(1, repeats)):
         started = time.perf_counter_ns()

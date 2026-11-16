@@ -109,7 +109,7 @@ def test_plans_are_deterministic(real_cities):
     assert first == second
 
 
-@pytest.mark.parametrize("strategy", ["dp", "greedy", "max_visits"])
+@pytest.mark.parametrize("strategy", ["dp", "greedy"])
 def test_random_trips_on_real_data_always_validate(real_cities, strategy):
     """Stress test: random trips on the real cities (random stay area, mode and picked places)
     must never break any constraint."""
@@ -135,7 +135,7 @@ def test_comparison_runs_on_identical_input(real_cities, tmp_path):
     trip = TripRequest(city="agra", start_date=MONDAY, days=2, day_start=540, day_end=1140,
                        interests=(), pace="balanced", start="agra-stay-east", strategy="dp")
     result = run_comparison(real_cities["agra"], trip, str(tmp_path), repeats=1)
-    assert [s["key"] for s in result["strategies"]] == ["dp", "greedy", "max_visits"]
+    assert [s["key"] for s in result["strategies"]] == ["dp", "greedy"]
     assert all(s["metrics"]["violations"] == 0 for s in result["strategies"])
     for row in result["selection"]:
         assert row["dp"]["score"] >= row["greedy"]["score"]            # same instance: DP is never worse

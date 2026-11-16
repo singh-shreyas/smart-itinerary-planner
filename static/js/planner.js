@@ -152,6 +152,19 @@
         excludeList.appendChild(wrap);
       });
     });
+    if (excludeFilter) excludeFilter.value = "";
+  }
+
+  // Exclusion list: filter by name (Enter must not submit the trip form).
+  var excludeFilter = document.getElementById("exclude-filter");
+  if (excludeFilter) {
+    excludeFilter.addEventListener("input", function () {
+      var q = excludeFilter.value.trim().toLowerCase();
+      excludeList.querySelectorAll(".form-check").forEach(function (row) {
+        row.hidden = q !== "" && row.textContent.toLowerCase().indexOf(q) === -1;
+      });
+    });
+    excludeFilter.addEventListener("keydown", function (e) { if (e.key === "Enter") e.preventDefault(); });
   }
 
   // The places you pick: base city and any nearby cities. Places whose access cannot be timed are shown,
@@ -328,6 +341,10 @@
     var picked = pickList ? pickList.querySelectorAll("input[name=places]:checked").length : 0;
     set("mode", (mode ? mode.nextElementSibling.querySelector("strong").textContent : "Suggested") +
         " · " + (picking ? t(picked === 1 ? "{n} place picked" : "{n} places picked").replace("{n}", picked) : t("planner chooses places")));
+    var skipped = excludeList.querySelectorAll("input[name=exclude]:checked").length;
+    set("exclude", skipped ? t(skipped === 1 ? "{n} place skipped" : "{n} places skipped").replace("{n}", skipped) : t("Nothing skipped"));
+    var skipCount = document.getElementById("exclude-count");
+    if (skipCount) skipCount.textContent = skipped;
     var pace = form.querySelector("input[name=pace]:checked");
     var interests = Array.prototype.map.call(form.querySelectorAll("input[name=interests]:checked"), function (i) {
       return i.nextElementSibling.textContent.trim();

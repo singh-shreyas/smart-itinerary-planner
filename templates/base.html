@@ -1,25 +1,27 @@
 <!doctype html>
-<html lang="{{ current_lang or 'en' }}" data-theme="dark" data-bs-theme="dark"
+<html lang="en" data-theme="light" data-bs-theme="light"
       data-i18n='{{ (js_i18n or {})|tojson }}' data-photo-missing="{{ _('Photo not available') }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ _('Smart Itinerary Planner') }}{% endblock %} · Smart Itinerary</title>
   <meta name="description" content="{% block description %}{{ _('Plan realistic day-by-day sightseeing itineraries for 50 Indian destinations, built on graph algorithms, dynamic programming and route optimisation.') }}{% endblock %}">
-  <meta name="theme-color" content="#0B0F10">
+  <meta name="theme-color" content="#FAF8F4">
   <script>
-    // Before the first paint: the app is dark-only; restore the sidebar's collapsed state (storage may be blocked).
+    // Before the first paint: light by default; a theme chosen earlier is restored (storage may be blocked).
     (function () {
-      var root = document.documentElement;
-      try { if (localStorage.getItem("si.sidebar") === "collapsed") root.classList.add("sb-collapsed"); } catch (e) {}
+      var root = document.documentElement, theme = "light";
+      try { if (localStorage.getItem("si.theme") === "dark") theme = "dark"; } catch (e) {}
+      root.setAttribute("data-theme", theme);
+      root.setAttribute("data-bs-theme", theme);
       root.classList.add("js");
     })();
-    // Translated texts for the page scripts come from data attributes on <html> (filled in by Flask),
+    // Texts for the page scripts come from data attributes on <html> (filled in by Flask),
     // so this script stays plain JavaScript.
     (function () {
       var root = document.documentElement, texts = {};
       try { texts = JSON.parse(root.dataset.i18n || "{}"); } catch (e) {}
-      window.I18N = { lang: root.lang || "en", texts: texts,
+      window.I18N = { lang: "en", texts: texts,
                       t: function (s) { return (window.I18N.texts && window.I18N.texts[s]) || s; } };
     })();
     // A photo that fails to load is replaced by the neutral placeholder (no broken-image icon, same box size).
@@ -39,100 +41,70 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.min.css') }}">
   {% block head_extra %}{% endblock %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% for sheet in ['tokens', 'base', 'shell', 'components', 'home', 'planner', 'itinerary', 'explore', 'lab', 'utilities'] %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/' ~ sheet ~ '.css') }}">
+  {% endfor %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
   <div class="page-progress" aria-hidden="true"></div>
   <a class="visually-hidden-focusable" href="#main">{{ _('Skip to content') }}</a>
 
-  {% set nav_groups = [
-    (_('Workspace'), [
-      ('main.index', 'bi-grid-1x2', _('Overview'), None),
-      ('planner.plan', 'bi-compass', _('Plan a trip'), None),
-    ]),
-    (_('Explore'), [
-      ('main.cities', 'bi-map', _('Destinations'), footer.city_count or None),
-      ('main.attractions', 'bi-pin-map', _('Attractions'), footer.attraction_count or None),
-    ]),
-    (_('Engine'), [
-      ('planner.compare', 'bi-cpu', _('Algorithm lab'), None),
-      ('main.about', 'bi-journal-text', _('Methodology'), None),
-    ]),
+  {% set nav_links = [
+    ('main.index', 'bi-house', _('Home')),
+    ('planner.plan', 'bi-compass', _('Plan a trip')),
+    ('main.cities', 'bi-map', _('Destinations')),
+    ('main.attractions', 'bi-pin-map', _('Attractions')),
+    ('planner.compare', 'bi-cpu', _('Algorithm lab')),
+    ('main.about', 'bi-journal-text', _('How it works')),
   ] %}
 
-  <div class="app-shell">
-    <aside class="sidebar" id="sidebar" aria-label="{{ _('Main') }}">
-      <div class="sb-head">
-        <a class="brand" href="{{ url_for('main.index') }}" aria-label="{{ _('Smart Itinerary home') }}">
-          <span class="brand-mark" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="18" r="2.3" fill="currentColor" stroke="none"/><circle cx="18.5" cy="6" r="2.3" fill="currentColor" stroke="none"/><path d="M8.5 18H14a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h5.5"/></svg>
-          </span>
-          <span class="brand-name">{{ _('Smart Itinerary') }}<small>{{ _('Travel optimisation') }}</small></span>
-        </a>
-        <button type="button" class="sb-icon-btn sb-collapse" id="sb-collapse" aria-label="{{ _('Collapse sidebar') }}" title="{{ _('Collapse sidebar') }}" aria-controls="sidebar"><i class="bi bi-chevron-double-left" aria-hidden="true"></i></button>
-        <button type="button" class="sb-icon-btn d-lg-none" data-sb-close aria-label="{{ _('Close menu') }}"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
-      </div>
-      <a class="btn btn-brand sb-cta" href="{{ url_for('planner.plan') }}" title="{{ _('Plan a trip') }}"><i class="bi bi-plus-lg" aria-hidden="true"></i><span>{{ _('New trip') }}</span></a>
-
-      <nav class="sb-nav" aria-label="{{ _('Sections') }}">
-        {% for group, links in nav_groups %}
-          <div class="sb-label">{{ group }}</div>
-          {% for endpoint, icon, label, count in links %}
-            <a class="sb-link {% if active_endpoint == endpoint or (endpoint == 'planner.plan' and active_endpoint == 'planner.itinerary') %}active{% endif %}"
-               {% if active_endpoint == endpoint %}aria-current="page"{% endif %} href="{{ url_for(endpoint) }}" title="{{ label }}">
-              <i class="bi {{ icon }}" aria-hidden="true"></i><span>{{ label }}</span>{% if count %}<span class="sb-count">{{ count }}</span>{% endif %}
-            </a>
-          {% endfor %}
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="{{ url_for('main.index') }}" aria-label="{{ _('Smart Itinerary home') }}">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="18" r="2.3" fill="currentColor" stroke="none"/><circle cx="18.5" cy="6" r="2.3" fill="currentColor" stroke="none"/><path d="M8.5 18H14a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h5.5"/></svg>
+        </span>
+        <span class="brand-name">{{ _('Smart Itinerary') }}<small>{{ _('Travel optimisation') }}</small></span>
+      </a>
+      <nav class="site-nav" id="site-nav" aria-label="{{ _('Main') }}">
+        {% for endpoint, icon, label in nav_links %}
+          {% set on = active_endpoint == endpoint or (endpoint == 'planner.plan' and active_endpoint == 'planner.itinerary') %}
+          <a class="nav-item {{ 'active' if on }}" {% if active_endpoint == endpoint %}aria-current="page"{% endif %} href="{{ url_for(endpoint) }}"><i class="bi {{ icon }}" aria-hidden="true"></i>{{ label }}</a>
         {% endfor %}
-        <div class="sb-section-recent">
-          <div class="sb-label">{{ _('Recent itineraries') }}</div>
-          <div class="sb-recent" data-recent-list="sidebar" data-limit="4">
-            <p class="sb-empty">{{ _('Itineraries you generate appear here (saved in this browser).') }}</p>
-          </div>
-        </div>
+        <a class="btn btn-brand nav-cta-mobile" href="{{ url_for('planner.plan') }}"><i class="bi bi-compass" aria-hidden="true"></i>{{ _('Start planning') }}</a>
       </nav>
-
-      <div class="sb-foot">
-        {% if footer.city_count %}
-        <div class="sb-stats" aria-label="{{ _('Dataset in numbers') }}">
-          <span><strong>{{ footer.city_count }}</strong>{{ _('cities') }}</span>
-          <span><strong>{{ footer.attraction_count }}</strong>{{ _('places') }}</span>
-          <span><strong>{{ footer.edge_count|num }}</strong>{{ _('road links') }}</span>
-        </div>
-        {% endif %}
-        <a class="sb-status" href="{{ url_for('api.health') }}" title="{{ _('API status') }}"><span class="status-dot" aria-hidden="true"></span><span>{{ _('API status') }}{% if footer.data_version %} · {{ _('data') }} #{{ footer.data_version }}{% endif %}</span></a>
+      <div class="header-actions">
+        <button type="button" class="icon-btn theme-toggle" id="theme-toggle" aria-label="{{ _('Switch to dark mode') }}" title="{{ _('Switch to dark mode') }}">
+          <i class="bi bi-moon-stars" aria-hidden="true"></i><i class="bi bi-sun" aria-hidden="true"></i></button>
+        <a class="btn btn-brand header-cta" href="{{ url_for('planner.plan') }}"><i class="bi bi-compass" aria-hidden="true"></i>{{ _('Start planning') }}</a>
+        <button type="button" class="icon-btn nav-toggle" id="nav-toggle" aria-controls="site-nav" aria-expanded="false" aria-label="{{ _('Open menu') }}"><i class="bi bi-list" aria-hidden="true"></i></button>
       </div>
-    </aside>
-    <div class="sb-backdrop" data-sb-close aria-hidden="true"></div>
+    </div>
+  </header>
 
-    <div class="main-col">
-      <header class="topbar">
-        <button type="button" class="sb-icon-btn topbar-menu" data-sb-open aria-controls="sidebar" aria-expanded="false" aria-label="{{ _('Open menu') }}"><i class="bi bi-list" aria-hidden="true"></i></button>
-        <nav class="crumbs" aria-label="{{ _('Breadcrumb') }}">
-          {% block crumbs %}<a href="{{ url_for('main.index') }}">{{ _('Smart Itinerary') }}</a><i class="bi bi-chevron-right sep" aria-hidden="true"></i><span class="current">{{ self.title() }}</span>{% endblock %}
-        </nav>
-        <div class="topbar-actions">
-          {% block top_actions %}{% endblock %}
-          <label class="visually-hidden" for="lang-select">{{ _('Language') }}</label>
-          <select class="form-select form-select-sm lang-select" id="lang-select" data-lang-switch>
-            {% for code, name in LANGUAGES.items() %}<option value="{{ code }}" lang="{{ code }}" {% if code == current_lang %}selected{% endif %}>{{ name }}</option>{% endfor %}
-          </select>
-        </div>
-      </header>
+  <main id="main" class="view {% block view_class %}{% endblock %}">
+    {% block content %}{% endblock %}
+  </main>
 
-      <main id="main" class="view {% block view_class %}{% endblock %}">
-        {% block content %}{% endblock %}
-      </main>
-
-      <footer class="app-footer">
-        <p>&copy; {{ today.year }} Smart Itinerary Planner · {{ _('ADA project by Priyanshi Gupta & Shreyas Singh, B.Tech CSE (Section B), Faculty of Technology, University of Delhi') }}</p>
-        <p>{{ _('Map data') }} &copy; <a href="https://www.openstreetmap.org/copyright" rel="noopener">{{ _('OpenStreetMap contributors') }}</a>
+  <footer class="app-footer">
+    <div class="footer-inner">
+      <div>
+        <p><strong class="text-body">Smart Itinerary Planner</strong> · {{ _('ADA project by Priyanshi Gupta & Shreyas Singh, B.Tech CSE (Section B), Faculty of Technology, University of Delhi') }}</p>
+        <p class="mt-1">{{ _('Map data') }} &copy; <a href="https://www.openstreetmap.org/copyright" rel="noopener">{{ _('OpenStreetMap contributors') }}</a>, {{ _('map tiles') }} &copy; <a href="https://www.esri.com/" rel="noopener">Esri</a>
           · {{ _('Routing') }} <a href="https://project-osrm.org/" rel="noopener">{{ _('OSRM') }}</a>
           · {{ _('Photos') }} <a href="{{ url_for('main.about') }}#credits">{{ _('Wikimedia Commons') }}</a>
           · <a href="{{ url_for('main.about') }}#data">{{ _('Hours, fees and visit lengths are labelled estimates unless a source is shown.') }}</a></p>
-      </footer>
+      </div>
+      {% if footer.city_count %}
+      <div class="footer-stats" aria-label="{{ _('Dataset in numbers') }}">
+        <span><strong>{{ footer.city_count }}</strong>{{ _('cities') }}</span>
+        <span><strong>{{ footer.attraction_count }}</strong>{{ _('places') }}</span>
+        <span><strong>{{ footer.edge_count|num }}</strong>{{ _('road links') }}</span>
+        <a href="{{ url_for('api.health') }}">{{ _('API status') }}</a>
+      </div>
+      {% endif %}
     </div>
-  </div>
+  </footer>
 
   <script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/site.js') }}"></script>

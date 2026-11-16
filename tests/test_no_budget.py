@@ -11,7 +11,6 @@ import config
 from algorithms.dynamic_programming import dp_select
 from algorithms.greedy import greedy_select
 from algorithms.knapsack_types import Item, SelectionResult
-from algorithms.max_visits import max_visits_select
 from conftest import make_trip
 from services import scorecard
 from services.itinerary_generator import plan_trip
@@ -55,7 +54,7 @@ def test_trip_and_plan_models_have_no_money_fields():
 
 def test_no_selector_takes_a_money_capacity():
     assert Item._fields == ("id", "score", "weight") and "cost" not in SelectionResult._fields
-    for select in (dp_select, greedy_select, max_visits_select):
+    for select in (dp_select, greedy_select):
         assert list(inspect.signature(select).parameters) == ["items", "time_cap"]
     assert list(inspect.signature(plan_trip).parameters) == ["city", "trip", "trace", "validate"]
 
