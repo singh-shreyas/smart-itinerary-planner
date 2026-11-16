@@ -10,14 +10,14 @@
   ('step-dates', 'bi-calendar3', _('When'), _('Dates & daily hours')),
   ('step-mode', 'bi-distribute-horizontal', _('What & how'), _('Places & itinerary mode')),
   ('step-style', 'bi-sliders', _('Preferences'), _('Interests, pace & meals')),
-  ('step-advanced', 'bi-cpu', _('Engine'), _('Algorithm & exclusions')),
+  ('step-advanced', 'bi-slash-circle', _('Skip'), _('Places to leave out')),
 ] %}
 
 <div class="view-head">
   <div>
     <span class="eyebrow"><i class="bi bi-compass"></i>{{ _('Trip planner') }}</span>
     <h1>{{ _('Design your trip') }}</h1>
-    <p>{{ _('Every field has a sensible default. Choose a base city (and nearby cities if you like), your days and interests, then generate a day-by-day plan or run every algorithm on the same trip.') }}</p>
+    <p>{{ _('Every field has a sensible default. Choose a base city (and nearby cities if you like), your days and interests, then generate a day-by-day plan.') }}</p>
   </div>
 </div>
 
@@ -143,7 +143,7 @@
           <p>{{ _('Opening hours depend on the weekday, so the date matters. A longer day lets the planner fit more, where places are still open.') }}</p></div></div>
         <div class="group">
           <span class="sub-label"><i class="bi bi-calendar-range me-1"></i>{{ _('Travel dates') }}</span>
-          {{ ui.date_range(values, errors) }}
+          {{ ui.date_range(values, errors, calendar=True) }}
         </div>
         <div class="group">
           <span class="sub-label"><i class="bi bi-clock me-1"></i>{{ _('Your daily window') }}</span>
@@ -177,8 +177,8 @@
           <input type="radio" name="choose" id="choose-pick" value="pick" {% if values.choose == 'pick' %}checked{% endif %}>
           <label for="choose-pick"><i class="bi bi-hand-index"></i>{{ _("I'll pick the places") }}</label>
         </div>
-        <p class="form-text mt-0" id="choose-help" data-auto="{{ _('The planner picks the most valuable places that fit your days (see “Advanced” for how).') }}"
-           data-pick="{{ _('Tick the places you want to see. The itinerary mode below decides which day each one goes on.') }}">{{ _('Tick the places you want to see. The itinerary mode below decides which day each one goes on.') if values.choose == 'pick' else _('The planner picks the most valuable places that fit your days (see “Advanced” for how).') }}</p>
+        <p class="form-text mt-0" id="choose-help" data-auto="{{ _('The planner picks the most valuable places that fit your days (dynamic programming over the hours of each day).') }}"
+           data-pick="{{ _('Tick the places you want to see. The itinerary mode below decides which day each one goes on.') }}">{{ _('Tick the places you want to see. The itinerary mode below decides which day each one goes on.') if values.choose == 'pick' else _('The planner picks the most valuable places that fit your days (dynamic programming over the hours of each day).') }}</p>
         <div class="pick-box {{ 'd-none' if values.choose != 'pick' }}" id="pick-box">
           <div class="pick-toolbar">
             <div class="input-icon pick-filter">
@@ -339,27 +339,25 @@
         </div>
       </section>
 
-      {# ── 5 · Engine ────────────────────────────────────────────── #}
+      {# ── 5 · Exclusions ────────────────────────────────────────── #}
       <section class="wiz-step form-section" id="step-advanced" aria-labelledby="h-advanced">
-        <div class="wiz-head"><span class="wiz-icon is-violet"><i class="bi bi-cpu"></i></span><div>
+        <div class="wiz-head"><span class="wiz-icon"><i class="bi bi-slash-circle"></i></span><div>
           <span class="kicker">{{ _('Step {n} of {total}', n=5, total=5) }} · {{ _('Optional') }}</span>
-          <h2 id="h-advanced" tabindex="-1">{{ _('Advanced: algorithm and exclusions') }}</h2>
-          <p>{{ _('Used when the planner chooses the places: how it decides which ones fit each day.') }}</p></div></div>
-        <span class="sub-label">{{ _('Selection strategy') }}</span>
-        <div class="row g-3 mb-4">
-          {% set strategy_icons = {'dp': 'bi-grid-3x3', 'greedy': 'bi-lightning-charge', 'max_visits': 'bi-list-ol'} %}
-          {% for key, label in STRATEGIES.items() %}
-            <div class="col-md-4">
-              <div class="choice-card">
-                <input type="radio" name="strategy" id="strategy-{{ key }}" value="{{ key }}" {% if values.strategy == key %}checked{% endif %}>
-                <label for="strategy-{{ key }}"><i class="bi {{ strategy_icons[key] }} choice-icon"></i><strong>{{ _(label) }}</strong><span>{{ _(objectives[key]) if objectives is defined else '' }}</span></label>
-              </div>
-            </div>
-          {% endfor %}
-        </div>
+          <h2 id="h-advanced" tabindex="-1">{{ _('Anything to skip?') }}</h2>
+          <p>{{ _('Tick any attraction you do not want in your trip, for example one you have already seen. The planner leaves it out and uses the time for something else.') }}</p></div></div>
+        {# The selection method is no longer a choice here: it keeps its value (dynamic programming unless a link says otherwise). #}
+        <input type="hidden" name="strategy" value="{{ values.strategy if values.strategy in STRATEGIES else 'dp' }}">
         {{ ui.field_error(errors, 'strategy') }}
-        <span class="sub-label" id="exclude-label">{{ _('Skip these attractions') }}</span>
-        <div class="exclude-list" id="exclude-list" role="group" aria-labelledby="exclude-label">
+        <div class="pick-toolbar">
+          <div class="input-icon pick-filter">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <input class="form-control form-control-sm" type="search" id="exclude-filter" placeholder="{{ _('Filter places by name') }}"
+                   aria-label="{{ _('Filter the list of attractions') }}" autocomplete="off">
+          </div>
+          <span class="small pick-count" aria-live="polite"><strong id="exclude-count">{{ values.exclude|length }}</strong> {{ _('skipped') }}</span>
+        </div>
+        <span class="visually-hidden" id="exclude-label">{{ _('Skip these attractions') }}</span>
+        <div class="exclude-list mt-2" id="exclude-list" role="group" aria-labelledby="exclude-label">
           {% if opts %}
             {% for a in opts.attractions %}
               <div class="form-check">
@@ -397,7 +395,7 @@
           <li><a href="#step-mode"><i class="bi bi-distribute-horizontal"></i><div><strong>{{ _('Itinerary') }}</strong><span data-summary="mode">{{ _(MODES.get(values.mode, MODES['suggested']).label) }} · {{ (_('{n} place picked', n=values.places|length) if values.places|length == 1 else _('{n} places picked', n=values.places|length)) if values.choose == 'pick' else _('planner chooses places') }}</span></div></a></li>
           <li><a href="#step-style"><i class="bi bi-sliders"></i><div><strong>{{ _('Style') }}</strong><span data-summary="style">{{ _(PACES.get(values.pace, PACES['balanced']).label) }} {{ _('pace') }}</span></div></a></li>
           <li><a href="#step-style"><i class="bi bi-egg-fried"></i><div><strong>{{ _('Meals') }}</strong><span data-summary="meals">{{ _('Lunch and dinner breaks') }}</span></div></a></li>
-          <li><a href="#step-advanced"><i class="bi bi-cpu"></i><div><strong>{{ _('Selection') }}</strong><span data-summary-strategy>{{ _(STRATEGIES.get(values.strategy, STRATEGIES['dp'])) }}</span></div></a></li>
+          <li><a href="#step-advanced"><i class="bi bi-slash-circle"></i><div><strong>{{ _('Skipping') }}</strong><span data-summary="exclude">{{ _('Nothing skipped') if not values.exclude else (_('{n} place skipped', n=values.exclude|length) if values.exclude|length == 1 else _('{n} places skipped', n=values.exclude|length)) }}</span></div></a></li>
         </ul>
         <button class="btn btn-brand btn-lg w-100" type="submit"><i class="bi bi-magic"></i>{{ _('Generate itinerary') }}</button>
         <button class="btn btn-outline-brand w-100 mt-2" type="submit" formaction="{{ url_for('planner.compare') }}" data-loading="{{ _('Running every algorithm…') }}"><i class="bi bi-cpu"></i>{{ _('Compare algorithms on this trip') }}</button>

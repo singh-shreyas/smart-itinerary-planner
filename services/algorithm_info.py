@@ -37,13 +37,6 @@ ALGORITHMS = [
                    "of attractions for the day's estimated capacity.",
     },
     {
-        "key": "max_visits", "name": "Max visits (DP on the count)", "icon": "bi-list-ol",
-        "file": "algorithms/max_visits.py", "time": "O(n · T)", "space": "O(n · T)",
-        "role": "Strategy",
-        "summary": "The same knapsack DP with every place worth one visit (ties broken by value), so it "
-                   "finds the largest number of places that fit the day's time.",
-    },
-    {
         "key": "nn", "name": "Nearest Neighbour", "icon": "bi-geo-alt",
         "file": "algorithms/nearest_neighbor.py", "time": "O(k²)", "space": "O(k)", "role": "Main plan",
         "summary": "Builds a first route by always travelling to the closest unvisited stop.",

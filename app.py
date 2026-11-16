@@ -13,7 +13,7 @@ import logging
 import os
 from datetime import date
 
-from flask import Flask, jsonify, redirect, render_template, request, url_for
+from flask import Flask, jsonify, render_template, request
 
 import config
 from config import Config
@@ -57,23 +57,12 @@ def _register_template_helpers(app):
     app.add_template_filter(fmt_long_date, "long_date")
     app.add_template_filter(lambda n: f"{n:,}" if isinstance(n, int) else n, "num")
 
-    # Interface language: from the "lang" cookie, for templates, Python messages and scripts alike.
+    # The interface is English only (the language selector was removed); "_" stays as the hook for texts.
     app.jinja_env.globals["_"] = i18n.gettext
-    app.jinja_env.globals["LANGUAGES"] = i18n.LANGUAGES
 
     @app.before_request
     def pick_language():
-        i18n.set_language(request.cookies.get(i18n.COOKIE, i18n.DEFAULT))
-
-    @app.route("/lang/<code>")
-    def set_language(code):
-        """Switch language and go back to the same page (same query string, so no trip input is lost)."""
-        target = request.args.get("next") or url_for("main.index")
-        if not target.startswith("/") or target.startswith("//"):
-            target = url_for("main.index")                      # only ever redirect within this site
-        response = redirect(target)
-        response.set_cookie(i18n.COOKIE, i18n.clean(code), max_age=365 * 24 * 3600, samesite="Lax")
-        return response
+        i18n.set_language(i18n.DEFAULT)
 
     def footer_data():
         """Top destinations and dataset totals for the footer. Never breaks a page (e.g. an error page)."""

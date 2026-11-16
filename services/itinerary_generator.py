@@ -22,8 +22,8 @@ For each day, in date order:
                  day on their own (meals included).
                  Every rejection is recorded with its reason.
     2. SELECT    one 0/1 knapsack instance over the day's time, solved by the
-                 chosen strategy:  dp (max total value, exact), greedy (value
-                 density, fast), max_visits (max count then value, exact).
+                 chosen strategy:  dp (max total value, exact) or greedy (value
+                 density, fast).
                  Each stop's time weight = visit + pace buffer + its cheapest
                  way to leave (a lower bound on real travel); the capacity is
                  the day minus the shortest first ride, the unavoidable extra
@@ -74,7 +74,6 @@ from algorithms.dynamic_programming import dp_select
 from algorithms.greedy import greedy_select
 from algorithms.insertion import cheapest_feasible_insertion, deadline_insertion_route
 from algorithms.knapsack_types import Item
-from algorithms.max_visits import max_visits_select
 from algorithms.nearest_neighbor import nearest_neighbor_route
 from algorithms.scoring import attraction_score, matches_interests
 from algorithms.sorting import merge_sort
@@ -89,7 +88,7 @@ from services.scheduler import DayContext, simulate
 from services.timeutil import WEEKDAY_LONG, WEEKDAY_SHORT, fmt_duration, fmt_hhmm
 
 SCORE_WEIGHTS = (config.W_RATING, config.W_POPULARITY, config.W_INTEREST)
-SELECTORS = {"dp": dp_select, "greedy": greedy_select, "max_visits": max_visits_select}
+SELECTORS = {"dp": dp_select, "greedy": greedy_select}
 
 
 @dataclass
@@ -315,17 +314,14 @@ def best_route(stops, ctx):
 # ------------------------------------------------------------------------------ steps 2-5 on one pool
 
 def objective_key(strategy, route, scores, travel):
-    """Smaller is better. dp / greedy: most value; max_visits: most stops, then value. Then less travel."""
+    """Smaller is better: most value, then most stops, then less travel."""
     value = sum(scores[a] for a in route)
-    if strategy == "max_visits":
-        return (-len(route), -value, travel)
     return (-value, -len(route), travel)
 
 
 def weakest_key(strategy, aid, scores, per_unit):
-    """Repair key (min-heap): the stop giving the least of the strategy's objective per estimated minute."""
-    worth = 1 if strategy == "max_visits" else scores[aid]
-    return (worth / per_unit, scores[aid], aid)
+    """Repair key (min-heap): the stop giving the least value per estimated minute."""
+    return (scores[aid] / per_unit, scores[aid], aid)
 
 
 def fill_route(route, pool, ctx, scores, strategy):
@@ -336,10 +332,7 @@ def fill_route(route, pool, ctx, scores, strategy):
         return simulate(candidate, ctx).feasible
 
     leftovers = [a for a in pool if a not in route]
-    if strategy == "max_visits":       # shortest first fits the most
-        leftovers = merge_sort(leftovers, key=lambda a: (ctx.duration(a), -scores[a], a))
-    else:                              # most valuable first
-        leftovers = merge_sort(leftovers, key=lambda a: (-scores[a], a))
+    leftovers = merge_sort(leftovers, key=lambda a: (-scores[a], a))      # most valuable first
     added = []
     for aid in leftovers:
         inserted = cheapest_feasible_insertion(start, route, aid, dist, feasible)

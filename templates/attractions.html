@@ -2,8 +2,10 @@
 {% import "_macros.html" as ui %}
 {% block title %}{{ _('{city} attractions', city=current.name) if current else _('Attractions') }}{% endblock %}
 
-{% block top_actions %}
-    <form class="city-picker d-flex align-items-center gap-2" method="get" action="{{ url_for('main.attractions') }}">
+{% block content %}
+<section class="page-header pb-4">
+  <div class="container">
+    <div class="picker-row"><form class="city-picker d-flex align-items-center gap-2" method="get" action="{{ url_for('main.attractions') }}">
       <label class="visually-hidden" for="city-pick">{{ _('Destination') }}</label>
       <div class="d-flex gap-2">
         <select class="form-select form-select-sm" id="city-pick" style="min-width: 190px" name="city" data-autosubmit>
@@ -16,12 +18,7 @@
         </select>
         <button class="btn btn-sm btn-outline-brand js-hide" type="submit">{{ _('Show') }}</button>
       </div>
-    </form>
-{% endblock %}
-
-{% block content %}
-<section class="page-header pb-4">
-  <div class="container">
+    </form></div>
     {% if current %}
       <div class="page-banner">
         {{ ui.image(current.hero_image, '', eager=True, width=1920, height=900) }}

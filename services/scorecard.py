@@ -11,7 +11,7 @@ Raw metrics (per strategy, whole trip):
     runtime_ms       planning time -- reported, never scored
 
 Subscores: each metric is normalised against the best strategy ON THIS TRIP,
-so 100 means "best of the three" and quantities in different units (minutes,
+so 100 means "best strategy on this trip" and quantities in different units (minutes,
 counts, shares) are never added together directly:
     higher is better:  sub = 100 * value / best value
     lower is better:   sub = 100 * best value / value

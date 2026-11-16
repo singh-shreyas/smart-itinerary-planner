@@ -29,7 +29,7 @@ def test_extra_evening_legitimately_changes_nothing_when_everything_is_closed(ti
     assert notes and "free after" in notes[0]                        # the unused evening is explained
 
 
-@pytest.mark.parametrize("strategy", ["dp", "greedy", "max_visits"])
+@pytest.mark.parametrize("strategy", ["dp", "greedy"])
 def test_stops_never_decrease_as_the_day_gets_longer(tiny_city, strategy):
     counts = []
     for end_hour in range(12, 24):

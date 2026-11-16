@@ -109,20 +109,17 @@ PACES = {
 }
 
 # --- Selection strategies ---------------------------------------------------
-# All three solve the SAME per-day knapsack instance and go through the same
-# routing, scheduling, repair and validation; only the objective differs.
+# Both solve the SAME per-day knapsack instance and go through the same
+# routing, scheduling, repair and validation; only the method differs.
 STRATEGIES = {
     "dp": "Dynamic programming (best total value)",
     "greedy": "Greedy (best value per minute)",
-    "max_visits": "Max visits (most stops)",
 }
-STRATEGY_SHORT = {"dp": "DP", "greedy": "Greedy", "max_visits": "Max visits"}
+STRATEGY_SHORT = {"dp": "DP", "greedy": "Greedy"}
 STRATEGY_OBJECTIVES = {
     "dp": "Maximise the total value score. Exact (optimal) for the per-day knapsack model.",
     "greedy": "Take places in order of value per minute of the day. Fast, but can miss "
               "a better combination.",
-    "max_visits": "Maximise the number of visits; among equally long lists, the higher total "
-                  "value wins. Exact for the per-day knapsack model.",
 }
 
 # --- Dynamic programming discretisation ------------------------------------
@@ -132,12 +129,16 @@ DP_TIME_UNIT_MIN = 10
 
 # --- Comparison page ------------------------------------------------------
 HELD_KARP_MAX_STOPS = 10          # 2^k * k^2 grows fast; exact tour only for small days
-TIMING_REPEATS = 5                # median of N timed runs after one warm-up
+TIMING_REPEATS = 5                # median of N timed runs after one warm-up (single algorithms)
+# Planning a whole trip takes about a second, so whole plans are timed with fewer runs; the plan that
+# was just built is the warm-up. Planning time is reported, never scored.
+PLAN_TIMING_REPEATS = 1
+COMPARISON_CACHE_SIZE = 24        # finished comparisons kept in memory for repeat views
 QUALITY_LAMBDA = 0.2              # Q = total score - lambda * travel minutes
 
 # Overall score of a plan on the comparison page = weighted sum of subscores.
 # Each subscore is normalised against the best strategy on the same trip
-# (100 = best of the three), so quantities in different units are never mixed
+# (100 = best strategy), so quantities in different units are never mixed
 # directly. Runtime is reported separately and does not count: a few
 # milliseconds do not change the traveller's day. Weights sum to 1.
 # There is no cost component: the planner optimises travel and time, not money.

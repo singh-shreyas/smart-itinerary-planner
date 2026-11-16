@@ -9,12 +9,12 @@ Rules that keep the comparison honest:
   * nothing is hard-coded: every number below is produced by running our code.
 
 Sections:
-  1. whole itineraries: DP vs Greedy vs Max visits -> raw metrics, subscores, overall, recommendation
-  2. selection on each day's identical knapsack instance: all three selectors
+  1. whole itineraries: DP vs Greedy -> raw metrics, subscores, overall, recommendation
+  2. selection on each day's identical knapsack instance: both selectors
   3. routing each planned day: Nearest Neighbour vs NN + 2-opt vs Held-Karp optimum,
      plus the travel-first vs window-first branches (kept separate from section 1)
   4. Dijkstra vs NetworkX on every pair of places
-  5. two textbook instances run live: the greedy trap, and value vs count
+  5. a textbook instance run live: the greedy trap
   6. saved scaling benchmarks (results/benchmarks.json), if the script has been run
   M. the three itinerary modes on the same places: how each spreads them over the days
 """
@@ -28,7 +28,6 @@ from algorithms.dynamic_programming import dp_select
 from algorithms.greedy import greedy_select
 from algorithms.held_karp import held_karp
 from algorithms.knapsack_types import Item
-from algorithms.max_visits import max_visits_select
 from algorithms.nearest_neighbor import nearest_neighbor_route
 from algorithms.tour import tour_cost
 from algorithms.two_opt import two_opt
@@ -39,15 +38,18 @@ from services.itinerary_generator import day_context, plan_trip, route_branches,
 from services.scheduler import simulate
 from services.timing import median_ms
 
-STRATEGY_ORDER = ["dp", "greedy", "max_visits"]
-SELECTOR_FUNCTIONS = {"dp": dp_select, "greedy": greedy_select, "max_visits": max_visits_select}
+STRATEGY_ORDER = ["dp", "greedy"]
+SELECTOR_FUNCTIONS = {"dp": dp_select, "greedy": greedy_select}
 
 
-def compare_itineraries(city, trip, repeats):
+def compare_itineraries(city, trip, repeats, trace=None):
+    """Both strategies' whole plans. `trace` (a list) receives the DP run's per-day knapsack instances,
+    so the selection comparison does not have to plan the trip again."""
     rows, plans = [], {}
+    plan_repeats = min(repeats, config.PLAN_TIMING_REPEATS)
     for key in STRATEGY_ORDER:
         variant = trip.with_changes(strategy=key)
-        itinerary = plan_trip(city, variant)
+        itinerary = plan_trip(city, variant, trace=trace if key == "dp" else None)
         plans[key] = itinerary
         row = {"key": key, "label": config.STRATEGIES[key], "short": config.STRATEGY_SHORT[key],
                "objective": config.STRATEGY_OBJECTIVES[key], "metrics": scorecard.raw_metrics(itinerary),
@@ -55,17 +57,19 @@ def compare_itineraries(city, trip, repeats):
                "per_day": [{"day": d.index, "stops": len(d.visits), "score": d.score, "travel_min": d.travel_min}
                            for d in itinerary.days],
                "stop_names": [[v.attraction.name for v in d.visits] for d in itinerary.days]}
-        row["runtime_ms"] = median_ms(lambda: plan_trip(city, variant, validate=False), repeats)
+        # The plan above was the warm-up (travel tables and caches are loaded), so only timed runs follow.
+        row["runtime_ms"] = median_ms(lambda: plan_trip(city, variant, validate=False), plan_repeats, warm_up=False)
         rows.append(row)
     weights = scorecard.subscores(rows)
     recommendation = scorecard.recommend(rows, {r["key"]: r["plan_id"] for r in rows})
     return rows, plans, weights, recommendation
 
 
-def compare_selection(city, trip, repeats):
-    """All three selectors on exactly the knapsack instance the DP pipeline built for each day."""
-    trace = []
-    plan_trip(city, trip.with_changes(strategy="dp"), trace=trace, validate=False)
+def compare_selection(city, trip, repeats, trace=None):
+    """Both selectors on exactly the knapsack instance the DP pipeline built for each day."""
+    if trace is None:
+        trace = []
+        plan_trip(city, trip.with_changes(strategy="dp"), trace=trace, validate=False)
     names = {aid: a.name for aid, a in city.attractions.items()}
     rows = []
     for record in trace:
@@ -90,12 +94,10 @@ def compare_selection(city, trip, repeats):
             "cells": (len(items) + 1) * (T + 1),
             "greedy": describe(greedy),
             "dp": describe(dp),
-            "max_visits": describe(results["max_visits"]),
             "gap": dp.score - greedy.score,
             "gap_pct": round(100 * (dp.score - greedy.score) / dp.score, 1) if dp.score else 0.0,
             "greedy_ms": median_ms(lambda: greedy_select(items, T), repeats),
             "dp_ms": median_ms(lambda: dp_select(items, T), repeats),
-            "max_visits_ms": median_ms(lambda: max_visits_select(items, T), repeats),
         })
     return rows
 
@@ -187,17 +189,10 @@ def _demo(items, capacity_units, note):
 
 
 def greedy_trap():
-    """The textbook counter-example, solved live by every selector (times in 10-minute units)."""
+    """The textbook counter-example, solved live by both selectors (times in 10-minute units)."""
     items = [Item("X", 90, 18), Item("Y", 60, 15), Item("Z", 60, 15)]
     return _demo(items, 30, _("Greedy takes X (best value per minute) and then nothing else fits; "
                               "DP considers every combination and finds Y + Z."))
-
-
-def value_vs_count():
-    """Why DP and Max visits differ: one valuable long visit against several short ordinary ones."""
-    items = [Item("A", 90, 12), Item("B", 30, 6), Item("C", 30, 6), Item("D", 30, 6)]
-    return _demo(items, 18, _("DP keeps the valuable 2-hour place A and adds B (score 120, 2 stops); "
-                              "Max visits prefers three short places B, C and D (score 90, 3 stops)."))
 
 
 def load_benchmarks(results_dir):
@@ -208,14 +203,14 @@ def load_benchmarks(results_dir):
         return json.load(f)
 
 
-def compare_modes(city, trip):
+def compare_modes(city, trip, known=None):
     """The same trip with each itinerary mode. The places are fixed first (yours, or the strategy's
     choice), so the only difference is how the mode spreads them over the days."""
     from services.distribution import comfort_minutes
     comfort = comfort_minutes(trip)
     rows = []
     for key, info in config.MODES.items():
-        it = plan_trip(city, trip.with_changes(mode=key))
+        it = known if (known is not None and key == trip.mode) else plan_trip(city, trip.with_changes(mode=key))
         busy = [d.return_time - d.depart for d in it.days if d.visits]
         rows.append({
             "key": key, "label": info["label"], "text": info["text"], "plan_id": it.versions["plan"],
@@ -229,26 +224,42 @@ def compare_modes(city, trip):
                           if a["plan_id"] == b["plan_id"]]}
 
 
+_CACHE = {}          # (trip, data version, settings version, repeats) -> finished comparison
+
+
 def run_comparison(city, trip, results_dir, repeats=None):
+    """Everything the comparison page shows. A finished comparison is kept in memory, so opening the
+    same scenario again (same trip, same data, same settings) is instant; a changed input recomputes."""
     repeats = repeats or config.TIMING_REPEATS
-    strategies, plans, weights, recommendation = compare_itineraries(city, trip, repeats)
+    cache_key = (repr(trip), city.data_version, versioning.settings_version(), repeats, results_dir)
+    if cache_key in _CACHE:
+        return _CACHE[cache_key]
+    result = _run_comparison(city, trip, results_dir, repeats)
+    if len(_CACHE) >= config.COMPARISON_CACHE_SIZE:
+        _CACHE.pop(next(iter(_CACHE)))            # drop the oldest entry
+    _CACHE[cache_key] = result
+    return result
+
+
+def _run_comparison(city, trip, results_dir, repeats):
+    trace = []
+    strategies, plans, weights, recommendation = compare_itineraries(city, trip, repeats, trace)
     dijkstra = crosscheck_city(city, repeats)
     dijkstra["example"] = dijkstra_example(city)
     dijkstra["sources"] = city.edge_sources
     route_key = recommendation["keys"][0] if recommendation["keys"] else "dp"
     return {
-        "modes": compare_modes(city, trip),
+        "modes": compare_modes(city, trip, plans.get(trip.strategy)),
         "strategies": strategies,
         "by_key": {row["key"]: row for row in strategies},
         "weights": weights,
         "recommendation": recommendation,
         "tradeoffs": scorecard.tradeoffs(strategies),
-        "selection": compare_selection(city, trip, repeats),
+        "selection": compare_selection(city, trip, repeats, trace),
         "route_strategy": route_key,
         "routing": compare_routing(city, trip.with_changes(strategy=route_key), plans[route_key], repeats),
         "dijkstra": dijkstra,
         "trap": greedy_trap(),
-        "value_vs_count": value_vs_count(),
         "benchmarks": load_benchmarks(results_dir),
         "lambda": config.QUALITY_LAMBDA,
         "repeats": repeats,

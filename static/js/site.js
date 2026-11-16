@@ -8,24 +8,40 @@
     return null;
   }
 
-  // ── Sidebar: collapsible rail on desktop, slide-in drawer on small screens ──────────────────────────
-  var collapse = document.getElementById("sb-collapse");
-  if (collapse) {
-    collapse.addEventListener("click", function () {
-      var collapsed = root.classList.toggle("sb-collapsed");
-      store("si.sidebar", collapsed ? "collapsed" : "open");
-      collapse.setAttribute("aria-pressed", collapsed ? "true" : "false");
-      window.dispatchEvent(new Event("resize"));                 // maps re-measure their container
+  // ── Theme: light by default; the choice is remembered in this browser. Pages that draw with theme
+  // colours (maps, charts) listen for "themechange". ───────────────────────────────────────────────
+  var themeButton = document.getElementById("theme-toggle");
+  function labelTheme() {
+    if (!themeButton) return;
+    var text = t(root.getAttribute("data-theme") === "dark" ? "Switch to light mode" : "Switch to dark mode");
+    themeButton.setAttribute("aria-label", text);
+    themeButton.title = text;
+  }
+  if (themeButton) {
+    labelTheme();
+    themeButton.addEventListener("click", function () {
+      var next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      root.classList.add("theme-fade");
+      root.setAttribute("data-theme", next);
+      root.setAttribute("data-bs-theme", next);
+      store("si.theme", next);
+      labelTheme();
+      document.dispatchEvent(new Event("themechange"));
+      setTimeout(function () { root.classList.remove("theme-fade"); }, 300);
     });
   }
-  var opener = document.querySelector("[data-sb-open]");
-  function setDrawer(open) {
-    root.classList.toggle("sb-open", open);
-    if (opener) opener.setAttribute("aria-expanded", open ? "true" : "false");
+
+  // ── Navigation: a drop-down panel on small screens ───────────────────────────────────────────────
+  var navButton = document.getElementById("nav-toggle");
+  function setNav(open) {
+    root.classList.toggle("nav-open", open);
+    if (navButton) navButton.setAttribute("aria-expanded", open ? "true" : "false");
   }
-  if (opener) opener.addEventListener("click", function () { setDrawer(true); });
-  document.querySelectorAll("[data-sb-close]").forEach(function (el) { el.addEventListener("click", function () { setDrawer(false); }); });
-  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && root.classList.contains("sb-open")) setDrawer(false); });
+  if (navButton) navButton.addEventListener("click", function () { setNav(!root.classList.contains("nav-open")); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") setNav(false); });
+  document.addEventListener("click", function (e) {
+    if (root.classList.contains("nav-open") && !e.target.closest(".site-header")) setNav(false);
+  });
 
   // ── Recent itineraries (this browser only). An itinerary URL fully reproduces its plan, so storing the
   // URL with a short description is enough; nothing is sent anywhere. ────────────────────────────────────
@@ -55,31 +71,20 @@
     var current = location.pathname + location.search;
     trips.forEach(function (x) {
       var sub = [x.dates, x.mode].filter(Boolean).join(" · ");
-      if (box.dataset.recentList === "sidebar") {
-        var a = el("a", "sb-link" + (x.url === current ? " active" : ""));
-        a.href = x.url;
-        a.title = x.title;
-        a.appendChild(el("i", "bi bi-signpost-2"));
-        var span = el("span", "", x.title);
-        span.appendChild(el("small", "", sub));
-        a.appendChild(span);
-        box.appendChild(a);
-      } else {
-        var li = el("li");
-        var link = el("a", "recent-item");
-        link.href = x.url;
-        var thumb = el("span", "recent-thumb");
-        if (x.image) { var img = el("img"); img.src = x.image; img.alt = ""; img.loading = "lazy"; img.onerror = function () { img.remove(); }; thumb.appendChild(img); }
-        else thumb.appendChild(el("i", "bi bi-signpost-2"));
-        var text = el("div");
-        text.appendChild(el("strong", "", x.title));
-        text.appendChild(el("small", "", [sub, x.stops ? x.stops + " " + t("stops") : ""].filter(Boolean).join(" · ")));
-        link.appendChild(thumb);
-        link.appendChild(text);
-        link.appendChild(el("i", "bi bi-chevron-right"));
-        li.appendChild(link);
-        box.appendChild(li);
-      }
+      var li = el("li");
+      var link = el("a", "recent-item");
+      link.href = x.url;
+      var thumb = el("span", "recent-thumb");
+      if (x.image) { var img = el("img"); img.src = x.image; img.alt = ""; img.loading = "lazy"; img.onerror = function () { img.remove(); }; thumb.appendChild(img); }
+      else thumb.appendChild(el("i", "bi bi-signpost-2"));
+      var text = el("div");
+      text.appendChild(el("strong", "", x.title));
+      text.appendChild(el("small", "", [sub, x.stops ? x.stops + " " + t("stops") : ""].filter(Boolean).join(" · ")));
+      link.appendChild(thumb);
+      link.appendChild(text);
+      link.appendChild(el("i", "bi bi-chevron-right"));
+      li.appendChild(link);
+      box.appendChild(li);
     });
     var empty = document.querySelector('[data-recent-empty="' + box.dataset.recentList + '"]');
     if (empty) empty.hidden = true;
@@ -130,9 +135,123 @@
         ? t("Trips can be up to {max} days long; this one is {n} days.").replace("{max}", max).replace("{n}", days)
         : (days === 1 ? t("1 day (start and end dates included)") : t("{n} days (start and end dates included)").replace("{n}", days));
     }
-    ["change", "input"].forEach(function (ev) { start.addEventListener(ev, sync); end.addEventListener(ev, sync); });
+    // While a date is being typed the value is incomplete, so the end date is only corrected once the
+    // field is committed ("change"); "input" just refreshes the trip length.
+    function refresh() {
+      var a = parse(start.value), b = parse(end.value);
+      if (a && b && b >= a) sync();
+    }
+    start.addEventListener("change", sync); end.addEventListener("change", sync);
+    start.addEventListener("input", refresh); end.addEventListener("input", refresh);
     sync();
+    if (box.hasAttribute("data-calendar")) buildCalendar(box, start, end, max);
   });
+
+  // ── Range calendar (trip planner): pick the first and the last day by clicking. The two date fields
+  // stay in the form (hidden) and carry the values, so everything else works as before; without
+  // JavaScript the plain date fields are shown instead. ─────────────────────────────────────────────
+  function buildCalendar(box, start, end, max) {
+    var DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    var MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    var SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    function parse(v) { var d = v ? new Date(v + "T00:00:00") : null; return d && !isNaN(d) ? d : null; }
+    function iso(d) { return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2); }
+    function addDays(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; }
+    function nice(d) { return t(DAYS[(d.getDay() + 6) % 7]) + ", " + d.getDate() + " " + t(SHORT[d.getMonth()]) + " " + d.getFullYear(); }
+
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    var first = parse(start.value) || today;
+    var view = new Date(first.getFullYear(), first.getMonth(), 1);
+    var awaitingEnd = false;                      // true after the first click of a new range
+
+    start.type = "hidden"; end.type = "hidden";
+    box.classList.add("has-calendar");
+    var cal = el("div", "cal col-12");
+    var pills = el("div", "cal-pills");
+    var pillStart = el("button", "cal-pill"); pillStart.type = "button";
+    var pillEnd = el("button", "cal-pill"); pillEnd.type = "button";
+    pills.appendChild(pillStart); pills.appendChild(el("i", "bi bi-arrow-right")); pills.appendChild(pillEnd);
+    var hint = el("p", "cal-hint");
+    var head = el("div", "cal-nav");
+    var prev = el("button", "icon-btn"); prev.type = "button"; prev.setAttribute("aria-label", t("Previous month")); prev.appendChild(el("i", "bi bi-chevron-left"));
+    var next = el("button", "icon-btn"); next.type = "button"; next.setAttribute("aria-label", t("Next month")); next.appendChild(el("i", "bi bi-chevron-right"));
+    var todayBtn = el("button", "btn btn-sm btn-ghost", t("Today")); todayBtn.type = "button";
+    head.appendChild(prev); head.appendChild(todayBtn); head.appendChild(next);
+    var months = el("div", "cal-months");
+    cal.appendChild(pills); cal.appendChild(hint); cal.appendChild(head); cal.appendChild(months);
+    box.insertBefore(cal, box.firstChild);
+
+    function commit() {                            // tell the rest of the form (trip length, brief)
+      start.dispatchEvent(new Event("change", { bubbles: true }));
+      end.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    function paint(hover) {
+      var a = parse(start.value), b = awaitingEnd ? (hover && a && hover >= a ? hover : a) : parse(end.value);
+      var limit = a && awaitingEnd ? addDays(a, max - 1) : null;
+      months.querySelectorAll("button[data-date]").forEach(function (btn) {
+        var d = parse(btn.dataset.date);
+        btn.classList.toggle("is-start", !!a && +d === +a);
+        btn.classList.toggle("is-end", !!b && +d === +b);
+        btn.classList.toggle("in-range", !!a && !!b && d > a && d < b);
+        btn.classList.toggle("is-preview", awaitingEnd);
+        btn.disabled = !!limit && d > limit;
+        btn.setAttribute("aria-pressed", (a && +d === +a) || (b && +d === +b) ? "true" : "false");
+      });
+      pillStart.innerHTML = ""; pillEnd.innerHTML = "";
+      pillStart.appendChild(el("small", "", t("Start date"))); pillStart.appendChild(el("strong", "", a ? nice(a) : "—"));
+      pillEnd.appendChild(el("small", "", t("End date")));
+      pillEnd.appendChild(el("strong", "", awaitingEnd ? t("Pick the last day") : (parse(end.value) ? nice(parse(end.value)) : "—")));
+      pillStart.classList.toggle("is-active", !awaitingEnd);
+      pillEnd.classList.toggle("is-active", awaitingEnd);
+      hint.textContent = awaitingEnd ? t("Now click the last day of your trip (the same day again for a one-day trip).")
+                                     : t("Click a day to choose a new first day, then click the last day.");
+    }
+    function month(base) {
+      var box = el("div", "cal-month");
+      box.appendChild(el("div", "cal-title", t(MONTHS[base.getMonth()]) + " " + base.getFullYear()));
+      var grid = el("div", "cal-grid");
+      DAYS.forEach(function (d, i) { grid.appendChild(el("span", "cal-dow" + (i > 4 ? " is-weekend" : ""), t(d))); });
+      var offset = (base.getDay() + 6) % 7;        // weeks start on Monday
+      for (var i = 0; i < offset; i++) grid.appendChild(el("span", "cal-blank"));
+      var count = new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate();
+      for (var n = 1; n <= count; n++) {
+        var d = new Date(base.getFullYear(), base.getMonth(), n);
+        var btn = el("button", "cal-day" + (+d === +today ? " is-today" : "") + (d < today ? " is-past" : ""), String(n));
+        btn.type = "button";
+        btn.dataset.date = iso(d);
+        btn.setAttribute("aria-label", nice(d));
+        grid.appendChild(btn);
+      }
+      box.appendChild(grid);
+      return box;
+    }
+    function render() {
+      months.innerHTML = "";
+      months.appendChild(month(view));
+      months.appendChild(month(new Date(view.getFullYear(), view.getMonth() + 1, 1)));
+      paint(null);
+    }
+    months.addEventListener("click", function (e) {
+      var btn = e.target.closest("button[data-date]");
+      if (!btn || btn.disabled) return;
+      var d = parse(btn.dataset.date), a = parse(start.value);
+      if (awaitingEnd && a && d >= a) { end.value = btn.dataset.date; awaitingEnd = false; }
+      else { start.value = btn.dataset.date; end.value = btn.dataset.date; awaitingEnd = true; }   // always a valid range
+      commit();
+      paint(null);
+    });
+    months.addEventListener("mouseover", function (e) {
+      var btn = e.target.closest("button[data-date]");
+      if (awaitingEnd && btn && !btn.disabled) paint(parse(btn.dataset.date));
+    });
+    months.addEventListener("mouseleave", function () { if (awaitingEnd) paint(null); });
+    prev.addEventListener("click", function () { view = new Date(view.getFullYear(), view.getMonth() - 1, 1); render(); });
+    next.addEventListener("click", function () { view = new Date(view.getFullYear(), view.getMonth() + 1, 1); render(); });
+    todayBtn.addEventListener("click", function () { view = new Date(today.getFullYear(), today.getMonth(), 1); render(); });
+    pillStart.addEventListener("click", function () { awaitingEnd = false; paint(null); });
+    pillEnd.addEventListener("click", function () { if (parse(start.value)) { awaitingEnd = true; paint(null); } });
+    render();
+  }
 
   // ── "Load more" listings (Destinations, Attractions). The server renders every card in ranking order,
   // so the page is complete without JavaScript; only the first PAGE matching cards are shown here. ──────
@@ -227,20 +346,4 @@
     window.addEventListener("scroll", function () { if (!pending) { pending = true; requestAnimationFrame(mark); } }, { passive: true });
     mark();
   });
-
-  // ── Language: the server renders every page in the chosen language (cookie), so switching reloads the
-  // same page. On the trip planner the current form values travel along, so nothing typed is lost. ────
-  var langSelect = document.querySelector("[data-lang-switch]");
-  if (langSelect) {
-    langSelect.addEventListener("change", function () {
-      var next = location.pathname + location.search;
-      var form = document.getElementById("trip-form");
-      if (form) {
-        var params = new URLSearchParams();
-        new FormData(form).forEach(function (value, key) { if (value !== "") params.append(key, value); });
-        next = location.pathname + "?" + params.toString();
-      }
-      location.href = "/lang/" + encodeURIComponent(langSelect.value) + "?next=" + encodeURIComponent(next + location.hash);
-    });
-  }
 })();

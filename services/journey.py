@@ -31,7 +31,7 @@ wherever you chose to finish.
                and that each day starts where the previous one ended.
 
 When the planner chooses the places, each stop's block first runs the
-day-by-day selection strategy (DP / Greedy / Max visits) on that city's
+day-by-day selection strategy (DP / Greedy) on that city's
 attractions alone, over a share of the trip proportional to how many it has.
 """
 

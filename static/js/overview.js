@@ -1,4 +1,4 @@
-// Overview: the destination network map (Leaflet + OpenStreetMap tiles, darkened in CSS).
+// Overview: the destination network map (Leaflet + OpenStreetMap tiles, themed in CSS).
 // Every marker is a destination from the database, coloured by how much of it can be planned.
 (function () {
   "use strict";
@@ -15,8 +15,8 @@
   }
 
   var map = L.map(el, { scrollWheelZoom: false, zoomControl: true, attributionControl: true, minZoom: 3, maxZoom: 12, zoomSnap: 0.25 });
-  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
+    maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, tiles &copy; <a href="https://www.esri.com/">Esri</a>'
   }).addTo(map);
 
   var bounds = [];

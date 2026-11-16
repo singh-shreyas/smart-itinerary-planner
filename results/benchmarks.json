@@ -183,8 +183,6 @@
     "greedy_higher": 10,
     "equal": 532,
     "mean_dp_gain_pct": 0.67,
-    "max_visits_more_stops": 7,
-    "max_visits_same_stops": 630,
     "cities": [
       "agra",
       "delhi",

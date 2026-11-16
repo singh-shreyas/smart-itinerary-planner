@@ -1,4 +1,4 @@
-// Route map for the itinerary workspace (Leaflet + OpenStreetMap tiles, darkened in CSS).
+// Route map for the itinerary workspace (Leaflet + OpenStreetMap tiles, themed in CSS).
 // The itinerary is complete without it: if Leaflet or the tiles fail, a short note is shown instead.
 // Selecting a stop card focuses its marker, and selecting a marker highlights its card.
 (function () {
@@ -24,9 +24,9 @@
   var map, layer, markers = {}, current = 1;
   try {
     map = L.map(el, { scrollWheelZoom: true, zoomControl: true, zoomSnap: 0.5 }).setView(data.center, 12);
-    var tiles = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    var tiles = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
       maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, tiles &copy; <a href="https://www.esri.com/">Esri</a>'
     }).addTo(map);
     var loaded = 0, errors = 0;
     tiles.on("tileload", function () { loaded++; });
@@ -101,8 +101,9 @@
     if (day.stops.length || moves) {
       points.push([finish.lat, finish.lng]);
       // Straight dashed segments in visit order -- deliberately NOT drawn as if they were roads.
-      var route = getComputedStyle(document.documentElement).getPropertyValue("--route").trim() || "#78DCC0";
-      L.polyline(points, { color: "#000", weight: 6, opacity: 0.35 }).addTo(layer);
+      var css = getComputedStyle(document.documentElement);
+      var route = css.getPropertyValue("--route").trim() || "#2456D6";
+      L.polyline(points, { color: css.getPropertyValue("--surface").trim() || "#fff", weight: 6, opacity: 0.75 }).addTo(layer);
       L.polyline(points, { color: route, weight: 2.5, opacity: 0.95, dashArray: "6 8", lineCap: "round" }).addTo(layer);
       map.fitBounds(L.latLngBounds(points).pad(0.2), { maxZoom: 14 });
     } else {
@@ -112,6 +113,8 @@
   }
 
   draw(current);
+  var wanted = location.hash && document.querySelector('[data-bs-target="' + location.hash + '"]');
+  if (wanted && window.bootstrap) bootstrap.Tab.getOrCreateInstance(wanted).show();
   document.querySelectorAll('[data-bs-toggle="tab"][data-day]').forEach(function (tab) {
     tab.addEventListener("shown.bs.tab", function () { current = parseInt(tab.dataset.day, 10); draw(current); });
   });

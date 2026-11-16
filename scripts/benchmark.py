@@ -146,10 +146,10 @@ def bench_dijkstra(sizes, seeds, repeats):
 
 
 def bench_real_scenarios(quick=False):
-    """DP vs Greedy vs Max visits on whole itineraries for a grid of real-data trips.
+    """DP vs Greedy on whole itineraries for a grid of real-data trips.
 
-    Unlike the knapsack comparison (where DP >= Greedy in value and Max visits >= both in
-    count are guaranteed), the final itinerary has no guarantee: routing, meals, repair,
+    Unlike the knapsack comparison (where DP >= Greedy in value is
+    guaranteed), the final itinerary has no guarantee: routing, meals, repair,
     the fill step and multi-day effects come after selection. This sweep measures how often
     each strategy actually ends up ahead. Cities: the 12 highest-ranked "ready" destinations
     (deterministic order by Top-50 rank), with the planner's default lunch break.
@@ -181,7 +181,7 @@ def bench_real_scenarios(quick=False):
     lunch = MealSetting("lunch", 12 * 60, 14 * 60 + 30, 45)
     grid = itertools.product(cities, range(2 if quick else 3), [1, 2, 3], ["balanced", "relaxed"],
                              [(), ("history",), ("spirituality",)])
-    dp_higher = greedy_higher = equal = mv_more_stops = mv_same_stops = 0
+    dp_higher = greedy_higher = equal = 0
     gaps = []
     for slug, offset, days, pace, interests in grid:
         city = cities[slug]
@@ -189,30 +189,24 @@ def bench_real_scenarios(quick=False):
                     day_end=1140, interests=interests, pace=pace,
                     start=city.stays[0].slug, lunch=lunch)
         plans = {key: plan_trip(city, TripRequest(strategy=key, **base))
-                 for key in ("dp", "greedy", "max_visits")}
+                 for key in ("dp", "greedy")}
         assert not any(p.violations for p in plans.values()), slug
-        dp, greedy, mv = plans["dp"], plans["greedy"], plans["max_visits"]
+        dp, greedy = plans["dp"], plans["greedy"]
         if dp.score > greedy.score:
             dp_higher += 1
         elif dp.score < greedy.score:
             greedy_higher += 1
         else:
             equal += 1
-        if mv.stops > dp.stops:
-            mv_more_stops += 1
-        elif mv.stops == dp.stops:
-            mv_same_stops += 1
         if greedy.score:
             gaps.append(100 * (dp.score - greedy.score) / greedy.score)
     total = dp_higher + greedy_higher + equal
     summary = {"scenarios": total, "dp_higher": dp_higher, "greedy_higher": greedy_higher, "equal": equal,
                "mean_dp_gain_pct": round(statistics.mean(gaps), 2),
-               "max_visits_more_stops": mv_more_stops, "max_visits_same_stops": mv_same_stops,
                "cities": list(cities),
                "grid": f"{len(cities)} highest-ranked ready cities x {2 if quick else 3} start days x 1-3 days x "
                        "pace {balanced, relaxed} x interests {none, history, spirituality}; 09:00-19:00 with lunch"}
-    print(f"real scenarios: {total} trips, DP higher {dp_higher}, Greedy higher {greedy_higher}, equal {equal}; "
-          f"Max visits more stops than DP in {mv_more_stops}")
+    print(f"real scenarios: {total} trips, DP higher {dp_higher}, Greedy higher {greedy_higher}, equal {equal}")
     return summary
 
 

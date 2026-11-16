@@ -70,7 +70,7 @@
   var fromHash = location.hash ? indexOf(location.hash.slice(1)) : -1;
   show(firstError >= 0 ? firstError : (fromHash >= 0 ? fromHash : 0), false);
 
-  // The brief follows the chosen city (photo + name) and the selection strategy.
+  // The brief follows the chosen city (photo + name).
   var images = {};
   try { images = JSON.parse(document.getElementById("city-images").textContent); } catch (e) { /* no photos */ }
   var img = document.getElementById("brief-img");
@@ -86,10 +86,4 @@
     }
   }
   citySelect.addEventListener("change", syncCity);
-  var strategyOut = document.querySelector("[data-summary-strategy]");
-  form.addEventListener("change", function (e) {
-    if (e.target.name === "strategy" && strategyOut) {
-      strategyOut.textContent = e.target.nextElementSibling.querySelector("strong").textContent;
-    }
-  });
 })();

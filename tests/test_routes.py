@@ -127,7 +127,7 @@ def test_api_errors_are_json(client):
 def test_api_compare(client):
     data = client.get("/api/compare?city=agra&days=1&start_date=2026-11-02").get_json()
     assert data["dijkstra"]["mismatches"] == 0
-    assert {s["key"] for s in data["strategies"]} == {"dp", "greedy", "max_visits"}
+    assert {s["key"] for s in data["strategies"]} == {"dp", "greedy"}
     assert data["recommendation"]["status"] in ("winner", "tie")
     assert all(s["feasible"] for s in data["strategies"])
 

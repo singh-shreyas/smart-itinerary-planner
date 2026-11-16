@@ -81,7 +81,7 @@ def test_missing_connection_uses_a_labelled_estimate_never_zero(tiny_area):
 
 def test_multi_city_trips_always_validate(tiny_area):
     area = tiny_area("testville", "riverton")
-    for strategy in ("dp", "greedy", "max_visits"):
+    for strategy in ("dp", "greedy"):
         for days in (1, 2, 3):
             trip = make_trip(extra_cities=("riverton",), strategy=strategy, days=days, day_end=20 * 60,
                              interests=("history", "markets"))

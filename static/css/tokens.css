@@ -1,0 +1,134 @@
+/* ==========================================================================
+   Smart Itinerary — design tokens (v4)
+
+   Light by default: warm ivory canvas, white surfaces, deep navy type, one
+   refined blue for actions. Each supporting hue means one thing everywhere:
+
+     blue   actions, sightseeing, "verified"     teal   algorithms / engine
+     coral  travel                               green  meals
+     amber  estimates, waiting, warnings         rose   errors
+
+   The dark theme ([data-theme="dark"]) is its own palette (navy-charcoal),
+   not an inversion. Fraunces for display headings, Inter for the interface.
+
+   Files: tokens · base · shell · components · home · planner · itinerary ·
+          explore · lab · utilities
+   ========================================================================== */
+:root {
+  color-scheme: light;
+  --bg: #FAF8F4;
+  --bg-raised: #F4F1EA;
+  --surface: #FFFFFF;
+  --surface-2: #F6F4EF;
+  --surface-3: #ECE8DF;
+  --line: #EAE5DA;
+  --line-2: #DDD7CA;
+  --line-3: #C4BCAC;
+  --text: #14213D;
+  --text-2: #3B4763;
+  --muted: #667085;
+  --faint: #8B93A3;
+
+  --bg-rgb: 250, 248, 244;
+  --surface-rgb: 255, 255, 255;
+  --ink-rgb: 20, 33, 61;               /* overlay tint: darkens on light, lightens on dark */
+
+  --accent: #2456D6;       --accent-rgb: 36, 86, 214;
+  --accent-hover: #1C47B8;
+  --accent-2: #1D49BD;                 /* accent used as text / links */
+  --accent-ink: #FFFFFF;               /* text on a solid accent */
+  --violet: #137A68;       --violet-rgb: 19, 122, 104;    /* "engine" hue: teal */
+  --coral: #C9552F;        --coral-rgb: 201, 85, 47;
+  --sky: #4E7D2B;          --sky-rgb: 78, 125, 43;        /* meals: green */
+  --amber: #A9680C;        --amber-rgb: 199, 138, 28;
+  --rose: #C2314A;         --rose-rgb: 194, 49, 74;
+  --accent-soft: rgba(var(--accent-rgb), .08);
+  --accent-line: rgba(var(--accent-rgb), .28);
+  --violet-soft: rgba(var(--violet-rgb), .09);
+  --coral-soft: rgba(var(--coral-rgb), .09);
+  --sky-soft: rgba(var(--sky-rgb), .10);
+  --amber-soft: rgba(var(--amber-rgb), .11);
+  --rose-soft: rgba(var(--rose-rgb), .08);
+  --amber-text: #6E4506;  --info-text: #1B3E99;  --rose-text: #8E1F33;  --violet-text: #0E5A4D;  --coral-text: #9A3F20;
+  --route: #2456D6;
+  --seg-buffer: #9AA7BD;  --seg-intercity: #9A3F20;
+  --map-bg: #E9EEF2;
+  --c-dp: #2456D6;  --c-greedy: #DB7A2B;  --c-exact: #137A68;  --c-wait: #C79A2B;  --c-free: #D9D5CB;   /* chart series */
+  --scrim-rgb: 12, 20, 38;             /* gradients over photographs (same in both themes) */
+
+  --r-xs: 6px; --r-sm: 8px; --r: 10px; --r-lg: 14px; --r-xl: 20px;
+  --shadow: 0 1px 2px rgba(20, 33, 61, .05), 0 8px 24px -12px rgba(20, 33, 61, .14);
+  --shadow-lg: 0 2px 4px rgba(20, 33, 61, .05), 0 24px 56px -20px rgba(20, 33, 61, .25);
+  --ring: 0 0 0 3px rgba(var(--accent-rgb), .22);
+  --ease: cubic-bezier(.2, .7, .2, 1);
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --display: 'Fraunces', 'Iowan Old Style', Georgia, serif;
+  --mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  --top-h: 64px;
+
+  --bs-body-bg: var(--bg);
+  --bs-body-color: var(--text);
+  --bs-body-font-family: var(--font);
+  --bs-body-font-size: 1rem;
+  --bs-body-line-height: 1.55;
+  --bs-border-color: var(--line-2);
+  --bs-secondary-color: var(--muted);
+  --bs-tertiary-bg: var(--surface-2);
+  --bs-secondary-bg: var(--surface-2);
+  --bs-emphasis-color: var(--text);
+  --bs-heading-color: var(--text);
+  --bs-link-color: var(--accent-2);
+  --bs-link-color-rgb: var(--accent-rgb);
+  --bs-link-hover-color: var(--accent-hover);
+  --bs-link-hover-color-rgb: var(--accent-rgb);
+  --bs-primary: var(--accent);
+  --bs-primary-rgb: var(--accent-rgb);
+  --bs-border-radius: 8px;
+  --bs-border-radius-lg: 12px;
+  --bs-focus-ring-color: rgba(var(--accent-rgb), .25);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0D1220;
+  --bg-raised: #111728;
+  --surface: #151C2E;
+  --surface-2: #1C2439;
+  --surface-3: #252F47;
+  --line: #212A40;
+  --line-2: #2C3752;
+  --line-3: #3D4A69;
+  --text: #EEF1F7;
+  --text-2: #C5CCDB;
+  --muted: #97A2B9;
+  --faint: #6C7892;
+
+  --bg-rgb: 13, 18, 32;
+  --surface-rgb: 21, 28, 46;
+  --ink-rgb: 255, 255, 255;
+
+  --accent: #6E9BFF;       --accent-rgb: 110, 155, 255;
+  --accent-hover: #8AAEFF;
+  --accent-2: #9CBBFF;
+  --accent-ink: #0A1533;
+  --violet: #5FD0B6;       --violet-rgb: 95, 208, 182;
+  --coral: #F0926F;        --coral-rgb: 240, 146, 111;
+  --sky: #A3D07E;          --sky-rgb: 163, 208, 126;
+  --amber: #E8B65E;        --amber-rgb: 232, 182, 94;
+  --rose: #F27C87;         --rose-rgb: 242, 124, 135;
+  --accent-soft: rgba(var(--accent-rgb), .13);
+  --accent-line: rgba(var(--accent-rgb), .38);
+  --violet-soft: rgba(var(--violet-rgb), .12);
+  --coral-soft: rgba(var(--coral-rgb), .12);
+  --sky-soft: rgba(var(--sky-rgb), .12);
+  --amber-soft: rgba(var(--amber-rgb), .12);
+  --rose-soft: rgba(var(--rose-rgb), .12);
+  --amber-text: #F3D7A2;  --info-text: #C9DAFF;  --rose-text: #FFC9CE;  --violet-text: #BDEBDD;  --coral-text: #F8C3B2;
+  --route: #9CBBFF;
+  --seg-buffer: #55627F;  --seg-intercity: #C0644A;
+  --map-bg: #0F1524;
+  --c-dp: #6E9BFF;  --c-greedy: #F0A46F;  --c-exact: #5FD0B6;  --c-wait: #D9A640;  --c-free: #3B4660;
+  --shadow: 0 1px 0 rgba(255, 255, 255, .03) inset, 0 12px 32px -16px rgba(0, 0, 0, .7);
+  --shadow-lg: 0 1px 0 rgba(255, 255, 255, .04) inset, 0 28px 60px -24px rgba(0, 0, 0, .85);
+  --ring: 0 0 0 3px rgba(var(--accent-rgb), .3);
+}

@@ -5,27 +5,21 @@
 
   var data = JSON.parse(document.getElementById("chart-data").textContent);
 
-  // Strategy colours follow the strategy everywhere on the page (validated with the dataviz
-  // palette checker: lightness, chroma, colour-blind separation; contrast relief = the tables).
-  // Dark mode uses lighter steps of the same three hues (each at least 3:1 against the dark chart
-  // surface); text, grid and surface colours come from the page's theme tokens.
+  // Series colours follow the strategy everywhere on the page and come from the theme tokens
+  // (--c-dp, --c-greedy, --c-exact in tokens.css), so charts, tables and bars always agree.
   var t = window.I18N ? window.I18N.t : function (x) { return x; };
-  var PALETTES = {
-    light: { strategy: { dp: "#2a7a52", greedy: "#e8894a", max_visits: "#3f6fb6" }, wait: "#b8860b", free: "#d9d3c7" },
-    dark: { strategy: { dp: "#5cb98a", greedy: "#f0a46f", max_visits: "#7aa2e0" }, wait: "#d9a640", free: "#3b4757" }
-  };
-  var STRATEGY, SLOT, SEGMENT, INK, MUTED, GRID, SURFACE;
+  var STRATEGY, SLOT, SEGMENT, INK, MUTED, GRID, SURFACE, TIP;
   function usePalette() {
-    var dark = document.documentElement.getAttribute("data-theme") === "dark";
-    var p = PALETTES[dark ? "dark" : "light"];
     var css = getComputedStyle(document.documentElement);
-    STRATEGY = p.strategy;
-    SLOT = [STRATEGY.dp, STRATEGY.greedy, STRATEGY.max_visits];
-    SEGMENT = { sight: STRATEGY.dp, travel: STRATEGY.greedy, meal: STRATEGY.max_visits, wait: p.wait, free: p.free };
-    INK = css.getPropertyValue("--ink").trim() || "#1B2A41";
-    MUTED = css.getPropertyValue("--muted").trim() || "#6B6257";
-    GRID = css.getPropertyValue("--line").trim() || "#ECE5D8";
-    SURFACE = css.getPropertyValue("--surface").trim() || "#FFFFFF";
+    function v(name, fallback) { return css.getPropertyValue(name).trim() || fallback; }
+    STRATEGY = { dp: v("--c-dp", "#2456D6"), greedy: v("--c-greedy", "#DB7A2B") };
+    SLOT = [STRATEGY.dp, STRATEGY.greedy, v("--c-exact", "#137A68")];
+    SEGMENT = { sight: SLOT[0], travel: SLOT[1], meal: SLOT[2], wait: v("--c-wait", "#C79A2B"), free: v("--c-free", "#D9D5CB") };
+    INK = v("--text", "#14213D");
+    MUTED = v("--muted", "#667085");
+    GRID = v("--line", "#EAE5DA");
+    SURFACE = v("--surface", "#FFFFFF");
+    TIP = { bg: v("--surface", "#fff"), border: v("--line-3", "#C4BCAC"), body: v("--text-2", "#3B4763") };
     if (window.Chart) Chart.defaults.color = MUTED;
   }
   usePalette();
@@ -46,7 +40,7 @@
   }
   function tooltip(unit) {
     return {
-      backgroundColor: "#1C2829", titleColor: "#F2F5F4", bodyColor: "#C4CFCC", borderColor: "#344749", borderWidth: 1, padding: 10, cornerRadius: 8,
+      backgroundColor: TIP.bg, titleColor: INK, bodyColor: TIP.body, borderColor: TIP.border, borderWidth: 1, padding: 10, cornerRadius: 8,
       boxPadding: 4, usePointStyle: true,
       callbacks: { label: function (ctx) { return " " + ctx.dataset.label + ": " + ctx.formattedValue + (unit || ""); } }
     };
@@ -64,7 +58,7 @@
   function bars(label, values, color, horizontal) {
     return {
       label: label, data: values, backgroundColor: color, hoverBackgroundColor: color,
-      maxBarThickness: 22, barPercentage: 0.82, categoryPercentage: 0.72,
+      maxBarThickness: 26, barPercentage: 0.82, categoryPercentage: 0.72,
       borderColor: SURFACE, borderWidth: { top: 0, right: horizontal ? 2 : 0, bottom: 0, left: 0 },
       borderRadius: horizontal ? { topRight: 4, bottomRight: 4, topLeft: 0, bottomLeft: 0 }
                                : { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 },
@@ -121,27 +115,8 @@
 
   function drawCharts() {
 
-  // 1a. Subscores (grouped horizontal bars: one group per measure, one bar per strategy)
-  var MEASURES = [["value", "Value"], ["coverage", "Coverage"], ["travel", "Travel efficiency"],
-                  ["utilisation", "Time utilisation"]];
-  var shown = MEASURES.filter(function (m) { return data.weights && m[0] in data.weights; });
+  // 1a. The subscores are drawn in HTML (the head-to-head bars), so only the time and per-day charts follow.
   if (rows.length) {
-    chart("chart-scorecard", {
-      type: "bar",
-      data: {
-        labels: shown.map(function (m) { return m[1]; }).concat(["Overall"]),
-        datasets: rows.map(function (r) {
-          return bars(r.short, shown.map(function (m) { return r.subscores[m[0]]; }).concat([r.overall]), STRATEGY[r.key], true);
-        })
-      },
-      options: {
-        indexAxis: "y",
-        interaction: { mode: "index", intersect: false },
-        plugins: { legend: legend(), tooltip: tooltip("") },
-        scales: { x: axis("subscore (100 = best of the three)", { min: 0, max: 100 }), y: axis(null, { grid: { display: false } }) }
-      }
-    });
-
     // 1b. Where the time goes (stacked horizontal bars, one per strategy)
     var segs = [
       ["Sightseeing", SEGMENT.sight, function (m) { return m.sight_min; }],
@@ -221,8 +196,8 @@
   var map, group;
   try {
     map = L.map(mapEl, { scrollWheelZoom: false });
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
+      maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, tiles &copy; <a href="https://www.esri.com/">Esri</a>'
     }).addTo(map);
     group = L.layerGroup().addTo(map);
   } catch (e) { card.classList.add("map-failed"); return; }
