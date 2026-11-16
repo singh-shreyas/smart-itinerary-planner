@@ -11,6 +11,8 @@ travel-optimisation system: it optimises time and travel, not money.
 ADA (Analysis and Design of Algorithms) project, B.Tech CSE (Section B), Faculty of Technology, University of Delhi.
 Team: **Priyanshi Gupta** and **Shreyas Singh**.
 
+Project documents (slides, viva handbook, technical documentation, user workflow) are in [`docs/`](docs/README.md).
+
 Stack (as in our synopsis): **Python · Flask · SQLite · HTML/CSS/JavaScript · Bootstrap 5 · Jinja2**, with
 **NetworkX used only to cross-check** our Dijkstra. Maps use **Leaflet + OpenStreetMap** (free, no API key). No paid API is used.
 
@@ -314,6 +316,7 @@ browser ──► Flask routes ──► services ──► algorithms (pure fun
 ```
 ADA PROJECT FINAL/
 ├── app.py  config.py  requirements.txt  pytest.ini  .gitignore  README.md
+├── docs/            presentation slides, viva handbook, technical documentation, user workflow (see docs/README.md)
 ├── algorithms/      graph, dijkstra, sorting, scoring, knapsack_types, greedy, dynamic_programming,
 │                    nearest_neighbor, two_opt, activity_selection, insertion, held_karp, tour, day_partition
 ├── services/        models, trip_request, city_data (city groups, access links), multicity, scheduler (meals, ferries),
@@ -322,7 +325,8 @@ ADA PROJECT FINAL/
 ├── database/        schema.sql, db.py, queries.py, seed_data.py, migrations.py
 ├── routes/          main_routes.py, itinerary_routes.py, api_routes.py, helpers.py
 ├── templates/       base (with footer), _macros, index, cities, attractions, planner, itinerary, compare, about, error
-├── static/          css/style.css, js/ (site, attractions, planner, itinerary, compare), images/, fonts/, vendor/
+├── static/          css/ (tokens, base, shell, components + one file per page area), js/ (site, overview, wizard, planner,
+│                    itinerary, attractions, compare), images/, fonts/, vendor/
 ├── data/            cities, stay_areas, transport_points, access_points, attractions, access, access_segments,
 │                    access_alternatives, opening_hours, categories, travel_times, intercity_times, image_credits,
 │                    estimate_defaults (.csv); catalog/ (team lists); curation/ (reviewed mappings, source snapshot, stay review)
