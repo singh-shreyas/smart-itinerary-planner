@@ -247,3 +247,9 @@
 
 .itin-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 .itin-title h1 { font-size: 1.6rem; }
+
+/* "Good to know": one box, short bullets */
+.good-to-know { display: block; }
+.good-to-know ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .45rem; }
+.good-to-know li { display: flex; gap: .55rem; align-items: baseline; line-height: 1.45; }
+.good-to-know li > .bi { flex: none; opacity: .8; }
