@@ -384,25 +384,28 @@
           {% if unplanned or access_visits or city_pairs or it.estimated_links or it.interest_notes %}
           <div class="block">
             <div class="block-title"><h3><i class="bi bi-info-circle"></i>{{ _('Good to know') }}</h3></div>
-            <div class="d-grid gap-2">
-              {% if city_pairs %}
-                <div class="notice notice-info"><i class="bi bi-signpost-2"></i><p>{{ _('Cities in this trip:') }}
-                  {% for p in city_pairs %}{{ p.a }} ↔ {{ p.b }} {{ p.km }} {{ _('km straight line') }}{% if p.road_km %} ({{ _('about {km} km / {time} by road between their central stays', km=p.road_km, time=p.minutes|travel) }}{{ ', ' ~ _('estimated') if p.estimated }}){% endif %}{{ ' · ' if not loop.last }}{% endfor %}.
-                  {% if not it.journey %}{{ _('You stay in {place} and travel out each day.', place=it.start_place.name) }}{% endif %}</p></div>
-              {% endif %}
-              {% for a, b, km in it.estimated_links %}
-                <div class="notice"><i class="bi bi-exclamation-triangle"></i>
-                  <p><strong>{{ _('Estimated connection.') }}</strong> {{ _('Our data has no road link between {a} and {b} ({km} km apart in a straight line), so that leg uses a labelled straight-line estimate, not a road time.', a=a|title, b=b|title, km=km) }}</p></div>
-              {% endfor %}
-              {% for note in it.interest_notes %}
-                <div class="notice notice-info"><i class="bi bi-funnel"></i><p>{{ note.text }}</p></div>
-              {% endfor %}
-              {% if unplanned or access_visits %}
-                <ul class="plan-warnings mb-0">
-                  {% for s in unplanned %}<li><i class="bi bi-exclamation-triangle text-accent" aria-hidden="true"></i><strong>{{ s.attraction.name }}</strong> {{ _('is not scheduled:') }} {{ s.reason }}</li>{% endfor %}
-                  {% for v in access_visits %}<li><i class="bi bi-signpost-split" aria-hidden="true"></i><strong>{{ v.attraction.name }}</strong>: {{ v.attraction.access_label }}{% if v.attraction.access_timing == 'estimated' %}; {{ _('walking or crossing times are estimates') }}{% endif %}. {{ _('Check routes and timings locally before you go.') }}</li>{% endfor %}
-                </ul>
-              {% endif %}
+            {% set no_data = it.interest_notes|selectattr('count', 'equalto', 0)|list %}
+            {% set few_data = it.interest_notes|rejectattr('count', 'equalto', 0)|list %}
+            <div class="notice notice-info good-to-know">
+              <ul>
+                {% if city_pairs %}
+                  <li><i class="bi bi-signpost-2" aria-hidden="true"></i>{{ _('By road:') }}
+                    {% for p in city_pairs %}{{ p.a }} ↔ {{ p.b }} {% if p.road_km %}{{ _('about {time}', time=p.minutes|travel) }}{{ ' (' ~ _('estimated') ~ ')' if p.estimated }}{% else %}{{ p.km }} {{ _('km straight line') }}{% endif %}{{ ' · ' if not loop.last }}{% endfor %}.
+                    {% if not it.journey %}{{ _('You stay in {place} and travel out each day.', place=it.start_place.name) }}{% endif %}</li>
+                {% endif %}
+                {% for a, b, km in it.estimated_links %}
+                  <li><i class="bi bi-exclamation-triangle" aria-hidden="true"></i>{{ _('{a} ↔ {b} uses a straight-line estimate ({km} km), not a road time.', a=a|title, b=b|title, km=km) }}</li>
+                {% endfor %}
+                {% if no_data %}
+                  <li><i class="bi bi-funnel" aria-hidden="true"></i>{{ _('No places in our data for:') }} {{ no_data|map(attribute='label')|join(', ') }}.</li>
+                {% endif %}
+                {% if few_data %}
+                  <li><i class="bi bi-funnel" aria-hidden="true"></i>{{ _('Only a few places for:') }}
+                    {% for n in few_data %}{{ n.label }} ({{ n.names|join(', ') }}){{ '; ' if not loop.last }}{% endfor %}.</li>
+                {% endif %}
+                {% for s in unplanned %}<li><i class="bi bi-exclamation-triangle" aria-hidden="true"></i><strong>{{ s.attraction.name }}</strong> {{ _('is not scheduled:') }} {{ s.reason }}</li>{% endfor %}
+                {% for v in access_visits %}<li><i class="bi bi-signpost-split" aria-hidden="true"></i><strong>{{ v.attraction.name }}</strong>: {{ v.attraction.access_label }}{% if v.attraction.access_timing == 'estimated' %}; {{ _('walking or crossing times are estimates') }}{% endif %}. {{ _('Check routes and timings locally before you go.') }}</li>{% endfor %}
+              </ul>
             </div>
           </div>
           {% endif %}

@@ -174,12 +174,13 @@ def interest_notes(city, trip, tctx):
                     and matches_interests(a.categories, [interest], tctx.parents)]
         label = _(names.get(interest, interest))
         if not matching:
-            notes.append({"interest": interest, "count": 0,
+            notes.append({"interest": interest, "count": 0, "label": label, "names": [],
                           "text": _("No “{label}” places in our data for {city}, so this interest cannot change "
                                     "your plan.", label=label, city=city.name)})
         elif len(matching) <= 2:
             listed = ", ".join(a.name for a in matching)
-            notes.append({"interest": interest, "count": len(matching),
+            notes.append({"interest": interest, "count": len(matching), "label": label,
+                          "names": [a.name for a in matching],
                           "text": ngettext("Only {n} “{label}” place in our data for {city}: {listed}.",
                                            "Only {n} “{label}” places in our data for {city}: {listed}.",
                                            len(matching), label=label, city=city.name, listed=listed)})
