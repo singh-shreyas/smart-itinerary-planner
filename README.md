@@ -18,16 +18,29 @@ Stack (as in our synopsis): **Python · Flask · SQLite · HTML/CSS/JavaScript �
 
 ---
 
-## Quick start (macOS)
+## Quick start
 
 You need Python 3.10 or newer (`python3 --version`). Tested with Python 3.11.
 
 ```bash
-cd "ADA PROJECT FINAL"                 # the project folder
-python3 -m venv .venv                  # create a private Python environment (once)
-source .venv/bin/activate              # use it in this terminal; the prompt shows (.venv)
-pip install -r requirements.txt        # Flask, NetworkX, pytest
-python app.py                          # start the app
+git clone https://github.com/singh-shreyas/smart-itinerary-planner.git
+cd smart-itinerary-planner
+```
+
+**macOS / Linux**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python app.py
+```
+
+**Windows (PowerShell)**
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python app.py
 ```
 
 Open **http://127.0.0.1:5001** in your browser. Stop the server with `Ctrl+C`.
@@ -355,6 +368,10 @@ ADA PROJECT FINAL/
 * **How do you know Dijkstra is correct?** Unit tests plus 0 mismatches against NetworkX on every pair, in every city and on random graphs.
 
 ---
+
+## Team
+- Priyanshi Gupta
+- Shreyas Singh
 
 ## Credits
 
