@@ -20,6 +20,7 @@
   var MAX_PICKED = 150;
   var pickAll = document.getElementById("pick-all");
   var pickFilter = document.getElementById("pick-filter");
+  var interestsToggle = document.getElementById("interests-toggle");
   var STAY_HINT = t("Five neighbourhoods, one in each part of the city, from OpenStreetMap.");
   var nearbyList = document.getElementById("nearby-list");
   var nearbyNote = document.getElementById("nearby-note");
@@ -244,6 +245,25 @@
       updateSummary();
     });
   }
+
+  function refreshInterestsToggle() {
+    if (!interestsToggle) return;
+    var boxes = form.querySelectorAll("input[name=interests]");
+    var all = boxes.length > 0 && Array.prototype.every.call(boxes, function (i) { return i.checked; });
+    interestsToggle.textContent = all ? t("Deselect All") : t("Select All");
+    interestsToggle.setAttribute("aria-pressed", all ? "true" : "false");
+  }
+
+  if (interestsToggle) {
+    interestsToggle.addEventListener("click", function () {
+      var boxes = form.querySelectorAll("input[name=interests]");
+      var all = boxes.length > 0 && Array.prototype.every.call(boxes, function (i) { return i.checked; });
+      var target = !all;
+      boxes.forEach(function (i) { i.checked = target; });
+      refreshInterestsToggle();
+      updateSummary();
+    });
+  }
   if (pickFilter) {
     pickFilter.addEventListener("input", function () {
       var q = pickFilter.value.trim().toLowerCase();
@@ -367,10 +387,12 @@
   form.addEventListener("change", function (e) { if (e.target.name === "overnight") rebuildEnds(); });
   form.addEventListener("change", function (e) {
     if (e.target.name === "choose" || e.target.name === "places") refreshPicks();
+    if (e.target.name === "interests") refreshInterestsToggle();
   });
   form.addEventListener("input", updateSummary);
   form.addEventListener("change", updateSummary);
   refreshNearby();
   refreshPicks();
+  refreshInterestsToggle();
   updateSummary();
 })();
