@@ -228,7 +228,12 @@
           <p>{{ _('Pick as many as you like. Matching places score higher. Food and shopping places are only planned when you pick a food or shopping interest.') }}</p></div></div>
 
         <div class="group" id="step-interests">
-          <span class="sub-label"><i class="bi bi-heart me-1"></i>{{ _('Interests') }}</span>
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+            <span class="sub-label mb-0"><i class="bi bi-heart me-1"></i>{{ _('Interests') }}</span>
+            <button type="button" class="btn btn-ghost interest-toggle-btn" id="interests-toggle" aria-pressed="{{ 'true' if (values.interests and categories and values.interests|length == categories|length) else 'false' }}">
+              {{ _('Deselect All') if (values.interests and categories and values.interests|length == categories|length) else _('Select All') }}
+            </button>
+          </div>
           {% for group, items in category_groups %}
             <div class="interest-group">
               <h3 class="interest-group-title">{{ _(group) }}</h3>
