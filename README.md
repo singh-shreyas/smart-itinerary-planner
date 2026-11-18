@@ -51,6 +51,13 @@ Open **http://127.0.0.1:5001** in your browser. Stop the server with `Ctrl+C`.
 * Equivalent Flask command: `flask --app app run --debug --port 5001`.
 * Everything except map tiles works offline: Bootstrap, Leaflet, Chart.js, icons and fonts are in `static/vendor/` and `static/fonts/`.
 
+### Configuration and login
+
+* **No login is needed.** The app has no user accounts, so there are no demo credentials.
+* **No API keys are used.** Maps and routing data come from free, keyless services.
+* **One optional environment variable**, `SECRET_KEY` (see [`.env.example`](.env.example)). Locally it falls back to a
+  development value; set your own for any deployed copy, e.g. `export SECRET_KEY=$(python -c "import secrets; print(secrets.token_hex(32))")`.
+
 ### Safe database updates
 
 ```bash
