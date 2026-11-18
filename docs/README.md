@@ -4,7 +4,7 @@ Everything written about the project, in one place. The code itself is explained
 
 | Document | What it is |
 |---|---|
-| [Presentation Slides](presentation-slides.pdf) | The slide deck for the project presentation |
+| [Presentation Slides](25293916098_ProjectPPT.pdf) | The slide deck for the project presentation |
 | [Algorithms Handbook](algorithms-handbook.pdf) | Every algorithm in the project: what it does, where it is used, pseudocode, complexity, and tested Python and C code ([source files](algorithm-code/)) |
 | [How the Planner Works](how-the-planner-works.pdf) | The whole workflow in plain, non-technical words, from the form to the finished plan |
 | [Technical Documentation](technical-documentation.pdf) | How the system is built: architecture, algorithms and data |
