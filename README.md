@@ -327,9 +327,10 @@ browser ──► Flask routes ──► services ──► algorithms (pure fun
 ```
 
 ```
-ADA PROJECT FINAL/
+smart-itinerary-planner/
 ├── app.py  config.py  requirements.txt  pytest.ini  .gitignore  README.md
-├── docs/            presentation slides, viva handbook, technical documentation, user workflow (see docs/README.md)
+├── docs/            slides, handbooks, technical documentation, user workflow (see docs/README.md);
+│                    algorithm-code/ (standalone Python and C versions), word-sources/ (editable .docx)
 ├── algorithms/      graph, dijkstra, sorting, scoring, knapsack_types, greedy, dynamic_programming,
 │                    nearest_neighbor, two_opt, activity_selection, insertion, held_karp, tour, day_partition
 ├── services/        models, trip_request, city_data (city groups, access links), multicity, scheduler (meals, ferries),
