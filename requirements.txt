@@ -2,3 +2,5 @@
 Flask>=3.1,<4
 networkx>=3.3,<4
 pytest>=8
+# Production web server used by the deployed copy (Linux/macOS); not needed for `python app.py`.
+gunicorn>=23

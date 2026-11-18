@@ -1,0 +1,19 @@
+# Render deployment blueprint: https://render.com/docs/blueprint-spec
+# Render reads this file when you create a "Blueprint" from the GitHub repo.
+services:
+  - type: web
+    name: smart-itinerary-planner
+    runtime: python
+    plan: free
+    # 1. install the libraries, 2. build the SQLite database from data/*.csv
+    buildCommand: pip install -r requirements.txt && python -m database.seed_data
+    # gunicorn is a production web server; it listens on the $PORT Render provides.
+    # --preload builds the app once before starting the workers.
+    startCommand: gunicorn "app:create_app()" --preload --workers 2 --threads 4 --timeout 120
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: SECRET_KEY
+        generateValue: true
