@@ -11,6 +11,9 @@ travel-optimisation system: it optimises time and travel, not money.
 ADA (Analysis and Design of Algorithms) project, B.Tech CSE (Section B), Faculty of Technology, University of Delhi.
 Team: **Priyanshi Gupta** and **Shreyas Singh**.
 
+**Live app:** https://smart-itinerary-planner-qsgf.onrender.com/ (free hosting: the first visit after a quiet spell can
+take up to a minute while the server wakes up).
+
 Project documents (slides, viva handbook, technical documentation, user workflow) are in [`docs/`](docs/README.md).
 
 Stack (as in our synopsis): **Python · Flask · SQLite · HTML/CSS/JavaScript · Bootstrap 5 · Jinja2**, with
@@ -127,7 +130,8 @@ shorter on average); a cost of 30 gave the same choices and 0 added days for sma
 
 ## Deployment
 
-The live copy runs on [Render](https://render.com) using [`render.yaml`](render.yaml):
+The live copy, https://smart-itinerary-planner-qsgf.onrender.com/, runs on [Render](https://render.com) using
+[`render.yaml`](render.yaml). Every push to `main` redeploys it automatically.
 
 | Step | Command |
 |---|---|
